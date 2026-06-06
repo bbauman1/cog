@@ -60,11 +60,14 @@ enum SessionOrigin: String, Codable, CaseIterable, Sendable {
 
 struct SessionPullRequest: Codable, Identifiable, Sendable {
     let url: String
-    let title: String?
-    let number: Int?
     let state: String?
 
     var id: String { url }
+
+    enum CodingKeys: String, CodingKey {
+        case url = "pr_url"
+        case state = "pr_state"
+    }
 }
 
 struct Session: Codable, Identifiable, Sendable {
