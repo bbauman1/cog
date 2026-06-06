@@ -63,19 +63,19 @@
 
 ### Views
 
-- [ ] `SessionDetailView` — header with status, ACUs, time, PR links, tags, category
-- [ ] `SessionChatView` — message list with user/Devin bubbles, timestamps
-- [ ] "Devin is working..." typing indicator (when `status_detail == "working"`)
-- [ ] `.navigationSubtitle()` showing current session status
-- [ ] Send message input bar with send button
-- [ ] `CreateSessionView` — prompt field, repo picker, playbook picker, mode toggle, tags
-- [ ] Playbook list fetching and selection
-- [ ] Session termination — swipe-to-terminate on list + button in detail with confirmation alert
+- [x] `SessionDetailView` — header with status, ACUs, time, PR links, tags, category
+- [x] `SessionChatView` — message list with user/Devin bubbles, timestamps
+- [x] "Devin is working..." typing indicator (when `status_detail == "working"`)
+- [x] `.navigationTitle()` showing session title with inline display mode
+- [x] Send message input bar with send button
+- [x] `CreateSessionView` — prompt field, playbook picker, tags
+- [x] Playbook list fetching and selection
+- [x] Session termination — swipe-to-terminate on list + button in detail with confirmation alert
 - [ ] Session archiving
-- [ ] `SettingsView` — account info, masked API key, org name, logout button
-- [ ] Error handling: network errors, 401 → re-auth flow, 429 → retry-after display
-- [ ] Empty states for all views (no sessions, no messages)
-- [ ] Loading skeletons / shimmer placeholders
+- [x] `SettingsView` — account info, masked API key, org name, logout button
+- [x] Error handling: network errors, 401 → re-auth flow, 429 → retry-after display
+- [x] Empty states for all views (no sessions, no messages)
+- [x] Loading skeletons / shimmer placeholders
 - [ ] Sheet morphing (`.glassEffectID()`) for list → detail transitions
 
 ### Testing (Sprint 2)
@@ -203,4 +203,4 @@
 
 ---
 
-*Last updated: Sprint 0 complete (June 2026)*
+*Last updated: Sprint 2 views complete (June 2026)*

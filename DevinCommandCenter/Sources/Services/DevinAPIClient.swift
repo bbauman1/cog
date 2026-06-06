@@ -62,12 +62,12 @@ actor DevinAPIClient {
 
     // MARK: - Generic Request
 
-    private func request<T: Decodable & Sendable>(
+    private func performRequest(
         method: String = "GET",
         path: String,
         queryItems: [URLQueryItem]? = nil,
         body: (any Encodable)? = nil
-    ) async throws -> T {
+    ) async throws -> (Data, HTTPURLResponse) {
         var components = URLComponents(string: baseURL + path)
         components?.queryItems = queryItems?.isEmpty == false ? queryItems : nil
 
@@ -98,11 +98,7 @@ actor DevinAPIClient {
 
         switch httpResponse.statusCode {
         case 200...299:
-            do {
-                return try decoder.decode(T.self, from: data)
-            } catch {
-                throw APIError.decodingError(error)
-            }
+            return (data, httpResponse)
         case 401:
             throw APIError.unauthorized
         case 403:
@@ -118,6 +114,29 @@ actor DevinAPIClient {
         default:
             throw APIError.unknown(statusCode: httpResponse.statusCode, data: data)
         }
+    }
+
+    private func request<T: Decodable & Sendable>(
+        method: String = "GET",
+        path: String,
+        queryItems: [URLQueryItem]? = nil,
+        body: (any Encodable)? = nil
+    ) async throws -> T {
+        let (data, _) = try await performRequest(method: method, path: path, queryItems: queryItems, body: body)
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    private func requestVoid(
+        method: String = "GET",
+        path: String,
+        queryItems: [URLQueryItem]? = nil,
+        body: (any Encodable)? = nil
+    ) async throws {
+        _ = try await performRequest(method: method, path: path, queryItems: queryItems, body: body)
     }
 
     // MARK: - Auth
@@ -179,7 +198,7 @@ actor DevinAPIClient {
     }
 
     func terminateSession(devinId: String) async throws {
-        let _: Session = try await request(
+        try await requestVoid(
             method: "DELETE",
             path: "/organizations/\(orgId)/sessions/\(devinId)"
         )

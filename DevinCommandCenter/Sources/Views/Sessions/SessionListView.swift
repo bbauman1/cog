@@ -4,6 +4,9 @@ struct SessionListView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel = SessionListViewModel()
     @State private var searchText = ""
+    @State private var showCreateSession = false
+    @State private var terminateSessionId: String?
+    @State private var showTerminateConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -12,14 +15,36 @@ struct SessionListView: View {
                 sessionList
             }
             .navigationTitle("Sessions")
+            .navigationDestination(for: String.self) { sessionId in
+                SessionDetailView(sessionId: sessionId)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(destination: SettingsView()) {
-                        Image(systemName: "gearshape")
+                    Button {
+                        showCreateSession = true
+                    } label: {
+                        Image(systemName: "plus")
                     }
                 }
             }
             .searchable(text: $searchText, prompt: "Search sessions")
+            .sheet(isPresented: $showCreateSession) {
+                CreateSessionView { _ in
+                    Task { await viewModel.refresh() }
+                }
+            }
+            .alert("Terminate Session?", isPresented: $showTerminateConfirmation) {
+                Button("Cancel", role: .cancel) {
+                    terminateSessionId = nil
+                }
+                Button("Terminate", role: .destructive) {
+                    if let id = terminateSessionId {
+                        Task { await terminateSession(id) }
+                    }
+                }
+            } message: {
+                Text("This will stop Devin from working on this session. This action cannot be undone.")
+            }
         }
         .task {
             if let client = appState.apiClient {
@@ -64,6 +89,16 @@ struct SessionListView: View {
                         NavigationLink(value: session.sessionId) {
                             SessionRowView(session: session)
                         }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            if isSessionActive(session) {
+                                Button(role: .destructive) {
+                                    terminateSessionId = session.sessionId
+                                    showTerminateConfirmation = true
+                                } label: {
+                                    Label("Terminate", systemImage: "xmark.octagon")
+                                }
+                            }
+                        }
                     }
 
                     if viewModel.isLoadingMore {
@@ -89,14 +124,19 @@ struct SessionListView: View {
         }
     }
 
+    private func isSessionActive(_ session: Session) -> Bool {
+        session.status == .running || session.status == .claimed ||
+        session.status == .new || session.status == .resuming
+    }
+
     private var loadingView: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-            Text("Loading sessions...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        VStack(spacing: 16) {
+            ForEach(0..<5, id: \.self) { _ in
+                ShimmerRow()
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private func errorView(_ message: String) -> some View {
@@ -125,8 +165,60 @@ struct SessionListView: View {
             Text("No sessions")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+            Button("Create Session") {
+                showCreateSession = true
+            }
+            .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func terminateSession(_ sessionId: String) async {
+        guard let client = appState.apiClient else { return }
+        do {
+            try await client.terminateSession(devinId: sessionId)
+            await viewModel.refresh()
+        } catch {
+            // Show error silently on next poll
+        }
+        terminateSessionId = nil
+    }
+}
+
+// MARK: - Shimmer / Loading Skeleton
+
+struct ShimmerRow: View {
+    @State private var isAnimating = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(.systemGray5))
+                .frame(width: 28, height: 28)
+
+            VStack(alignment: .leading, spacing: 6) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color(.systemGray5))
+                    .frame(width: 180, height: 14)
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color(.systemGray6))
+                    .frame(width: 100, height: 10)
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 6) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color(.systemGray6))
+                    .frame(width: 40, height: 10)
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color(.systemGray6))
+                    .frame(width: 50, height: 10)
+            }
+        }
+        .opacity(isAnimating ? 0.5 : 1.0)
+        .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: isAnimating)
+        .onAppear { isAnimating = true }
     }
 }
 
