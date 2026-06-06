@@ -53,5 +53,11 @@ final class AppState {
         try? keychain.deleteAll()
         apiClient = nil
         authState = .unauthenticated
+        SessionStatusTracker.shared.clearAll()
+        Task { await NotificationService.shared.clearAllNotifications() }
+    }
+
+    func scheduleBackgroundRefresh() {
+        BackgroundRefreshManager().scheduleBackgroundRefresh()
     }
 }

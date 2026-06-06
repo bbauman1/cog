@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(AppState.self) private var appState
     @State private var selfInfo: SelfResponse?
     @State private var showLogoutConfirmation = false
+    @State private var notificationsEnabled = false
 
     var body: some View {
         List {
@@ -27,6 +28,25 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Notifications") {
+                Toggle("Session Alerts", isOn: $notificationsEnabled)
+                    .onChange(of: notificationsEnabled) {
+                        if notificationsEnabled {
+                            Task {
+                                let granted = await NotificationService.shared.requestAuthorization()
+                                if !granted {
+                                    notificationsEnabled = false
+                                }
+                            }
+                        }
+                    }
+                if notificationsEnabled {
+                    Text("Get notified when sessions need input, complete, or fail.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section {
                 Button("Log Out", role: .destructive) {
                     showLogoutConfirmation = true
@@ -34,8 +54,8 @@ struct SettingsView: View {
             }
 
             Section("About") {
-                LabeledContent("Version", value: "0.2.0")
-                LabeledContent("Build", value: "2")
+                LabeledContent("Version", value: "0.3.0")
+                LabeledContent("Build", value: "3")
                 Link("Devin API Docs", destination: URL(string: "https://docs.devin.ai")!)
             }
         }
@@ -50,6 +70,7 @@ struct SettingsView: View {
         }
         .task {
             await loadSelfInfo()
+            notificationsEnabled = await NotificationService.shared.isAuthorized()
         }
     }
 

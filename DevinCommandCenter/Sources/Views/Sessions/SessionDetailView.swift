@@ -2,12 +2,19 @@ import SwiftUI
 
 struct SessionDetailView: View {
     @Environment(AppState.self) private var appState
+    @Namespace private var fallbackNamespace
     @State private var viewModel: SessionDetailViewModel
     @State private var showTerminateConfirmation = false
     @State private var showSessionInfo = false
+    var transitionNamespace: Namespace.ID?
 
-    init(sessionId: String) {
+    init(sessionId: String, transitionNamespace: Namespace.ID? = nil) {
         _viewModel = State(initialValue: SessionDetailViewModel(sessionId: sessionId))
+        self.transitionNamespace = transitionNamespace
+    }
+
+    private var activeNamespace: Namespace.ID {
+        transitionNamespace ?? fallbackNamespace
     }
 
     var body: some View {
@@ -31,6 +38,14 @@ struct SessionDetailView: View {
                     if let url = viewModel.session?.url, let link = URL(string: url) {
                         Link(destination: link) {
                             Label("Open in Browser", systemImage: "safari")
+                        }
+                    }
+
+                    if viewModel.canArchive {
+                        Button {
+                            Task { await viewModel.archiveSession() }
+                        } label: {
+                            Label("Archive Session", systemImage: "archivebox")
                         }
                     }
 
@@ -60,6 +75,7 @@ struct SessionDetailView: View {
         } message: {
             Text("This will stop Devin from working on this session. This action cannot be undone.")
         }
+        .navigationTransition(.zoom(sourceID: viewModel.sessionId, in: activeNamespace))
         .task {
             if let client = appState.apiClient {
                 viewModel.configure(with: client)

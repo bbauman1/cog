@@ -22,6 +22,9 @@ struct RootView: View {
 }
 
 struct MainTabView: View {
+    @Environment(AppState.self) private var appState
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
         TabView {
             Tab("Sessions", systemImage: "list.bullet") {
@@ -35,5 +38,10 @@ struct MainTabView: View {
             }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
+        .onChange(of: scenePhase) {
+            if scenePhase == .background {
+                appState.scheduleBackgroundRefresh()
+            }
+        }
     }
 }
