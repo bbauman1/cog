@@ -198,7 +198,6 @@
 - **iOS 26 Liquid Glass everywhere** — tab bars, toolbars, floating buttons, sheets use `.glassEffect()`
 - **SF Symbols 7** — all icons are system symbols with draw-on animations
 - **Follow Devin mobile web UX** — same information architecture, native expression
-- **Zero external Swift dependencies** — Apple frameworks only
 - **5-second polling in foreground** — adaptive (slow down when inactive)
 - **Optimistic UI** — messages appear instantly, confirm on next poll
 
