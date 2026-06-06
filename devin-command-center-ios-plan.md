@@ -441,58 +441,19 @@ struct DevinSessionWidget: Widget {
 
 ---
 
-## 7. MVP Build Plan — Detailed Sprint Breakdown
+## 7. MVP Build Plan — Sprint Overview
 
-### Sprint 1 (Week 1-2): Foundation + Auth + Session List
+> **Detailed task lists with testing built into each sprint are in Section 14.**
 
-**Deliverable:** App that authenticates and shows a list of sessions.
+| Sprint | Timeline | Deliverable |
+|---|---|---|
+| **Sprint 0** | Day 1-2 | Hello World app builds + runs in Limrun simulator (toolchain validation) |
+| **Sprint 1** | Week 1-2 | Auth + session list (working API integration, mock tests, screenshot proof) |
+| **Sprint 2** | Week 3-4 | Session detail + chat + create + terminate (full lifecycle) |
+| **Sprint 3** | Week 5-6 | Notifications + Widgets |
+| **Sprint 4** | Week 7-8 | Live Activities + Knowledge + Attachments |
 
-- [ ] Xcode project setup (SwiftUI, iOS 17+, Swift 6)
-- [ ] Define `Session`, `PaginatedResponse`, `Message`, `Playbook` Codable models
-- [ ] Build `DevinAPIClient` with async/await + generic request method
-- [ ] Build `KeychainService` for secure credential storage
-- [ ] Build `AuthenticationService` for Face ID / Touch ID via `LAContext`
-- [ ] `LoginView` — API key + org ID text fields, "Connect" button, validation via `GET /v3/self`
-- [ ] `BiometricUnlockView` — Face ID prompt on cold launch
-- [ ] `SessionListView` — paginated list with pull-to-refresh
-- [ ] `SessionRowView` — status badge (color-coded), prompt preview, time ago, ACUs
-- [ ] Status filter bar (All / Running / Waiting / Finished / Error)
-- [ ] Navigation via `NavigationStack` with `.navigationDestination`
-- [ ] App icon and launch screen (Devin branding)
-
-### Sprint 2 (Week 3-4): Session Detail + Chat + Create
-
-**Deliverable:** Full session lifecycle — view, chat, create, terminate.
-
-- [ ] `SessionDetailView` — header (status, ACUs, time), PR links, tags, category
-- [ ] `SessionChatView` — message list with user/Devin message bubbles
-- [ ] Send message input bar with send button
-- [ ] `CreateSessionView` — prompt field, repo picker, playbook picker, mode toggle, tags
-- [ ] Playbook list fetching and picker integration
-- [ ] Swipe-to-terminate on session list
-- [ ] Session detail → terminate button with confirmation
-- [ ] Session archiving
-- [ ] Error handling: network errors, 401 → re-auth, 429 → retry-after
-- [ ] Empty states and loading skeletons
-- [ ] Settings view — account info, masked API key display, logout
-
-### Sprint 3 (Week 5-6): Notifications + Widgets
-
-- [ ] Background App Refresh registration (`BGAppRefreshTask`)
-- [ ] Local notification scheduling on session status transitions
-- [ ] Notification actions: "View Session", "Send Message"
-- [ ] WidgetKit: `ActiveSessions` widget (small + medium)
-- [ ] Timeline provider that fetches session counts
-- [ ] Deep link from widget tap → session detail
-
-### Sprint 4 (Week 7-8): Live Activities + Knowledge + Attachments
-
-- [ ] Live Activity for tracked sessions (lock screen + Dynamic Island)
-- [ ] Update Live Activity state via polling
-- [ ] Knowledge notes list view
-- [ ] Create/edit/delete knowledge notes
-- [ ] Session attachments list + Quick Look preview
-- [ ] Share attachment files via iOS share sheet
+Each sprint's PR includes: unit tests (mock), UI screenshots, interaction videos, and integration test results. See Section 12 for the full testing workflow and Section 14 for detailed task checklists.
 
 ---
 
@@ -618,27 +579,304 @@ Ordered by expected user impact. Each item is a candidate for a 1-2 week sprint.
 
 ---
 
-## 12. What to Build First
+## 12. Testing & Development Workflow
 
-**Start with Sprint 1.** The single most important thing is:
+### 12.1 The Core Challenge
 
-> **A working session list that proves the API integration works end-to-end.**
+Devin runs on **Linux**. iOS apps require **macOS + Xcode** to build and simulate. This means we need an external build/test path. The goal: Devin writes code, builds it, tests it in a simulator, and provides visual proof in each PR — all without a local Mac.
 
-Here's the exact first-day checklist:
+### 12.2 Recommended Approach: Limrun
 
-1. `File → New Project → iOS App → SwiftUI → "DevinCommandCenter"`
-2. Create `Session.swift` — Codable model matching the `SessionResponse` schema
-3. Create `DevinAPIClient.swift` — generic `request<T>()` with bearer auth
-4. Create `KeychainService.swift` — store/retrieve/delete API key
-5. Create `LoginView.swift` — two text fields + connect button
-6. Create `SessionListView.swift` — `List` of sessions with status badges
-7. Wire it up: Login → validate via `GET /v3/self` → fetch sessions → display
+[**Limrun**](https://docs.limrun.com/docs) is cloud infrastructure specifically designed for this exact use case — letting coding agents on Linux VMs build and test iOS apps. It provides:
 
-Once you can see your real Devin sessions on your phone, everything else is incremental iteration.
+| Capability | How It Works |
+|---|---|
+| **Xcode Build Sandbox** | A real Mac running `xcodebuild` in the cloud. Devin syncs source code, builds remotely, gets logs back. |
+| **iOS Simulator** | A real iOS simulator running on that Mac. The built app is auto-installed on successful build. |
+| **Programmatic Control** | `lim ios element-tree` reads the accessibility tree; `lim ios tap-element` / `lim ios type` drive the UI. No flaky pixel coordinates. |
+| **Screenshots & Video** | `lim ios screenshot` captures the screen; `lim ios record start/stop` captures video of interactions. |
+| **Shareable Preview URL** | Each instance has a **Signed Stream URL** — a live view of the simulator in any browser. Attach to PRs so reviewers can open the running app themselves. |
+
+**The Devin workflow per task:**
+
+```
+1. lim ios create --xcode --reuse-if-exists    # Boot simulator + Mac sandbox
+2. lim xcode build .                           # Sync source, build, auto-install
+3. lim ios element-tree                        # Read current screen state
+4. lim ios screenshot ./proof.png              # Capture for PR
+5. lim ios tap-element --ax-label "Connect"    # Drive the UI
+6. lim ios record start → (interactions) → lim ios record stop -o demo.mp4
+7. Attach screenshots + video + Signed Stream URL to PR
+```
+
+**Setup required (one-time, added to Devin environment):**
+
+```bash
+npm install --global lim
+export LIM_API_KEY=lim_...  # stored as org secret
+lim skills install           # installs Limrun skill in .agents/skills/
+```
+
+### 12.3 Alternative Build Options (Compared)
+
+| Option | Pros | Cons | Verdict |
+|---|---|---|---|
+| **Limrun** | Purpose-built for agents, CLI-driven, preview URLs, element-tree testing, video recording | Requires `LIM_API_KEY`, usage-based cost | **Primary choice** — closest to what we need |
+| **GitHub Actions (macOS runner)** | Free 2000 min/month (public repos), standard CI, mature | Build-only (no interactive simulation), $0.077/min for private repos, slow (~5 min per build) | **Secondary — CI/CD pipeline** for automated builds + unit tests on push |
+| **Codemagic** | 500 free min/month (M2), good for indie devs, TestFlight integration | Similar limitations to GH Actions for interactive testing | Possible alternative to GH Actions |
+| **no-mac-ios-starter template** | Proven pattern for building/deploying without a Mac | Template-based, less control, Capacitor-oriented | Reference architecture only |
+| **Remote Mac (MacStadium/AWS EC2)** | Full macOS control, run anything | Expensive ($50+/month always-on), complex SSH management | Overkill — Limrun solves this better |
+
+**Recommendation:** Limrun for interactive development/testing, GitHub Actions for CI/CD (automated build + unit test on every push).
+
+### 12.4 Testing Strategy — Two Layers
+
+We use a **mock-first + real-integration** hybrid approach:
+
+#### Layer 1: Mock API (Deterministic UI Testing)
+
+A mock Devin API lets Devin put the app into any state instantly — no real sessions needed.
+
+**Implementation: Swift `URLProtocol` mock**
+
+```swift
+// MockURLProtocol.swift — intercepts URLSession requests in tests
+class MockURLProtocol: URLProtocol {
+    static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        guard let handler = Self.requestHandler else { fatalError("No handler") }
+        let (response, data) = try! handler(request)
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}
+```
+
+**What mock testing covers:**
+
+| Test Scenario | Mock Response | What It Validates |
+|---|---|---|
+| Happy path — session list loads | Return 5 sessions in various statuses | List renders correctly, status badges match |
+| Empty state — no sessions | Return empty array | "No sessions" placeholder shown |
+| Auth failure | Return 401 | App shows re-auth prompt, clears credential |
+| Rate limited | Return 429 with `Retry-After` | Exponential backoff triggers, user sees "Rate limited" |
+| Network offline | Return URLError.notConnectedToInternet | Offline state shown, retry button works |
+| Session waiting for user | Return session with `status_detail: waiting_for_user` | Notification badge, typing indicator correct |
+| Long message list | Return 100+ messages (paginated) | Cursor pagination loads correctly, scroll perf OK |
+| Malformed response | Return invalid JSON | App shows error gracefully, no crash |
+
+**When to use mocks:**
+- Unit tests (XCTest / Swift Testing) — always
+- UI tests (XCUITest) — for deterministic scenario coverage
+- Devin's self-testing in Limrun — for validating UI layouts and flows without real API state
+
+#### Layer 2: Real Devin Account (Integration Testing)
+
+Use your personal Devin account's API key to validate real end-to-end flows.
+
+**What real testing covers:**
+
+| Test Scenario | Action | What It Validates |
+|---|---|---|
+| Auth works for real | Enter real `cog_` key + org ID | `GET /v3/self` returns real identity |
+| Sessions load from real API | Fetch sessions | Real data renders correctly, pagination works |
+| Create a real session | Submit a prompt via `POST /sessions` | Session appears in list, status transitions work |
+| Send a message | Chat in a real session | Message delivered, Devin responds, polling picks it up |
+| Terminate a session | Tap terminate | Session status moves to `exit` |
+
+**When to use real API:**
+- Integration smoke tests — run after a build passes mock tests
+- Demo recordings — show the app working with actual data for PR reviews
+- Polling/notification testing — verify timing behavior against the real API
+
+#### Testing Cadence Per PR
+
+Every PR Devin submits will include:
+
+```
+✓ Unit tests pass (mocked API, run via `xcodebuild test` in Limrun)
+✓ Screenshot(s) showing the feature working (captured via `lim ios screenshot`)
+✓ Video recording for interaction-heavy features (captured via `lim ios record`)
+✓ Signed Stream URL (optional — for reviewer to interact with live simulator)
+✓ Integration smoke test result (real API call logged)
+```
+
+### 12.5 Mock Server Architecture
+
+Beyond `URLProtocol` for unit tests, we'll also build a lightweight **mock Devin API server** that runs alongside the app in a "demo mode":
+
+```swift
+// MockDevinServer — in-app, debug-only fake API
+// Activated via: Settings > Developer > Use Mock API
+//
+// Returns canned responses for every endpoint:
+// - GET /v3/self → mock identity
+// - GET /sessions → configurable session list (0, 1, 5, 50 sessions)
+// - GET /sessions/:id/messages → configurable chat history
+// - POST /sessions → creates a fake session that transitions through statuses over time
+// - POST /sessions/:id/messages → echoes back after 2 seconds
+```
+
+This lets us:
+1. **Test without network** — airplane mode testing works
+2. **Screenshot any state** — instantly show "5 running, 2 waiting" without creating real sessions
+3. **Demo the app** — App Store screenshots, demo videos, investor pitches
+4. **Devin self-tests efficiently** — no API calls needed per test cycle, faster iteration
+
+### 12.6 Verifying Devin-as-a-Feature (Testing Our Own API Integration)
+
+Since the app's core purpose is managing Devin sessions, and we're building with Devin, we have a unique recursive testing opportunity:
+
+- **Create a dedicated "test org" or use your personal account** with a service user API key stored as a Devin org secret (`DEVIN_TEST_API_KEY`).
+- **Integration test flow:** Build the app → install in simulator → enter test key → create a session → verify it appears in the web dashboard → send a message → verify Devin responds → terminate.
+- **This is the ultimate proof-of-correctness:** if Devin can build the app, install it in a simulator, use it to create another Devin session, and verify that session works, the app is working.
+
+### 12.7 CI/CD Pipeline
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                          On Every Push / PR                           │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌─────────────┐    ┌──────────────┐    ┌────────────────────────┐   │
+│  │ Lint & Format│───▶│ Unit Tests   │───▶│ Build (Limrun/GH       │   │
+│  │ (SwiftLint)  │    │ (Mock API)   │    │ Actions macOS runner)  │   │
+│  └─────────────┘    └──────────────┘    └────────────┬───────────┘   │
+│                                                      │               │
+│                                          ┌───────────▼────────────┐  │
+│                                          │ Install in Simulator   │  │
+│                                          │ (Limrun iOS instance)  │  │
+│                                          └───────────┬────────────┘  │
+│                                                      │               │
+│                                          ┌───────────▼────────────┐  │
+│                                          │ UI Smoke Test          │  │
+│                                          │ (element-tree + taps)  │  │
+│                                          └───────────┬────────────┘  │
+│                                                      │               │
+│                                          ┌───────────▼────────────┐  │
+│                                          │ Screenshot + Video     │  │
+│                                          │ (attached to PR)       │  │
+│                                          └────────────────────────┘  │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 13. Risks & Mitigations
+## 13. What to Build First — Sprint 0
+
+**Before Sprint 1, we validate the entire toolchain with a Hello World app.**
+
+### Sprint 0 (Day 1-2): Hello Build
+
+**Deliverable:** A minimal SwiftUI app that builds via Limrun, runs in a cloud simulator, and produces a screenshot — proving the full Devin → Xcode → Simulator pipeline works.
+
+- [ ] Create Xcode project structure (Swift Package Manager or `project.yml` for XcodeGen)
+- [ ] Single `ContentView.swift` with "Hello, Devin Command Center" text
+- [ ] Set up Limrun: `npm install -g lim`, configure `LIM_API_KEY`
+- [ ] Run `lim ios create --xcode --reuse-if-exists`
+- [ ] Run `lim xcode build .` — verify build succeeds
+- [ ] Run `lim ios screenshot ./hello.png` — capture proof
+- [ ] Run `lim ios element-tree` — verify accessibility tree shows our text
+- [ ] Attach screenshot + Signed Stream URL to PR
+- [ ] Document any issues with the build pipeline in the PR description
+
+**Why Sprint 0 matters:**
+- Proves Devin can write Swift code and get it compiled without a Mac
+- Validates the Limrun integration before we invest in feature development
+- Catches Xcode project configuration issues early (signing, SDK targets, etc.)
+- Establishes the PR deliverable format for all future sprints
+
+> **The rest of the sprints remain the same (Sprint 1-4),** but every sprint now includes testing artifacts in each PR.
+
+---
+
+## 14. Revised Sprint Plan (with Testing Built In)
+
+### Sprint 1 (Week 1-2): Foundation + Auth + Session List
+
+**Deliverable:** App that authenticates and shows a list of sessions.
+
+PR deliverables for each task:
+- Screenshot of LoginView with fields visible
+- Screenshot of session list with mock data
+- Integration test video: real API key → real session list
+
+Tasks:
+
+- [ ] Xcode project setup (SwiftUI, iOS 17+, Swift 6)
+- [ ] Set up `MockURLProtocol` test infrastructure
+- [ ] Define `Session`, `PaginatedResponse`, `Message`, `Playbook` Codable models
+- [ ] Build `DevinAPIClient` with async/await + generic request method
+- [ ] Build `KeychainService` for secure credential storage
+- [ ] Build `AuthenticationService` for Face ID / Touch ID via `LAContext`
+- [ ] `LoginView` — API key + org ID text fields, "Connect" button, validation via `GET /v3/self`
+- [ ] `BiometricUnlockView` — Face ID prompt on cold launch
+- [ ] `SessionListView` — paginated list with pull-to-refresh
+- [ ] `SessionRowView` — status badge (color-coded), prompt preview, time ago, ACUs
+- [ ] Status filter bar (All / Running / Waiting / Finished / Error)
+- [ ] Navigation via `NavigationStack` with `.navigationDestination`
+- [ ] App icon and launch screen (Devin branding)
+- [ ] Unit tests: API client (all mock scenarios), Keychain CRUD, model decoding
+- [ ] UI test: Login → session list flow (mock API)
+- [ ] Integration test: Login with real key → verify session list loads
+
+### Sprint 2 (Week 3-4): Session Detail + Chat + Create
+
+**Deliverable:** Full session lifecycle — view, chat, create, terminate.
+
+PR deliverables for each task:
+- Screenshot of session detail view
+- Video of chat interaction (send message → Devin responds)
+- Integration test video: create a real session, verify it appears
+
+Tasks:
+
+- [ ] `SessionDetailView` — header (status, ACUs, time), PR links, tags, category
+- [ ] `SessionChatView` — message list with user/Devin message bubbles
+- [ ] "Devin is working..." typing indicator (when `status_detail == "working"`)
+- [ ] Send message input bar with send button
+- [ ] `CreateSessionView` — prompt field, repo picker, playbook picker, mode toggle, tags
+- [ ] Playbook list fetching and picker integration
+- [ ] Swipe-to-terminate on session list
+- [ ] Session detail → terminate button with confirmation
+- [ ] Session archiving
+- [ ] Error handling: network errors, 401 → re-auth, 429 → retry-after
+- [ ] Empty states and loading skeletons
+- [ ] Settings view — account info, masked API key display, logout
+- [ ] Unit tests: message parsing, create session request body, pagination cursors
+- [ ] UI test: Full chat flow with mock API
+- [ ] Integration test: Create session → send message → verify response
+
+### Sprint 3 (Week 5-6): Notifications + Widgets
+
+- [ ] Background App Refresh registration (`BGAppRefreshTask`)
+- [ ] Local notification scheduling on session status transitions
+- [ ] Notification actions: "View Session", "Send Message"
+- [ ] WidgetKit: `ActiveSessions` widget (small + medium)
+- [ ] Timeline provider that fetches session counts
+- [ ] Deep link from widget tap → session detail
+- [ ] Tests: Notification trigger logic, widget timeline provider
+
+### Sprint 4 (Week 7-8): Live Activities + Knowledge + Attachments
+
+- [ ] Live Activity for tracked sessions (lock screen + Dynamic Island)
+- [ ] Update Live Activity state via polling
+- [ ] Knowledge notes list view
+- [ ] Create/edit/delete knowledge notes
+- [ ] Session attachments list + Quick Look preview
+- [ ] Share attachment files via iOS share sheet
+- [ ] Tests: Live Activity state updates, Knowledge CRUD
+
+---
+
+## 15. Risks & Mitigations
 
 | Risk | Impact | Mitigation |
 |---|---|---|
@@ -648,10 +886,12 @@ Once you can see your real Devin sessions on your phone, everything else is incr
 | App Store rejection | Apple may flag "developer tool" apps | Ensure rich UI, follow HIG, avoid "thin client" appearance |
 | API breaking changes | v3 is current but could evolve | Version the API client, abstract behind protocol, monitor release notes |
 | Multi-org complexity | Enterprise users have many orgs | Defer to Phase 3, design data model to support from day 1 |
+| Limrun dependency | Single vendor for build/test pipeline | Fallback: GitHub Actions macOS runner for builds. Keep project buildable via `xcodebuild` directly (no Limrun lock-in). |
+| No streaming API for messages | Can't show Devin "typing" in real-time | Typing indicator from session status + instant appearance on next poll (5s). See Section 12.4 note. |
 
 ---
 
-## 14. Success Metrics
+## 16. Success Metrics
 
 | Metric | Target (MVP) | Target (6 months) |
 |---|---|---|
@@ -664,9 +904,10 @@ Once you can see your real Devin sessions on your phone, everything else is incr
 
 ---
 
-## 15. Summary: The Path from MVP to Vision
+## 17. Summary: The Path from MVP to Vision
 
 ```
+DAY   1-2   ██          Sprint 0: Hello Build (toolchain validation via Limrun)
 WEEK  1-4   ██████████  MVP: Auth + Session List + Chat + Create
 WEEK  5-8   ██████████  Notifications + Widgets + Live Activities + Knowledge
 WEEK  9-14  ██████████  Siri + Share Sheet + Universal Links + Schedules
