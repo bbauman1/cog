@@ -28,6 +28,10 @@
 		B1000019 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F1000019 /* Assets.xcassets */; };
 		B1000020 /* Color+Devin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000021 /* Color+Devin.swift */; };
 		B1000021 /* Date+Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000022 /* Date+Formatting.swift */; };
+		B1000022 /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000023 /* SessionDetailView.swift */; };
+		B1000023 /* CreateSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000024 /* CreateSessionView.swift */; };
+		B1000024 /* SessionDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000025 /* SessionDetailViewModel.swift */; };
+		B1000025 /* CreateSessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000026 /* CreateSessionViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +57,10 @@
 		F1000020 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F1000021 /* Color+Devin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Devin.swift"; sourceTree = "<group>"; };
 		F1000022 /* Date+Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Formatting.swift"; sourceTree = "<group>"; };
+		F1000023 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
+		F1000024 /* CreateSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSessionView.swift; sourceTree = "<group>"; };
+		F1000025 /* SessionDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailViewModel.swift; sourceTree = "<group>"; };
+		F1000026 /* CreateSessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSessionViewModel.swift; sourceTree = "<group>"; };
 		F1000099 /* DevinCommandCenter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DevinCommandCenter.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -147,6 +155,8 @@
 			children = (
 				F1000006 /* SessionListView.swift */,
 				F1000007 /* SessionRowView.swift */,
+				F1000023 /* SessionDetailView.swift */,
+				F1000024 /* CreateSessionView.swift */,
 			);
 			path = Sessions;
 			sourceTree = "<group>";
@@ -155,6 +165,8 @@
 			isa = PBXGroup;
 			children = (
 				F1000009 /* SessionListViewModel.swift */,
+				F1000025 /* SessionDetailViewModel.swift */,
+				F1000026 /* CreateSessionViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -276,6 +288,10 @@
 				B1000018 /* AuthenticationService.swift in Sources */,
 				B1000020 /* Color+Devin.swift in Sources */,
 				B1000021 /* Date+Formatting.swift in Sources */,
+				B1000022 /* SessionDetailView.swift in Sources */,
+				B1000023 /* CreateSessionView.swift in Sources */,
+				B1000024 /* SessionDetailViewModel.swift in Sources */,
+				B1000025 /* CreateSessionViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

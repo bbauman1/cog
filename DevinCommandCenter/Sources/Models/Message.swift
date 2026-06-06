@@ -17,6 +17,13 @@ struct Message: Codable, Identifiable, Sendable {
         Date(timeIntervalSince1970: TimeInterval(createdAt))
     }
 
+    init(eventId: String, source: MessageSource, message: String, createdAt: Int) {
+        self.eventId = eventId
+        self.source = source
+        self.message = message
+        self.createdAt = createdAt
+    }
+
     enum CodingKeys: String, CodingKey {
         case eventId = "event_id"
         case source
