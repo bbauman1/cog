@@ -8,7 +8,9 @@
 
 **Devin Command Center** is a native SwiftUI iPhone app that gives developers on-the-go control over their Devin AI sessions. Think of it as mission control for your AI engineer — monitor active sessions, spin up new work, chat with Devin, manage your knowledge base and playbooks, and get notified the instant Devin needs you or finishes a task.
 
-The app is built on the [Devin API v3](https://docs.devin.ai/api-reference/overview) and designed to exploit native iOS capabilities (Live Activities, Widgets, notifications, Siri, Shortcuts, biometrics) to deliver an experience that is impossible to replicate in a mobile browser.
+The app is built on the [Devin API v3](https://docs.devin.ai/api-reference/overview), targets **iOS 26+** exclusively, and is designed to exploit the latest native iOS capabilities (Liquid Glass design language, Live Activities, Widgets, Foundation Models, SF Symbols, on-device speech-to-text, Siri, Shortcuts, biometrics) to deliver an experience that is impossible to replicate in a mobile browser.
+
+> **Design principle:** Follow how Devin looks and works on mobile web today, but expressed through iOS 26's Liquid Glass design system. The app should feel native-first — not a web wrapper.
 
 > **Key architecture decision: No backend.** This is a fully client-side app. The user's Devin API key is stored in the iOS Keychain and the app hits `api.devin.ai` directly. Zero infrastructure to deploy or maintain. The only feature that would eventually benefit from a backend is real-time remote push notifications — that's scoped as an optional Tier 4 add-on, only to be built if local notification latency (~15 min when backgrounded) becomes a real user complaint.
 
@@ -513,25 +515,32 @@ Ordered by expected user impact. Each item is a candidate for a 1-2 week sprint.
 
 | iOS Capability | Where Used | Phase |
 |---|---|---|
-| **SwiftUI** | Entire UI layer | MVP |
+| **SwiftUI (iOS 26)** | Entire UI layer | MVP |
+| **Liquid Glass** (`.glassEffect()`) | Tab bar, toolbars, floating buttons, sheets | MVP |
+| **SF Symbols 7** (draw-on animations) | Status badges, action icons, loading states | MVP |
+| **`@Animatable` macro** | Session status transitions, morphing | MVP |
 | **Keychain Services** | API key + org ID storage | MVP |
 | **LocalAuthentication** (Face ID / Touch ID) | App unlock | MVP |
 | **URLSession async/await** | All API calls | MVP |
 | **Pull-to-refresh** (`.refreshable`) | Session list, knowledge list | MVP |
-| **Searchable** (`.searchable`) | Session list filtering | MVP |
-| **NavigationStack** | App navigation | MVP |
+| **Searchable** + `Tab(role: .search)` | Session filtering via glass search tab | MVP |
+| **NavigationStack** + `.navigationSubtitle()` | Navigation with session status subtitles | MVP |
+| **Sheet morphing** (`.glassEffectID()`) | Smooth list → detail transitions | MVP |
 | **WidgetKit** | Home screen session widgets | Tier 2 |
 | **ActivityKit** (Live Activities) | Lock screen session tracking | Tier 2 |
 | **UNUserNotificationCenter** | Local push notifications | Tier 2 |
 | **Background App Refresh** | Polling when backgrounded | Tier 2 |
 | **Quick Look** | Attachment preview | Tier 2 |
+| **WebView** (SwiftUI native, iOS 26) | Preview Devin session web URLs in-app | Tier 2 |
+| **Rich TextEditor** (AttributedString) | Formatted session prompt composition | Tier 2 |
 | **AppIntents** (Siri & Shortcuts) | Voice commands, automation | Tier 3 |
 | **Share Extension** | Create session from any app | Tier 3 |
 | **Core Spotlight** | Session search from home screen | Tier 3 |
 | **Associated Domains** (Universal Links) | Open Devin URLs in-app | Tier 3 |
+| **Foundation Models** (on-device LLM) | Summarize sessions, suggest prompts, smart search | Tier 3 |
+| **`SpeechRecognizer`** (on-device, iOS 26) | Voice-to-prompt without network | Tier 3 |
 | **Swift Charts** | Analytics dashboard | Tier 4 |
 | **SwiftData** | Offline cache | Tier 4 |
-| **SFSpeechRecognizer** | Voice-to-prompt | Tier 4 |
 | **WatchKit** | Apple Watch companion | Tier 4 |
 | **AVFoundation** | Camera for screenshots/attachments | Tier 4 |
 
@@ -541,21 +550,222 @@ Ordered by expected user impact. Each item is a candidate for a 1-2 week sprint.
 
 | Layer | Choice | Rationale |
 |---|---|---|
-| UI Framework | SwiftUI (iOS 17+) | Declarative, native, Widgets/Activities support |
-| Language | Swift 6 (strict concurrency) | Modern, safe, fast |
+| UI Framework | **SwiftUI (iOS 26+)** | Liquid Glass, latest APIs, no backward compat baggage |
+| Design Language | **Liquid Glass** (`.glassEffect()`, `GlassEffectContainer`) | iOS 26 native, matches system chrome |
+| Language | **Swift 6** (strict concurrency) | Modern, safe, fast |
+| Min Deployment | **iOS 26.0** | Access to Foundation Models, Liquid Glass, latest SF Symbols |
 | Networking | `URLSession` + `async/await` | Zero deps, built-in, sufficient for REST |
 | JSON | `Codable` + `JSONDecoder` | No third-party needed |
 | Secure storage | Keychain Services (Security framework) | Hardware-backed encryption |
-| Biometrics | LocalAuthentication (`LAContext`) | Face ID / Touch ID |
+| Biometrics | LocalAuthentication (`LAContext`) | Face ID / Touch ID / Optic ID |
 | State | `@Observable` (Observation framework) | Modern, less boilerplate than Combine |
 | Navigation | `NavigationStack` + `NavigationPath` | Programmatic, type-safe |
-| Image loading | `AsyncImage` (or Kingfisher if perf needed) | Built-in for MVP |
+| Image loading | `AsyncImage` | Built-in |
 | Persistence | SwiftData (later phases for offline) | Native, iCloud-ready |
 | Charts | Swift Charts (later phases) | Native, accessible |
+| On-device AI | Foundation Models framework | Summarize sessions, smart search, no cloud cost |
+| Speech | `SpeechRecognizer` (on-device models) | Voice-to-prompt without network |
 | Testing | XCTest + Swift Testing | Built-in |
-| CI/CD | Xcode Cloud or GitHub Actions + fastlane | Automated builds + TestFlight |
+| Project Management | **XcodeGen** (`project.yml` → `.xcodeproj`) | No Xcode GUI needed, git-friendly |
+| Build (remote) | **Limrun** (`lim xcode build`) | Cloud Xcode from Linux |
+| Build (CI) | GitHub Actions (macOS runner) | Automated builds + TestFlight |
+| MCP (optional) | Xcode Build MCP ([`xcodebuild-mcp`](https://github.com/redne-w/xcodebuild-mcp)) | AI-assisted build/test/sim management |
 
-**Zero external dependencies for MVP.** Everything uses Apple-native frameworks. This keeps the binary small, avoids dependency risk, and aligns with App Store review preferences.
+**Zero external Swift dependencies for MVP.** Everything uses Apple-native frameworks. This keeps the binary small, avoids dependency risk, and aligns with App Store review preferences.
+
+> **iOS 26 exclusive:** We intentionally do NOT support iOS 18 or earlier. This frees us to use Liquid Glass, Foundation Models, the new `SpeechRecognizer`, and all latest SwiftUI APIs without conditional compilation or backward-compat shims.
+
+---
+
+## 10a. iOS 26 Design Language & Modern Features
+
+### Liquid Glass — Design System
+
+Liquid Glass is iOS 26's unified design language. It provides a translucent, adaptive material for navigational and overlay elements. Key principles:
+
+- **Glass sits on top of content** — toolbars, tab bars, floating action buttons, sheets. Never use it as a background for primary content areas.
+- **Automatically adapts** — changes from light to dark based on underlying content as you scroll.
+- **Controls come alive** — toggles, sliders, segmented pickers transform into Liquid Glass during interaction.
+
+**SwiftUI APIs we'll use:**
+
+| API | Where Used |
+|---|---|
+| `.glassEffect()` | Floating action buttons (create session), custom overlays |
+| `.buttonStyle(.glass)` / `.buttonStyle(.glassProminent)` | Primary action buttons |
+| `GlassEffectContainer` | Group glass elements for optimized rendering + morphing transitions |
+| `.glassEffectID()` | Smooth morphing between glass elements during navigation |
+| `.tabBarMinimizeBehavior(.onScrollDown)` | Tab bar collapses while scrolling session lists |
+| `Tab(role: .search)` + `.searchable()` | Search tab transforms tab bar into live text field |
+| Navigation subtitle (`.navigationSubtitle()`) | Show session status under title |
+| `.scrollEdgeEffectStyle(.soft)` | Blur/fade content under toolbars |
+
+### iOS 26 Features We'll Leverage
+
+| Feature | Use Case in Our App | Phase |
+|---|---|---|
+| **Liquid Glass** tab bar + toolbars | App-wide navigation, session actions | MVP |
+| **SF Symbols 7** (draw-on animations) | Status badges, action confirmations, loading states | MVP |
+| **`@Animatable` macro** | Smooth transitions between session states | MVP |
+| **WebView** (native SwiftUI) | Preview Devin session web URLs in-app | Tier 2 |
+| **Rich TextEditor** (AttributedString) | Compose session prompts with formatting | Tier 2 |
+| **Foundation Models** (on-device LLM) | Summarize session output, suggest prompts, smart search | Tier 3 |
+| **`SpeechRecognizer`** (on-device) | Voice-to-prompt: dictate session tasks hands-free | Tier 3 |
+| **Section index labels** | Alphabetical jump in Knowledge notes list | Tier 2 |
+| **Sheet morphing** | Smooth transitions from list items to detail sheets | MVP |
+
+### Design Reference: Devin Mobile Web
+
+The app's information architecture mirrors Devin's mobile web experience:
+- **Session list** = primary view (like the web's session dashboard)
+- **Session detail** = chat + status + actions (like the web's session view)
+- **Create session** = prompt + config (like the web's "New Session" dialog)
+
+But expressed natively: Liquid Glass navigation, haptic feedback, SF Symbol animations, system-native gesture patterns.
+
+---
+
+## 10b. No-Xcode Development Workflow
+
+> **Goal: Never open Xcode.** The entire project is managed via text files, CLI tools, and AI agents.
+
+### Project Structure (XcodeGen)
+
+We use [XcodeGen](https://github.com/yonaskolb/XcodeGen) to define the project in a YAML file. The `.xcodeproj` is generated on-demand and never committed to git.
+
+```yaml
+# project.yml — the single source of truth for our Xcode project
+name: DevinCommandCenter
+options:
+  bundleIdPrefix: com.devincommand
+  deploymentTarget:
+    iOS: "26.0"
+  xcodeVersion: "26.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+
+targets:
+  DevinCommandCenter:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    resources: [Resources]
+    settings:
+      base:
+        INFOPLIST_FILE: Sources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.devincommand.app
+    dependencies: []
+
+  DevinCommandCenterTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: DevinCommandCenter
+
+  DevinCommandCenterUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: DevinCommandCenter
+
+schemes:
+  DevinCommandCenter:
+    build:
+      targets:
+        DevinCommandCenter: all
+    run:
+      config: Debug
+    test:
+      targets:
+        - DevinCommandCenterTests
+        - DevinCommandCenterUITests
+```
+
+### File Layout
+
+```
+DevinCommandCenter/
+├── project.yml                    # XcodeGen spec (committed)
+├── .gitignore                     # *.xcodeproj, DerivedData/, etc.
+├── Sources/
+│   ├── App/
+│   │   └── DevinCommandCenterApp.swift
+│   ├── Views/
+│   ├── ViewModels/
+│   ├── Services/
+│   ├── Models/
+│   └── Info.plist
+├── Tests/
+├── UITests/
+├── Resources/
+│   └── Assets.xcassets
+├── scripts/
+│   ├── generate                   # xcodegen generate
+│   ├── build                      # lim xcode build . (or xcodebuild)
+│   ├── test                       # lim xcode build . --scheme Tests
+│   └── lint                       # swiftlint
+└── .agents/
+    └── skills/
+        └── ios-development/
+            └── SKILL.md           # Devin skill for this project
+```
+
+### Development Loop (Devin's Perspective)
+
+```bash
+# 1. Write/edit Swift files directly (no Xcode needed)
+vim Sources/Views/SessionListView.swift
+
+# 2. Generate .xcodeproj from YAML (only needed if targets/settings change)
+xcodegen generate
+
+# 3. Build remotely via Limrun
+lim xcode build . --scheme DevinCommandCenter
+
+# 4. Test in cloud simulator
+lim ios element-tree              # read UI state
+lim ios screenshot ./proof.png    # capture for PR
+lim ios tap-element --ax-label "Sessions"  # interact
+
+# 5. Run unit tests
+lim xcode build . --scheme DevinCommandCenterTests
+```
+
+### Xcode Build MCP (Optional Enhancement)
+
+The [Xcode Build MCP](https://github.com/redne-w/xcodebuild-mcp) exposes `xcodebuild` and `xcrun simctl` as MCP tools. If running on a macOS host (or via Limrun's sandbox), it provides:
+
+| Tool | What It Does |
+|---|---|
+| `xcode_build` | Build project with structured error output |
+| `xcode_test` | Run tests with filtering and detailed failure reports |
+| `list_simulators` | Show available iOS simulators |
+| `boot_simulator` | Boot a specific simulator |
+| `install_app` | Install built app on simulator |
+| `launch_app` | Launch app in simulator |
+| `simulator_screenshot` | Capture simulator screen |
+
+This is complementary to Limrun — Limrun handles the cloud case (building from Linux), while Xcode Build MCP handles the local macOS case if someone needs it.
+
+### What We Never Commit to Git
+
+- `.xcodeproj` / `.xcworkspace` (generated on-demand via `xcodegen generate`)
+- `DerivedData/`
+- `xcuserdata/`
+- `.DS_Store`
+
+### What We Always Commit
+
+- `project.yml` (source of truth)
+- All `.swift` source files
+- `Info.plist`, `Assets.xcassets`
+- `scripts/` directory
+- `.agents/skills/` (Devin SKILL.md files)
 
 ---
 
