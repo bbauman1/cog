@@ -8,7 +8,9 @@
 
 **Devin Command Center** is a native SwiftUI iPhone app that gives developers on-the-go control over their Devin AI sessions. Think of it as mission control for your AI engineer — monitor active sessions, spin up new work, chat with Devin, manage your knowledge base and playbooks, and get notified the instant Devin needs you or finishes a task.
 
-The app is built on the [Devin API v3](https://docs.devin.ai/api-reference/overview) and designed to exploit native iOS capabilities (Live Activities, Widgets, push notifications, Siri, Shortcuts, biometrics) to deliver an experience that is impossible to replicate in a mobile browser.
+The app is built on the [Devin API v3](https://docs.devin.ai/api-reference/overview) and designed to exploit native iOS capabilities (Live Activities, Widgets, notifications, Siri, Shortcuts, biometrics) to deliver an experience that is impossible to replicate in a mobile browser.
+
+> **Key architecture decision: No backend.** This is a fully client-side app. The user's Devin API key is stored in the iOS Keychain and the app hits `api.devin.ai` directly. Zero infrastructure to deploy or maintain. The only feature that would eventually benefit from a backend is real-time remote push notifications — that's scoped as an optional Tier 4 add-on, only to be built if local notification latency (~15 min when backgrounded) becomes a real user complaint.
 
 ---
 
@@ -238,27 +240,32 @@ DevinCommandCenter/
 
 | Feature | API Mechanism | iOS Tech |
 |---|---|---|
-| **Push Notifications** — session finished, error, waiting for user, PR created | Polling → local notification (or webhook → APNs if backend added) | `UNUserNotificationCenter`, rich notifications |
+| **Local Notifications** — session finished, error, waiting for user, PR created | Polling + `BGAppRefreshTask` → local notification | `UNUserNotificationCenter`, rich notifications |
 | **Home Screen Widgets** — active session count, latest session status | `GET /sessions` | WidgetKit (small, medium, large) |
 | **Live Activities** — real-time session progress on lock screen | `GET /sessions/{id}` (poll) | ActivityKit + `LiveActivityAttributes` |
 | **Session Attachments** — view/download files from sessions | `GET /sessions/{id}/attachments` | Quick Look, share sheet |
 | **Knowledge Notes** — browse, create, edit, delete notes | `GET/POST/PUT/DELETE /knowledge/notes` | CRUD views with editor |
 
-**Push Notification Architecture:**
+**Notification Architecture:**
 
-Since the Devin API doesn't natively push to APNs, we have two options:
+> **Design decision:** No backend for MVP. The app is fully client-side — it stores the Devin API key in Keychain and hits `api.devin.ai` directly. This means zero infrastructure cost and zero deployment complexity.
 
-**Option A: Client-side polling + local notifications (no backend)**
-- Background App Refresh polls every 15 minutes (iOS minimum).
-- When app is foregrounded, poll every 5 seconds.
-- Trigger `UNNotificationRequest` locally when status transitions are detected.
-- Limitation: notifications are delayed when app is backgrounded.
+**MVP: Client-side polling + local notifications (no backend)**
+- When app is foregrounded, poll `GET /sessions` every 5-10 seconds and diff against last-known state.
+- Background App Refresh (`BGAppRefreshTask`) polls when backgrounded — iOS throttles this to ~15-30 minutes and it's not guaranteed.
+- Trigger local `UNNotificationRequest` when session status transitions are detected (e.g., running → waiting_for_user, running → exit).
+- Rich notification with session title, status, and action buttons ("View Session", "Send Message").
+- **Limitation:** Notifications are delayed up to 15-30 minutes when the app is fully backgrounded or killed. This is an acceptable tradeoff for zero infrastructure.
 
-**Option B: Lightweight backend relay (recommended for Tier 2)**
-- Tiny server (e.g., Cloudflare Worker or AWS Lambda) polls Devin API per-user.
-- On status change, sends APNs push via `apple/swift-nio` or AWS SNS.
-- Device registers its push token with this relay on login.
-- Enables true real-time notifications even when app is killed.
+**Future (Tier 4): Optional remote notifications via lightweight backend**
+- When the user base grows and real-time alerts become critical, add an optional backend relay:
+  - Tiny server (Cloudflare Worker, AWS Lambda, or Fly.io) stores encrypted device push tokens + Devin API keys.
+  - Polls `GET /sessions` every 10-30 seconds per active user.
+  - Compares session status to last-known state; sends APNs push on transitions.
+  - ~200 lines of code. Estimated infra cost: <$5/month for small user base.
+- Device registers its APNs push token with the relay on opt-in.
+- This is additive — local notifications continue to work for users who don't opt in.
+- **Only build this when local notification latency becomes a real user complaint.**
 
 ### Tier 3 — Power Features (Weeks 9-14)
 
@@ -527,7 +534,7 @@ Ordered by expected user impact. Each item is a candidate for a 1-2 week sprint.
 
 14. **Offline mode** — Cache recent sessions in SwiftData. Queue messages for send when connectivity returns.
 
-15. **Push notification backend** — Deploy lightweight relay (Cloudflare Worker / Lambda) that polls Devin API per-user and sends real APNs pushes. Eliminates background refresh delay.
+15. **Remote push notification backend (optional)** — Lightweight relay service (Cloudflare Worker / Lambda) that polls Devin API per-user and sends real APNs pushes. Opt-in for users who want <30 second notification latency. Only build when local notification delay becomes a user pain point.
 
 16. **Voice session creation** — On-device speech-to-text (`SFSpeechRecognizer`) → directly submit as session prompt. "Record a task for Devin" workflow.
 
@@ -636,7 +643,7 @@ Once you can see your real Devin sessions on your phone, everything else is incr
 | Risk | Impact | Mitigation |
 |---|---|---|
 | PATs remain in closed beta ([source](https://docs.devin.ai/api-reference/personal-access-tokens)) | Users must use service user keys (less intuitive for personal use) | In-app guided onboarding, clipboard detection for `cog_` tokens, deep link auth transfer from desktop |
-| No webhook/push support from Devin API | Real-time notifications require polling | Background refresh + lightweight relay backend (Tier 2) |
+| No webhook/push support from Devin API | Notifications delayed ~15-30 min when backgrounded | Local notifications for MVP (acceptable); optional remote push backend in Tier 4 if latency becomes a complaint |
 | API rate limiting | Aggressive polling could hit 429s | Exponential backoff, adaptive polling intervals, local caching |
 | App Store rejection | Apple may flag "developer tool" apps | Ensure rich UI, follow HIG, avoid "thin client" appearance |
 | API breaking changes | v3 is current but could evolve | Version the API client, abstract behind protocol, monitor release notes |
@@ -653,7 +660,7 @@ Once you can see your real Devin sessions on your phone, everything else is incr
 | Daily active users | Internal dogfooding | 500+ |
 | App Store rating | N/A | 4.5+ |
 | Crash-free rate | 99% | 99.9% |
-| Notification delivery latency | ~15 min (local) | < 30 sec (APNs relay) |
+| Notification delivery latency | ~15 min (local, backgrounded) / instant (foregrounded) | < 30 sec (with optional APNs relay) |
 
 ---
 
@@ -664,7 +671,7 @@ WEEK  1-4   ██████████  MVP: Auth + Session List + Chat + Cr
 WEEK  5-8   ██████████  Notifications + Widgets + Live Activities + Knowledge
 WEEK  9-14  ██████████  Siri + Share Sheet + Universal Links + Schedules
 WEEK 15-20  ██████████  Analytics + Team View + Enterprise + Watch
-WEEK 20+    ──────────  Offline mode, Push backend, Voice, App Clip
+WEEK 20+    ──────────  Offline mode, Remote push backend (optional), Voice, App Clip
 ```
 
 The MVP is intentionally narrow: **authenticate, list sessions, view details, chat, create new sessions.** This covers the core loop that every Devin user needs on mobile. Everything else layers on top without rearchitecting.
