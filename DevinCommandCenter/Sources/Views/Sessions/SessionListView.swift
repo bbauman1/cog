@@ -56,7 +56,7 @@ struct SessionListView: View {
                 loadingView
             } else if let error = viewModel.errorMessage, viewModel.sessions.isEmpty {
                 errorView(error)
-            } else if viewModel.filteredSessions.isEmpty {
+            } else if filteredAndSearched.isEmpty {
                 emptyView
             } else {
                 List {

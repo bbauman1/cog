@@ -160,39 +160,22 @@ actor DevinAPIClient {
     }
 
     func createSession(prompt: String, playBookId: String? = nil, tags: [String]? = nil) async throws -> Session {
-        var body: [String: Any] = ["prompt": prompt]
-        if let playBookId { body["playbook_id"] = playBookId }
-        if let tags { body["tags"] = tags }
+        struct CreateSessionBody: Encodable {
+            let prompt: String
+            let playbookId: String?
+            let tags: [String]?
 
-        let jsonData = try JSONSerialization.data(withJSONObject: body)
-
-        let components = URLComponents(string: baseURL + "/organizations/\(orgId)/sessions")
-        guard let url = components?.url else { throw APIError.invalidURL }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = jsonData
-
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.unknown(statusCode: 0, data: nil)
+            enum CodingKeys: String, CodingKey {
+                case prompt
+                case playbookId = "playbook_id"
+                case tags
+            }
         }
-
-        switch httpResponse.statusCode {
-        case 200...299:
-            return try decoder.decode(Session.self, from: data)
-        case 401:
-            throw APIError.unauthorized
-        case 403:
-            throw APIError.forbidden
-        case 429:
-            let retryAfter = httpResponse.value(forHTTPHeaderField: "Retry-After").flatMap(Int.init)
-            throw APIError.rateLimited(retryAfter: retryAfter)
-        default:
-            throw APIError.unknown(statusCode: httpResponse.statusCode, data: data)
-        }
+        return try await request(
+            method: "POST",
+            path: "/organizations/\(orgId)/sessions",
+            body: CreateSessionBody(prompt: prompt, playbookId: playBookId, tags: tags)
+        )
     }
 
     func terminateSession(devinId: String) async throws {

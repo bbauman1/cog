@@ -129,6 +129,12 @@ struct LoginView: View {
     private func checkClipboard() {
         if let content = UIPasteboard.general.string, content.hasPrefix("cog_") {
             apiKey = content
+            Task {
+                try? await Task.sleep(for: .seconds(30))
+                if UIPasteboard.general.string == content {
+                    UIPasteboard.general.string = ""
+                }
+            }
         }
     }
 }

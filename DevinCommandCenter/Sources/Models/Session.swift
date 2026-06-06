@@ -114,4 +114,25 @@ struct Session: Codable, Identifiable, Sendable {
         case tags
         case title
     }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        sessionId = try container.decode(String.self, forKey: .sessionId)
+        status = try container.decode(SessionStatus.self, forKey: .status)
+        statusDetail = try container.decodeIfPresent(SessionStatusDetail.self, forKey: .statusDetail)
+        acusConsumed = try container.decode(Double.self, forKey: .acusConsumed)
+        category = try container.decodeIfPresent(SessionCategory.self, forKey: .category)
+        createdAt = try container.decode(Int.self, forKey: .createdAt)
+        origin = try container.decodeIfPresent(SessionOrigin.self, forKey: .origin)
+        orgId = try container.decode(String.self, forKey: .orgId)
+        pullRequests = try container.decodeIfPresent([SessionPullRequest].self, forKey: .pullRequests) ?? []
+        serviceUserId = try container.decodeIfPresent(String.self, forKey: .serviceUserId)
+        childSessionIds = try container.decodeIfPresent([String].self, forKey: .childSessionIds)
+        parentSessionId = try container.decodeIfPresent(String.self, forKey: .parentSessionId)
+        playBookId = try container.decodeIfPresent(String.self, forKey: .playBookId)
+        isArchived = try container.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
+        url = try container.decodeIfPresent(String.self, forKey: .url)
+        tags = try container.decodeIfPresent([String].self, forKey: .tags)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+    }
 }
