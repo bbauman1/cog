@@ -65,35 +65,69 @@ All list endpoints use cursor-based pagination: `?first=N&after=<cursor>`. Respo
 
 ## 3. App Authentication Strategy
 
-This is the most critical design decision. The Devin API authenticates via bearer tokens — there is no OAuth2 flow for end-user login. We need to bridge this gap securely.
+> **Context:** This is a third-party app. We cannot modify the Devin web dashboard or create new server-side auth flows on Devin's infrastructure. We can only use what the [Devin API](https://docs.devin.ai/api-reference/authentication) exposes today.
 
-### 3.1 Recommended Approach: Hybrid Auth
+The Devin API authenticates via bearer tokens (`cog_` prefix) — there is no OAuth2 flow for third-party apps. Two token types exist:
 
-**Phase 1 (MVP):** Direct API key entry + Keychain storage
-- User pastes their `cog_` API key and org ID into the app.
-- Key is stored in the iOS Keychain (encrypted, hardware-backed on devices with Secure Enclave).
-- Protected behind Face ID / Touch ID for app unlock.
-- Simple, works today, zero backend required.
+| Token Type | Status | Who It Authenticates As | Source |
+|---|---|---|---|
+| Service User API Key | **GA** | A non-human service user (org-scoped) | [Docs: Authentication](https://docs.devin.ai/api-reference/authentication) |
+| Personal Access Token (PAT) | **Closed beta** (feature-flagged, contact support) | The human user themselves | [Docs: Personal Access Tokens](https://docs.devin.ai/api-reference/personal-access-tokens) |
 
-**Phase 2:** QR-code pairing from Devin web dashboard
-- Add a "Connect Mobile App" button to the Devin web UI that generates a time-limited QR code encoding `{ api_key, org_id, user_name }`.
-- App scans QR code via `AVFoundation` camera → stores credentials in Keychain.
-- Eliminates manual key entry and reduces copy-paste risk.
+### 3.1 Recommended Approach: Phased Third-Party Auth
 
-**Phase 3 (Long-term):** OAuth2 PKCE flow via Devin
-- Once PATs are GA and/or Devin adds OAuth2 support, implement a proper Authorization Code + PKCE flow.
-- `ASWebAuthenticationSession` handles the browser-based login natively.
-- Refresh tokens stored in Keychain; access tokens auto-refreshed.
-- This is the gold standard — no API key handling on the client at all.
+**Phase 1 (MVP): Direct token entry + Keychain storage**
 
-### 3.2 Security Measures (All Phases)
+This is the only viable approach today and is the standard pattern for third-party API clients (similar to how apps like Working Copy, Blink Shell, or HTTP clients handle API keys).
+
+- User generates a Service User API Key (or PAT if they have beta access) from [Settings > Service Users](https://app.devin.ai) in the Devin web dashboard.
+- User enters the `cog_` token and their org ID into the app.
+- We provide an in-app guide with step-by-step screenshots showing where to find these values.
+- Token is validated immediately via `GET /v3/self` before storing.
+- Stored in the iOS Keychain (encrypted, hardware-backed via Secure Enclave).
+- App is protected behind Face ID / Touch ID on every cold launch.
+
+The onboarding UX matters a lot here — we need to make the key-entry flow as frictionless as possible:
+- Deep link / universal link support: user could tap a link from their browser that passes the key to the app (e.g., `devincommand://auth?token=cog_...&org=org-...`). This lets them copy the key on their Mac/desktop and send it to their phone via iMessage/AirDrop/universal clipboard.
+- Clipboard detection: offer to paste from clipboard if it contains a `cog_` prefix string.
+- Clear inline instructions with a "Open Devin Settings" button that links to `https://app.devin.ai`.
+
+**Phase 2: Multi-account & smart token management**
+
+- Support multiple org credentials (users may belong to several Devin orgs).
+- Token health monitoring: periodically call `GET /v3/self` to detect revoked keys and prompt re-auth.
+- Guide users toward PATs once they become GA — PATs are better for end users since they authenticate as the human user directly (proper audit trail, personal permissions).
+- Implement token rotation reminders (e.g., "Your token is 90 days old, consider rotating").
+
+**Phase 3 (Aspirational): OAuth2 PKCE — if/when Devin supports it**
+
+- If Cognition ever adds an OAuth2 authorization server for third-party apps, we would implement Authorization Code + PKCE via `ASWebAuthenticationSession`.
+- This would eliminate all manual token handling — users just tap "Sign in with Devin" and authorize in a browser sheet.
+- Until then, this phase is aspirational. We should monitor the [Devin API release notes](https://docs.devin.ai/api-reference/release-notes) for any OAuth2 announcements.
+
+### 3.2 Token Types: Practical Guidance for Users
+
+The app should guide users on which token type to use:
+
+| User Scenario | Recommended Token | Why |
+|---|---|---|
+| Individual user, wants sessions attributed to them | **PAT** (if available) | Sessions show as created by _them_, not a bot |
+| Individual user, no PAT access | **Service User API Key** + `create_as_user_id` | Workaround: create a service user, grant `ImpersonateOrgSessions`, pass own user ID |
+| Team admin managing org sessions | **Service User API Key** with `ManageOrgSessions` | Designed for automation and management |
+| Enterprise, multiple orgs | **Enterprise Service User API Key** | Cross-org access via `/v3/enterprise/*` |
+
+The app's onboarding flow should ask "What do you want to do?" and recommend the right token type + required permissions.
+
+### 3.3 Security Measures (All Phases)
 
 | Layer | Implementation |
 |---|---|
-| Storage | iOS Keychain with `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` |
+| Storage | iOS Keychain with `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` — encrypted at rest, device-bound, excluded from backups |
 | App lock | Require Face ID / Touch ID on every cold launch (via `LAContext`) |
 | Transport | TLS 1.3 only; certificate pinning for `api.devin.ai` |
 | Token display | Never show full token in UI; mask with `cog_••••••ab3f` |
+| Clipboard | Auto-clear clipboard 30 seconds after paste-detection is used |
+| URL scheme | Validate token format (`cog_` prefix) before accepting via deep link; reject malformed input |
 | Logout | Keychain wipe + in-memory credential zeroing |
 | Jailbreak detection | Optional: warn users on compromised devices |
 
@@ -501,7 +535,7 @@ Ordered by expected user impact. Each item is a candidate for a 1-2 week sprint.
 
 18. **Haptic feedback language** — Distinct haptic patterns for different events: success (triple tap), error (buzz), waiting (gentle pulse).
 
-19. **QR code pairing** — Camera-based onboarding: scan QR from Devin web dashboard to auto-configure credentials.
+19. **Cross-device credential transfer** — Use Apple's universal clipboard or a custom URL scheme (`devincommand://auth?token=...&org=...`) so users can copy credentials on desktop and open them on phone with one tap.
 
 20. **App Clip** — Lightweight clip accessible via shared link. View a specific session's status without installing the full app.
 
@@ -531,7 +565,7 @@ Ordered by expected user impact. Each item is a candidate for a 1-2 week sprint.
 | **SwiftData** | Offline cache | Tier 4 |
 | **SFSpeechRecognizer** | Voice-to-prompt | Tier 4 |
 | **WatchKit** | Apple Watch companion | Tier 4 |
-| **AVFoundation** | QR code scanning | Tier 4 |
+| **AVFoundation** | Camera for screenshots/attachments | Tier 4 |
 
 ---
 
@@ -601,7 +635,7 @@ Once you can see your real Devin sessions on your phone, everything else is incr
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| PATs remain in closed beta | Users must use service user keys (less intuitive) | QR pairing flow makes service key entry seamless |
+| PATs remain in closed beta ([source](https://docs.devin.ai/api-reference/personal-access-tokens)) | Users must use service user keys (less intuitive for personal use) | In-app guided onboarding, clipboard detection for `cog_` tokens, deep link auth transfer from desktop |
 | No webhook/push support from Devin API | Real-time notifications require polling | Background refresh + lightweight relay backend (Tier 2) |
 | API rate limiting | Aggressive polling could hit 429s | Exponential backoff, adaptive polling intervals, local caching |
 | App Store rejection | Apple may flag "developer tool" apps | Ensure rich UI, follow HIG, avoid "thin client" appearance |
