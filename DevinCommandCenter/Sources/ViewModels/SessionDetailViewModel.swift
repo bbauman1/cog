@@ -6,6 +6,7 @@ final class SessionDetailViewModel {
     var session: Session?
     var messages: [Message] = []
     var isLoadingMessages = false
+    var isLoadingMoreMessages = false
     var isLoadingSession = false
     var isSendingMessage = false
     var isTerminating = false
@@ -65,7 +66,8 @@ final class SessionDetailViewModel {
     }
 
     func loadMoreMessages() async {
-        guard let apiClient, hasMoreMessages else { return }
+        guard let apiClient, hasMoreMessages, !isLoadingMoreMessages else { return }
+        isLoadingMoreMessages = true
 
         do {
             let response = try await apiClient.listMessages(
@@ -77,6 +79,8 @@ final class SessionDetailViewModel {
         } catch {
             // Silently fail for pagination
         }
+
+        isLoadingMoreMessages = false
     }
 
     // MARK: - Send Message
@@ -190,8 +194,9 @@ final class SessionDetailViewModel {
 
     private func refreshMessages() async {
         guard let apiClient else { return }
+        let fetchCount = max(50, messages.count)
         do {
-            let response = try await apiClient.listMessages(devinId: sessionId, first: 50)
+            let response = try await apiClient.listMessages(devinId: sessionId, first: fetchCount)
             messages = response.items
             messageEndCursor = response.endCursor
             hasMoreMessages = response.hasNextPage

@@ -89,6 +89,11 @@ struct SessionDetailView: View {
                         ForEach(viewModel.messages) { message in
                             MessageBubbleView(message: message)
                                 .id(message.id)
+                                .onAppear {
+                                    if message.id == viewModel.messages.last?.id {
+                                        Task { await viewModel.loadMoreMessages() }
+                                    }
+                                }
                         }
 
                         if viewModel.isDevinWorking {
