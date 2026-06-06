@@ -1,0 +1,24 @@
+# Xcode workspace (generated, don't commit)
+*.xcworkspace
+
+# Xcode
+DerivedData/
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Build artifacts
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
