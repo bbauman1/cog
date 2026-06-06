@@ -1,31 +1,39 @@
 import SwiftUI
 
-struct ContentView: View {
+struct RootView: View {
+    @Environment(AppState.self) private var appState
+
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                Image(systemName: "command.circle.fill")
-                    .font(.system(size: 80))
-                    .foregroundStyle(.blue)
-                    .symbolEffect(.pulse)
-
-                Text("Devin Command Center")
-                    .font(.largeTitle.bold())
-
-                Text("Sprint 0 — Hello Build")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-
-                Text("iOS 26 • SwiftUI • Liquid Glass")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+        Group {
+            switch appState.authState {
+            case .unknown:
+                ProgressView()
+                    .task { appState.checkStoredCredentials() }
+            case .unauthenticated:
+                LoginView()
+            case .locked:
+                BiometricUnlockView()
+            case .authenticated:
+                MainTabView()
             }
-            .padding()
-            .navigationTitle("Command Center")
         }
+        .animation(.easeInOut, value: appState.authState == .authenticated)
     }
 }
 
-#Preview {
-    ContentView()
+struct MainTabView: View {
+    var body: some View {
+        TabView {
+            Tab("Sessions", systemImage: "list.bullet") {
+                SessionListView()
+            }
+
+            Tab("Settings", systemImage: "gearshape") {
+                NavigationStack {
+                    SettingsView()
+                }
+            }
+        }
+        .tabBarMinimizeBehavior(.onScrollDown)
+    }
 }

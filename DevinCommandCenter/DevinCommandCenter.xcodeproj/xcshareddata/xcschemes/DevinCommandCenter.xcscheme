@@ -5,7 +5,7 @@
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES"
-      buildArchitectures = "Automatic">
+      runPostActionsOnFailure = "NO">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -15,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "A4000001"
+               BlueprintIdentifier = "E0000001"
                BuildableName = "DevinCommandCenter.app"
                BlueprintName = "DevinCommandCenter"
                ReferencedContainer = "container:DevinCommandCenter.xcodeproj">
@@ -44,7 +44,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "A4000001"
+            BlueprintIdentifier = "E0000001"
             BuildableName = "DevinCommandCenter.app"
             BlueprintName = "DevinCommandCenter"
             ReferencedContainer = "container:DevinCommandCenter.xcodeproj">
@@ -61,7 +61,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "A4000001"
+            BlueprintIdentifier = "E0000001"
             BuildableName = "DevinCommandCenter.app"
             BlueprintName = "DevinCommandCenter"
             ReferencedContainer = "container:DevinCommandCenter.xcodeproj">
