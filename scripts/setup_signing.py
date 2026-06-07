@@ -68,40 +68,94 @@ def download_wwdr():
     return pem_path
 
 
+def _restore_key_from_secret():
+    """Write dist_key.pem from APPLE_DIST_KEY_PEM org secret if not on disk.
+
+    Handles two formats:
+    - Proper PEM with newlines (from well-behaved secret stores)
+    - Single-line PEM where newlines were lost (re-wraps at 64 chars)
+    """
+    key_pem_path = os.path.join(ASC_DIR, "dist_key.pem")
+    if os.path.exists(key_pem_path):
+        return True
+    key_pem = os.environ.get("APPLE_DIST_KEY_PEM", "")
+    if not key_pem:
+        return False
+
+    # Check if newlines were stripped (entire PEM on one or two lines)
+    lines = key_pem.strip().splitlines()
+    if len(lines) <= 2:
+        # Newlines lost — extract base64 body and re-wrap at 64 chars
+        body = key_pem.replace("-----BEGIN PRIVATE KEY-----", "") \
+                      .replace("-----END PRIVATE KEY-----", "") \
+                      .replace(" ", "").replace("\n", "").replace("\r", "")
+        wrapped = "\n".join(body[i:i+64] for i in range(0, len(body), 64))
+        key_pem = f"-----BEGIN PRIVATE KEY-----\n{wrapped}\n-----END PRIVATE KEY-----\n"
+
+    with open(key_pem_path, 'w') as f:
+        f.write(key_pem)
+    os.chmod(key_pem_path, 0o600)
+    print(f"Restored distribution key from APPLE_DIST_KEY_PEM secret")
+    return True
+
+
+def _key_matches_cert(key_pem_path, cert_pem_path):
+    """Check if a private key matches a certificate by comparing public key modulus."""
+    try:
+        key_mod = run(f"openssl rsa -in '{key_pem_path}' -modulus -noout", check=False)
+        cert_mod = run(f"openssl x509 -in '{cert_pem_path}' -modulus -noout", check=False)
+        return (key_mod.returncode == 0 and cert_mod.returncode == 0
+                and key_mod.stdout.strip() == cert_mod.stdout.strip())
+    except Exception:
+        return False
+
+
 def find_or_create_cert():
-    """Find existing DISTRIBUTION cert or create a new one."""
+    """Find existing DISTRIBUTION cert matching our key, or create one."""
     cert_pem_path = os.path.join(ASC_DIR, "apple_dist_cert.pem")
     key_pem_path = os.path.join(ASC_DIR, "dist_key.pem")
 
-    # Check for existing valid cert
+    # Restore private key from org secret if not on disk
+    _restore_key_from_secret()
+    has_key = os.path.exists(key_pem_path)
+
+    # Check for existing valid certs
     data = api('GET', '/v1/certificates?filter[certificateType]=DISTRIBUTION')
     certs = data.get('data', [])
     valid_certs = [c for c in certs if c['attributes']['certificateType'] == 'DISTRIBUTION']
 
-    if valid_certs and os.path.exists(key_pem_path):
-        # We have a cert and key already — download the cert content
-        cert = valid_certs[0]
-        cert_content = cert['attributes'].get('certificateContent', '')
-        if cert_content:
+    # Try to find a cert that matches our key
+    if valid_certs and has_key:
+        der_path = os.path.join(ASC_DIR, "dist_cert.der")
+        for cert in valid_certs:
+            cert_content = cert['attributes'].get('certificateContent', '')
+            if not cert_content:
+                continue
             cert_der = base64.b64decode(cert_content)
-            der_path = os.path.join(ASC_DIR, "dist_cert.der")
             with open(der_path, 'wb') as f:
                 f.write(cert_der)
             run(f"openssl x509 -inform DER -in '{der_path}' -out '{cert_pem_path}'")
-        print(f"Reusing existing cert {cert['id']} with local key")
-        return cert['id'], cert_pem_path, key_pem_path, False
+            if _key_matches_cert(key_pem_path, cert_pem_path):
+                print(f"Reusing existing cert {cert['id']} (key matches)")
+                return cert['id'], cert_pem_path, key_pem_path, False
+        # No matching cert — create one using our existing key (below)
+        print("No existing cert matches the saved key")
 
-    # Need to create a new cert (and key)
-    print("Creating new distribution certificate...")
+    if has_key:
+        # Create a new cert using the EXISTING key (from secret) — no new key needed
+        print("Creating cert from existing key...")
+    else:
+        # No key at all — generate a new one
+        print("No key available, generating new key + cert...")
+        run(f"openssl genrsa -out '{key_pem_path}' 2048")
+        os.chmod(key_pem_path, 0o600)
 
-    # Revoke any existing DISTRIBUTION certs (limit of ~3)
-    for cert in valid_certs:
-        print(f"  Revoking old cert {cert['id']}...")
-        api('DELETE', f"/v1/certificates/{cert['id']}")
-
-    # Generate key + CSR
-    run(f"openssl genrsa -out '{key_pem_path}' 2048")
-    os.chmod(key_pem_path, 0o600)
+    # Only revoke if at Apple's limit (~3 active distribution certs)
+    MAX_DIST_CERTS = 3
+    if len(valid_certs) >= MAX_DIST_CERTS:
+        oldest = sorted(valid_certs, key=lambda c: c['attributes'].get('expirationDate', ''))[0]
+        print(f"  At cert limit ({MAX_DIST_CERTS}), revoking oldest cert {oldest['id']}...")
+        api('DELETE', f"/v1/certificates/{oldest['id']}")
 
     csr_path = os.path.join(ASC_DIR, "dist.csr")
     run(f"openssl req -new -key '{key_pem_path}' -out '{csr_path}' -subj '/CN=Cog Distribution/O={TEAM_ID}'")
