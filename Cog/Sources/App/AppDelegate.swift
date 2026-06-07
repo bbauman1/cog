@@ -23,7 +23,9 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound, .badge]
+        // Suppress banners while the app is in the foreground — the user can already
+        // see session status changes in the list. Only update the badge silently.
+        [.badge]
     }
 
     nonisolated func userNotificationCenter(

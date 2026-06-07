@@ -28,6 +28,10 @@ final class SessionStatusTracker {
     }
 
     func updateFromSessions(_ sessions: [Session]) {
+        // Keep only IDs from the current response to prevent unbounded growth.
+        let activeIds = Set(sessions.map(\.sessionId))
+        statusCache = statusCache.filter { activeIds.contains($0.key) }
+
         for session in sessions {
             if let status = session.statusDetail {
                 statusCache[session.sessionId] = status.rawValue

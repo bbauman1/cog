@@ -60,7 +60,9 @@ final class BackgroundRefreshManager: Sendable {
                     let oldStatus = tracker.lastKnownStatus(for: session.sessionId)
                     let newStatus = session.statusDetail
 
-                    if oldStatus != newStatus {
+                    // Only notify for actual status *changes*, not first-seen sessions.
+                    // When oldStatus is nil the session was never tracked — seed it silently.
+                    if let oldStatus, oldStatus != newStatus {
                         await NotificationService.shared.notifyStatusChange(
                             sessionId: session.sessionId,
                             sessionTitle: session.title,
