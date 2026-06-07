@@ -26,22 +26,11 @@ struct MainTabView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        TabView {
-            Tab("Sessions", systemImage: "list.bullet") {
-                SessionListView()
-            }
-
-            Tab("Settings", systemImage: "gearshape") {
-                NavigationStack {
-                    SettingsView()
+        SessionListView()
+            .onChange(of: scenePhase) {
+                if scenePhase == .background {
+                    appState.scheduleBackgroundRefresh()
                 }
             }
-        }
-        .tabBarMinimizeBehavior(.onScrollDown)
-        .onChange(of: scenePhase) {
-            if scenePhase == .background {
-                appState.scheduleBackgroundRefresh()
-            }
-        }
     }
 }

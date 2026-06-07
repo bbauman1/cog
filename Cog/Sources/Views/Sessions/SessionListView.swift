@@ -7,6 +7,7 @@ struct SessionListView: View {
     @State private var navigationPath = NavigationPath()
     @State private var searchText = ""
     @State private var showCreateSession = false
+    @State private var showSettings = false
     @State private var terminateSessionId: String?
     @State private var showTerminateConfirmation = false
 
@@ -23,9 +24,9 @@ struct SessionListView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        showCreateSession = true
+                        showSettings = true
                     } label: {
-                        Image(systemName: "plus")
+                        Image(systemName: "gearshape")
                     }
                 }
             }
@@ -34,6 +35,31 @@ struct SessionListView: View {
                 CreateSessionView { _ in
                     Task { await viewModel.refresh() }
                 }
+            }
+            .sheet(isPresented: $showSettings) {
+                NavigationStack {
+                    SettingsView()
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Done") {
+                                    showSettings = false
+                                }
+                            }
+                        }
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Button {
+                    showCreateSession = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 56, height: 56)
+                        .background(.blue, in: Circle())
+                        .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+                }
+                .padding(20)
             }
             .alert("Terminate Session?", isPresented: $showTerminateConfirmation) {
                 Button("Cancel", role: .cancel) {
