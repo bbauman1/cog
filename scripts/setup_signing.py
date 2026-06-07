@@ -91,13 +91,16 @@ def find_or_create_cert():
         print(f"Reusing existing cert {cert['id']} with local key")
         return cert['id'], cert_pem_path, key_pem_path, False
 
-    # Need to create a new cert (and key)
+    # Need to create a new cert (and key) — don't revoke existing ones
+    # (revocation sends email notifications to the account holder).
+    # Apple allows ~3 active distribution certs; only revoke the oldest
+    # if we're at the limit.
+    MAX_DIST_CERTS = 3
+    if len(valid_certs) >= MAX_DIST_CERTS:
+        oldest = sorted(valid_certs, key=lambda c: c['attributes'].get('expirationDate', ''))[0]
+        print(f"  At cert limit ({MAX_DIST_CERTS}), revoking oldest cert {oldest['id']}...")
+        api('DELETE', f"/v1/certificates/{oldest['id']}")
     print("Creating new distribution certificate...")
-
-    # Revoke any existing DISTRIBUTION certs (limit of ~3)
-    for cert in valid_certs:
-        print(f"  Revoking old cert {cert['id']}...")
-        api('DELETE', f"/v1/certificates/{cert['id']}")
 
     # Generate key + CSR
     run(f"openssl genrsa -out '{key_pem_path}' 2048")
