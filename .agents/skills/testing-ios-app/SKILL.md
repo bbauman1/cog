@@ -138,6 +138,14 @@ lim ios open-url "cog://session/{sessionId}"
 ```
 Opens a URL in the simulator. Use this to test deep linking — the app should navigate to the specified session detail view.
 
+## App Navigation
+
+The app does NOT have a tab bar. All navigation is from the session list screen:
+
+- **Settings**: Tap the gear icon (⚙) in the top-right toolbar (~360, 83). Opens as a sheet with a "Done" button at top-left to dismiss.
+- **Create Session**: Tap the blue floating action button (FAB) with "+" icon in the bottom-right corner (~355, 740). Opens the Create Session sheet.
+- **Session Detail**: Tap any session row in the list.
+
 ## Key Testing Patterns
 
 ### Login Flow
@@ -160,7 +168,7 @@ Opens a URL in the simulator. Use this to test deep linking — the app should n
 7. Verify "Devin is working..." typing indicator appears when session is working
 
 ### Create Session
-1. Tap "+" button in top-right of session list
+1. Tap the blue FAB ("+") in the bottom-right corner (~355, 740)
 2. Verify Create Session sheet with Cancel/Create buttons
 3. Verify Create button is DISABLED when prompt is empty
 4. Type prompt text + `press-key space` to trigger binding
@@ -173,10 +181,12 @@ Opens a URL in the simulator. Use this to test deep linking — the app should n
 - Both show confirmation alert: "Terminate Session?" with Cancel/Terminate
 
 ### Settings & Notification Preferences
-1. Tap Settings tab (bottom tab bar, ~243, 820) (~243, 820)
-2. Verify: masked API key (e.g. `cog_----477q`), org ID, auth type, version/build
-3. Verify "Notifications" section with "Session Alerts" toggle
-4. Tap "Log Out" → confirmation alert with Cancel/Log Out
+1. Tap gear icon (⚙) in top-right toolbar (~360, 83)
+2. Verify Settings sheet opens with "Done" button at top-left
+3. Verify: masked API key (e.g. `cog_----477q`), org ID, auth type, version/build
+4. Verify "Notifications" section with "Session Alerts" toggle
+5. Tap "Log Out" → confirmation alert with Cancel/Log Out
+6. Tap "Done" to dismiss sheet and return to session list
 
 ### Deep Linking
 1. Get a session ID (from element-tree or API: `curl -s -H "Authorization: Bearer ${DEVIN_API_KEY}" "https://api.devin.ai/v3/organizations/org-ef33adaca3a84b72839816853d18d23f/sessions?first=1"`)
@@ -185,38 +195,26 @@ Opens a URL in the simulator. Use this to test deep linking — the app should n
 
 #### Testing Notification Toggle Persistence
 The notification toggle preference is persisted in shared UserDefaults. To verify persistence:
-1. Navigate to Settings tab
+1. Tap gear icon to open Settings
 2. Verify "Session Alerts" toggle is ON (green) — this is the default
 3. Tap the toggle to turn it OFF (~343, 463)
-4. Navigate away (tap Sessions tab ~157, 830)
+4. Tap "Done" to dismiss Settings
 5. Wait 1-2 seconds
-6. Navigate back to Settings tab (~243, 820)
+6. Tap gear icon to reopen Settings
 7. **Key assertion:** Toggle should still be OFF. If it resets to ON, the persistence is broken.
 8. Toggle back ON to restore default state
 
 Note: The toggle checks both OS notification authorization AND the app-level preference. If OS permissions were denied ("Don't Allow" on first launch), the toggle will always show OFF regardless of app preference.
 
-### Deep Linking
-```bash
-lim ios open-url "cog://session/{session_id}"
-```
-Opens the session detail view for the given session ID. Get a real session ID from the session list first.
-
 ### Toolbar Buttons
-Toolbar buttons (Cancel, Create, ellipsis menu) may NOT appear in `lim ios element-tree`. Use coordinates from screenshots to tap them. Typical positions:
+Toolbar buttons (Cancel, Create, Done, ellipsis menu) may NOT appear in `lim ios element-tree`. Use coordinates from screenshots to tap them. Typical positions:
 - Cancel button: ~(55, 100)
 - Create button: ~(338, 100)
+- Done button (Settings sheet): ~(50, 100)
 - Ellipsis menu: ~(365, 83)
 - Back button: ~(37, 83)
-- "+" (create session): ~(365, 83)
-- Settings tab: ~(243, 820)
-- Sessions tab: ~(157, 830)
-
-## Tab Bar Coordinates
-- Sessions tab: ~(157, 830)
-- Settings tab: ~(243, 820)
-
-Note: Tab bar coordinates may shift slightly depending on device. Use `lim ios element-tree` to find exact positions if taps don't register.
+- Gear icon (Settings): ~(360, 83)
+- FAB ("+" create session): ~(355, 740)
 
 ## Cleanup
 
@@ -339,6 +337,3 @@ The script uploads, confirms, and polls processing state until VALID/FAILED.
 - There is no `lim ios swipe` command — use `lim ios perform` with touchDown/touchMove/touchUp
 - Push notifications, widgets, and background refresh cannot be observed in the Limrun simulator — verify these at build level only
 - On fresh install, a notification permission dialog appears before the login screen — tap "Allow" to proceed
-- Tab bar labels ("Sessions", "Settings") may not be found by `tap-element --ax-label` — use coordinate-based taps instead
-- `press-key h` does NOT go to the home screen in Limrun — use `lim ios open-url` to test deep links from the foreground app state
-- Push notifications, widgets, and background refresh cannot be directly tested in the simulator
