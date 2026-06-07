@@ -13,7 +13,7 @@ final class SessionDetailViewModel {
     var errorMessage: String?
     var messageDraft = ""
 
-    private let sessionId: String
+    let sessionId: String
     private var apiClient: DevinAPIClient?
     private var messageEndCursor: String?
     private var hasMoreMessages = false
@@ -142,6 +142,19 @@ final class SessionDetailViewModel {
         }
     }
 
+    // MARK: - Archive
+
+    func archiveSession() async {
+        guard let apiClient else { return }
+        do {
+            session = try await apiClient.archiveSession(devinId: sessionId)
+        } catch let error as APIError {
+            errorMessage = error.errorDescription
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     // MARK: - Polling
 
     func startPolling() {
@@ -178,6 +191,11 @@ final class SessionDetailViewModel {
 
     var canTerminate: Bool {
         isSessionActive && !isTerminating
+    }
+
+    var canArchive: Bool {
+        guard let session else { return false }
+        return !session.isArchived
     }
 
     // MARK: - Private

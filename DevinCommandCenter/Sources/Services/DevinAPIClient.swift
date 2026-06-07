@@ -204,6 +204,13 @@ actor DevinAPIClient {
         )
     }
 
+    func archiveSession(devinId: String) async throws -> Session {
+        try await request(
+            method: "POST",
+            path: "/organizations/\(orgId)/sessions/\(devinId)/archive"
+        )
+    }
+
     // MARK: - Messages
 
     func listMessages(

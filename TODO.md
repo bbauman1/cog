@@ -71,12 +71,12 @@
 - [x] `CreateSessionView` — prompt field, playbook picker, tags
 - [x] Playbook list fetching and selection
 - [x] Session termination — swipe-to-terminate on list + button in detail with confirmation alert
-- [ ] Session archiving
+- [x] Session archiving
 - [x] `SettingsView` — account info, masked API key, org name, logout button
 - [x] Error handling: network errors, 401 → re-auth flow, 429 → retry-after display
 - [x] Empty states for all views (no sessions, no messages)
 - [x] Loading skeletons / shimmer placeholders
-- [ ] Sheet morphing (`.glassEffectID()`) for list → detail transitions
+- [x] Sheet morphing (`.navigationTransition(.zoom)`) for list → detail transitions
 
 ### Testing (Sprint 2)
 
@@ -94,17 +94,17 @@
 
 **Goal:** Know when Devin needs you even when the app is backgrounded.
 
-- [ ] Background App Refresh registration (`BGAppRefreshTask`)
-- [ ] Polling service that runs during background refresh
-- [ ] Local notification scheduling on session status transitions
-  - [ ] `waiting_for_user` → "Devin needs your input" notification
-  - [ ] `finished` → "Session complete" notification
-  - [ ] `error` → "Session failed" notification
-- [ ] Notification actions: "View Session", "Send Message" (quick reply)
-- [ ] Notification tap deep-links to specific session
-- [ ] WidgetKit: `ActiveSessions` widget (small: count, medium: top 3 sessions)
-- [ ] Timeline provider that fetches session data
-- [ ] Widget deep link → session detail
+- [x] Background App Refresh registration (`BGAppRefreshTask`)
+- [x] Polling service that runs during background refresh
+- [x] Local notification scheduling on session status transitions
+  - [x] `waiting_for_user` → "Devin needs your input" notification
+  - [x] `finished` → "Session complete" notification
+  - [x] `error` → "Session failed" notification
+- [x] Notification actions: "View Session", "Send Message" (quick reply)
+- [x] Notification tap deep-links to specific session
+- [x] WidgetKit: `ActiveSessions` widget (small: count, medium: top 3 sessions)
+- [x] Timeline provider that fetches session data
+- [x] Widget deep link → session detail
 - [ ] Widget configuration intent (filter by status)
 
 ### Testing (Sprint 3)
@@ -203,4 +203,4 @@
 
 ---
 
-*Last updated: Sprint 2 views complete (June 2026)*
+*Last updated: Sprint 3 notifications + widgets complete (June 2026)*

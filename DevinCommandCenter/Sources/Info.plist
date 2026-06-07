@@ -21,5 +21,24 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<true/>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.devincommand.app.sessionRefresh</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>devincommand</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>com.devincommand.app</string>
+		</dict>
+	</array>
 </dict>
 </plist>

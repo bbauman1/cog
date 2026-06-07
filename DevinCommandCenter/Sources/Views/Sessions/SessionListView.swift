@@ -2,21 +2,23 @@ import SwiftUI
 
 struct SessionListView: View {
     @Environment(AppState.self) private var appState
+    @Namespace private var sessionTransition
     @State private var viewModel = SessionListViewModel()
+    @State private var navigationPath = NavigationPath()
     @State private var searchText = ""
     @State private var showCreateSession = false
     @State private var terminateSessionId: String?
     @State private var showTerminateConfirmation = false
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             VStack(spacing: 0) {
                 filterBar
                 sessionList
             }
             .navigationTitle("Sessions")
             .navigationDestination(for: String.self) { sessionId in
-                SessionDetailView(sessionId: sessionId)
+                SessionDetailView(sessionId: sessionId, transitionNamespace: sessionTransition)
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -56,6 +58,11 @@ struct SessionListView: View {
         .onDisappear {
             viewModel.stopPolling()
         }
+        .onChange(of: DeepLinkManager.shared.pendingSessionId) {
+            if let sessionId = DeepLinkManager.shared.consumePendingSession() {
+                navigationPath.append(sessionId)
+            }
+        }
     }
 
     private var filterBar: some View {
@@ -89,6 +96,7 @@ struct SessionListView: View {
                         NavigationLink(value: session.sessionId) {
                             SessionRowView(session: session)
                         }
+                        .matchedTransitionSource(id: session.sessionId, in: sessionTransition)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             if isSessionActive(session) {
                                 Button(role: .destructive) {
@@ -97,6 +105,15 @@ struct SessionListView: View {
                                 } label: {
                                     Label("Terminate", systemImage: "xmark.octagon")
                                 }
+                            }
+
+                            if !session.isArchived {
+                                Button {
+                                    Task { await archiveSession(session.sessionId) }
+                                } label: {
+                                    Label("Archive", systemImage: "archivebox")
+                                }
+                                .tint(.indigo)
                             }
                         }
                     }
@@ -182,6 +199,16 @@ struct SessionListView: View {
             // Show error silently on next poll
         }
         terminateSessionId = nil
+    }
+
+    private func archiveSession(_ sessionId: String) async {
+        guard let client = appState.apiClient else { return }
+        do {
+            _ = try await client.archiveSession(devinId: sessionId)
+            await viewModel.refresh()
+        } catch {
+            // Show error silently on next poll
+        }
     }
 }
 
