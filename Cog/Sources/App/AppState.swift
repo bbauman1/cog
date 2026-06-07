@@ -22,7 +22,7 @@ final class AppState {
             return
         }
 
-        if authService.isDeviceAuthAvailable {
+        if authService.isBiometricAvailable {
             authState = .locked
         } else if let apiKey = keychain.read(.apiKey),
                   let orgId = keychain.read(.orgId) {

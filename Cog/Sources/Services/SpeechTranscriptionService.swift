@@ -69,8 +69,21 @@ final class SpeechTranscriptionService {
         let engine = AVAudioEngine()
         audioEngine = engine
 
+        let audioSession = AVAudioSession.sharedInstance()
+        guard let availableInputs = audioSession.availableInputs, !availableInputs.isEmpty else {
+            errorMessage = "No audio input available on this device"
+            cleanup()
+            return
+        }
+
         let inputNode = engine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
+
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            errorMessage = "Audio input format is not supported"
+            cleanup()
+            return
+        }
 
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
             continuation.yield(AnalyzerInput(buffer: buffer))

@@ -21,9 +21,10 @@ enum AuthError: Error, LocalizedError {
 final class AuthenticationService: Sendable {
     func authenticateWithBiometrics() async throws -> Bool {
         let context = LAContext()
+        context.localizedFallbackTitle = ""
         var error: NSError?
 
-        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
             if let error {
                 throw AuthError.biometricFailed(error)
             }
@@ -32,7 +33,7 @@ final class AuthenticationService: Sendable {
 
         do {
             let success = try await context.evaluatePolicy(
-                .deviceOwnerAuthentication,
+                .deviceOwnerAuthenticationWithBiometrics,
                 localizedReason: "Unlock Cog"
             )
             return success
