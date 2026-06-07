@@ -72,6 +72,8 @@ Types into the currently focused text field.
 
 **IMPORTANT:** `lim ios type` inserts text at the UIKit layer but does NOT trigger SwiftUI `@Binding` updates. After using `lim ios type`, you MUST follow up with `lim ios press-key space` (or another key) to force the binding to sync. Without this, buttons that depend on text field content (e.g. "Create" button checking `isFormValid`) will remain disabled even though the text is visible in the field.
 
+**EXCEPTION:** Do NOT use `press-key space` for fields where trailing whitespace matters (org ID, API key). Instead, tap elsewhere on the screen (e.g. `lim ios tap 201 300`) to dismiss the keyboard and trigger binding sync without adding unwanted characters.
+
 **WARNING:** `press-key space` adds a literal space character to the text. For fields where trailing whitespace matters (e.g., API keys, org IDs), prefer tapping a different field or tapping elsewhere on screen to defocus — this also triggers the binding update without adding unwanted characters. For the Create Session prompt field, `press-key space` is fine since trailing spaces don't affect functionality.
 
 ### Select All + Replace
@@ -150,8 +152,8 @@ Opens a URL in the simulator. Use this to test deep linking — the app should n
 - **Via menu:** Tap ellipsis (⋯) button in detail view → Terminate Session
 - Both show confirmation alert: "Terminate Session?" with Cancel/Terminate
 
-### Settings
-1. Tap Settings tab (bottom tab bar, ~243, 820)
+### Settings & Notification Preferences
+1. Tap Settings tab (bottom tab bar, ~243, 820) (~243, 820)
 2. Verify: masked API key (e.g. `cog_----477q`), org ID, auth type, version/build
 3. Verify "Notifications" section with "Session Alerts" toggle
 4. Tap "Log Out" → confirmation alert with Cancel/Log Out
@@ -160,6 +162,25 @@ Opens a URL in the simulator. Use this to test deep linking — the app should n
 1. Get a session ID (from element-tree or API: `curl -s -H "Authorization: Bearer ${DEVIN_API_KEY}" "https://api.devin.ai/v3/organizations/org-ef33adaca3a84b72839816853d18d23f/sessions?first=1"`)
 2. `lim ios open-url "devincommand://session/{sessionId}"`
 3. Verify app navigates to the session detail view for that specific session
+
+#### Testing Notification Toggle Persistence
+The notification toggle preference is persisted in shared UserDefaults. To verify persistence:
+1. Navigate to Settings tab
+2. Verify "Session Alerts" toggle is ON (green) — this is the default
+3. Tap the toggle to turn it OFF (~343, 463)
+4. Navigate away (tap Sessions tab ~157, 830)
+5. Wait 1-2 seconds
+6. Navigate back to Settings tab (~243, 820)
+7. **Key assertion:** Toggle should still be OFF. If it resets to ON, the persistence is broken.
+8. Toggle back ON to restore default state
+
+Note: The toggle checks both OS notification authorization AND the app-level preference. If OS permissions were denied ("Don't Allow" on first launch), the toggle will always show OFF regardless of app preference.
+
+### Deep Linking
+```bash
+lim ios open-url "devincommand://session/{session_id}"
+```
+Opens the session detail view for the given session ID. Get a real session ID from the session list first.
 
 ### Toolbar Buttons
 Toolbar buttons (Cancel, Create, ellipsis menu) may NOT appear in `lim ios element-tree`. Use coordinates from screenshots to tap them. Typical positions:
@@ -170,6 +191,12 @@ Toolbar buttons (Cancel, Create, ellipsis menu) may NOT appear in `lim ios eleme
 - "+" (create session): ~(365, 83)
 - Settings tab: ~(243, 820)
 - Sessions tab: ~(157, 830)
+
+## Tab Bar Coordinates
+- Sessions tab: ~(157, 830)
+- Settings tab: ~(243, 820)
+
+Note: Tab bar coordinates may shift slightly depending on device. Use `lim ios element-tree` to find exact positions if taps don't register.
 
 ## Cleanup
 
@@ -190,6 +217,8 @@ lim xcode delete <id> # Clean up
 - `lim ios type` does NOT sync SwiftUI bindings — always follow with `lim ios press-key` or tap elsewhere to force sync
 - Toolbar buttons are not always in the accessibility element tree — use coordinate-based taps
 - There is no `lim ios swipe` command — use `lim ios perform` with touchDown/touchMove/touchUp
+- Push notifications, widgets, and background refresh cannot be observed in the Limrun simulator — verify these at build level only
+- On fresh install, a notification permission dialog appears before the login screen — tap "Allow" to proceed
 - Tab bar labels ("Sessions", "Settings") may not be found by `tap-element --ax-label` — use coordinate-based taps instead
 - `press-key h` does NOT go to the home screen in Limrun — use `lim ios open-url` to test deep links from the foreground app state
 - Push notifications, widgets, and background refresh cannot be directly tested in the simulator
