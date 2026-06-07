@@ -107,19 +107,7 @@ final class SessionListViewModel {
         guard let apiClient else { return }
         do {
             let response = try await apiClient.listSessions(first: 20)
-            let tracker = SessionStatusTracker.shared
-            for session in response.items {
-                let oldStatus = tracker.lastKnownStatus(for: session.sessionId)
-                if oldStatus != session.statusDetail {
-                    await NotificationService.shared.notifyStatusChange(
-                        sessionId: session.sessionId,
-                        sessionTitle: session.title,
-                        oldStatus: oldStatus,
-                        newStatus: session.statusDetail
-                    )
-                }
-            }
-            tracker.updateFromSessions(response.items)
+            SessionStatusTracker.shared.updateFromSessions(response.items)
             sessions = response.items
             endCursor = response.endCursor
             hasNextPage = response.hasNextPage
