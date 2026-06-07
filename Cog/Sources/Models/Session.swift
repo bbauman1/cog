@@ -22,7 +22,7 @@ struct Repository: Codable, Identifiable, Sendable {
     var id: String { repositoryPath }
 
     enum CodingKeys: String, CodingKey {
-        case repositoryPath = "repository_path"
+        case repositoryPath = "repo_path"
         case gitConnectionHost = "git_connection_host"
         case gitConnectionId = "git_connection_id"
     }
