@@ -199,16 +199,9 @@ struct SessionDetailView: View {
 
 // MARK: - Markdown Rendering
 
-private enum MarkdownBlock: Identifiable {
+private enum MarkdownBlock {
     case text(String)
     case codeBlock(language: String?, code: String)
-
-    var id: String {
-        switch self {
-        case .text(let t): return "text-\(t.hashValue)"
-        case .codeBlock(_, let c): return "code-\(c.hashValue)"
-        }
-    }
 }
 
 private func parseMarkdownBlocks(_ markdown: String) -> [MarkdownBlock] {
@@ -266,7 +259,7 @@ struct MarkdownMessageView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(blocks) { block in
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
                 switch block {
                 case .text(let content):
                     inlineMarkdownText(content)
