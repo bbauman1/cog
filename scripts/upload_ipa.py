@@ -116,17 +116,23 @@ def upload_ipa(app_id, ipa_path):
     for _ in range(60):
         time.sleep(10)
         resp = requests.get(f"{BASE}/v1/buildUploads/{upload_id}", headers=api_headers())
-        state = resp.json()['data']['attributes'].get('processingState', 'unknown')
+        attrs = resp.json()['data']['attributes']
+        # ASC API returns state as nested object: attributes.state.state
+        state_obj = attrs.get('state', {})
+        if isinstance(state_obj, dict):
+            state = state_obj.get('state', 'unknown')
+            errors = state_obj.get('errors', [])
+        else:
+            state = attrs.get('processingState', 'unknown')
+            errors = attrs.get('processingErrors', [])
         print(f"   State: {state}")
-        if state in ('VALID', 'FAILED', 'INVALID'):
-            if state == 'VALID':
-                print(f"\nBuild uploaded successfully! Check TestFlight for app {app_id}")
-                return True
-            else:
-                errors = resp.json()['data']['attributes'].get('processingErrors', [])
-                for e in errors:
-                    print(f"   Error: {e}")
-                return False
+        if state in ('COMPLETE', 'VALID'):
+            print(f"\nBuild uploaded successfully! Check TestFlight for app {app_id}")
+            return True
+        elif state in ('FAILED', 'INVALID'):
+            for e in errors:
+                print(f"   Error: {e}")
+            return False
     print("Timed out waiting for processing")
     return False
 

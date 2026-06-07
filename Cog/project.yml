@@ -21,14 +21,12 @@ targets:
       - path: Sources
     resources:
       - path: Resources
-    dependencies:
-      - target: SessionsWidgetExtension
     settings:
       base:
         INFOPLIST_FILE: Sources/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.cogfordevin.ios
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "3"
+        CURRENT_PROJECT_VERSION: "5"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     info:
       path: Sources/Info.plist
@@ -48,26 +46,3 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
-
-  SessionsWidgetExtension:
-    type: app-extension
-    platform: iOS
-    sources:
-      - path: SessionsWidget
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.cogfordevin.ios.sessions-widget
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "3"
-        INFOPLIST_FILE: SessionsWidget/Info.plist
-        SKIP_INSTALL: YES
-        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-        ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME: WidgetBackground
-    info:
-      path: SessionsWidget/Info.plist
-      properties:
-        CFBundleDisplayName: "Sessions Widget"
-        CFBundleShortVersionString: "$(MARKETING_VERSION)"
-        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.widgetkit-extension

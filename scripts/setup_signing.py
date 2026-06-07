@@ -150,11 +150,10 @@ def find_or_create_cert():
         run(f"openssl genrsa -out '{key_pem_path}' 2048")
         os.chmod(key_pem_path, 0o600)
 
-    # Only revoke if at Apple's limit (~3 active distribution certs)
-    MAX_DIST_CERTS = 3
-    if len(valid_certs) >= MAX_DIST_CERTS:
+    # Revoke non-matching certs that block creation (Apple limits active certs)
+    if valid_certs:
         oldest = sorted(valid_certs, key=lambda c: c['attributes'].get('expirationDate', ''))[0]
-        print(f"  At cert limit ({MAX_DIST_CERTS}), revoking oldest cert {oldest['id']}...")
+        print(f"  Revoking non-matching cert {oldest['id']} to allow creation with our key...")
         api('DELETE', f"/v1/certificates/{oldest['id']}")
 
     csr_path = os.path.join(ASC_DIR, "dist.csr")
