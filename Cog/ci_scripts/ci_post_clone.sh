@@ -12,12 +12,7 @@ echo "Generating Xcode project..."
 cd "$CI_PRIMARY_REPOSITORY_PATH/Cog"
 xcodegen generate
 
-# Set build number from Xcode Cloud's auto-incrementing CI_BUILD_NUMBER.
-# This ensures each build has a unique, increasing build number without
-# manual bumps to CURRENT_PROJECT_VERSION in project.yml.
-if [ -n "$CI_BUILD_NUMBER" ]; then
-  echo "Setting build number to $CI_BUILD_NUMBER..."
-  agvtool new-version -all "$CI_BUILD_NUMBER"
-fi
+# Xcode Cloud automatically manages CFBundleVersion (build number)
+# during the archive step. No manual agvtool override needed.
 
 echo "=== ci_post_clone.sh complete ==="
