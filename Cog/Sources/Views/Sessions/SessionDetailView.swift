@@ -6,6 +6,7 @@ struct SessionDetailView: View {
     @State private var viewModel: SessionDetailViewModel
     @State private var showTerminateConfirmation = false
     @State private var showSessionInfo = false
+    @State private var speechService = SpeechTranscriptionService()
     var transitionNamespace: Namespace.ID?
 
     init(sessionId: String, transitionNamespace: Namespace.ID? = nil) {
@@ -86,6 +87,9 @@ struct SessionDetailView: View {
         }
         .onDisappear {
             viewModel.stopPolling()
+            if speechService.isTranscribing {
+                _ = speechService.stopTranscription()
+            }
         }
     }
 
@@ -168,32 +172,91 @@ struct SessionDetailView: View {
     // MARK: - Message Input
 
     private var messageInputBar: some View {
-        HStack(spacing: 8) {
-            TextField("Message Devin...", text: $viewModel.messageDraft, axis: .vertical)
-                .textFieldStyle(.plain)
-                .lineLimit(1...5)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-
-            Button {
-                Task { await viewModel.sendMessage() }
-            } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(canSend ? .blue : .gray)
+        VStack(spacing: 4) {
+            if speechService.isTranscribing {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(.red)
+                        .frame(width: 8, height: 8)
+                        .symbolEffect(.pulse)
+                    Text(speechService.transcribedText.isEmpty
+                         ? "Listening..."
+                         : speechService.transcribedText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.top, 4)
             }
-            .disabled(!canSend)
+
+            HStack(spacing: 8) {
+                TextField("Message Devin...", text: $viewModel.messageDraft, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...5)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+
+                if speechService.isAvailable {
+                    Button {
+                        Task { await toggleTranscription() }
+                    } label: {
+                        Image(systemName: speechService.isTranscribing ? "mic.fill" : "mic")
+                            .font(.title2)
+                            .foregroundStyle(speechService.isTranscribing ? .red : .blue)
+                            .symbolEffect(.pulse, isActive: speechService.isTranscribing)
+                    }
+                    .accessibilityLabel(speechService.isTranscribing ? "Stop dictation" : "Start dictation")
+                }
+
+                Button {
+                    Task { await sendMessageWithSpeech() }
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(canSend ? .blue : .gray)
+                }
+                .disabled(!canSend)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
         .background(.bar)
     }
 
     private var canSend: Bool {
-        viewModel.canSendMessage &&
-        !viewModel.messageDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        viewModel.canSendMessage && (
+            !viewModel.messageDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            (speechService.isTranscribing && !speechService.transcribedText.isEmpty)
+        )
+    }
+
+    private func toggleTranscription() async {
+        if speechService.isTranscribing {
+            let text = speechService.stopTranscription()
+            if !text.isEmpty {
+                if viewModel.messageDraft.isEmpty {
+                    viewModel.messageDraft = text
+                } else {
+                    viewModel.messageDraft += " " + text
+                }
+            }
+        } else {
+            await speechService.startTranscription()
+        }
+    }
+
+    private func sendMessageWithSpeech() async {
+        if speechService.isTranscribing {
+            let text = speechService.stopTranscription()
+            if !text.isEmpty {
+                viewModel.messageDraft += (viewModel.messageDraft.isEmpty ? "" : " ") + text
+            }
+        }
+        await viewModel.sendMessage()
     }
 }
 
