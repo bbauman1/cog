@@ -8,10 +8,6 @@ actor NotificationService {
     private nonisolated(unsafe) static let preferenceSuite = UserDefaults(suiteName: WidgetDataStore.suiteName)
     private static let alertsEnabledKey = "notifications_alerts_enabled"
 
-    /// Tracks when each session+category was last notified to avoid duplicates.
-    private var lastNotifiedAt: [String: Date] = [:]
-    private let cooldownInterval: TimeInterval = 30 * 60 // 30 minutes
-
     var alertsEnabled: Bool {
         get { Self.preferenceSuite?.object(forKey: Self.alertsEnabledKey) as? Bool ?? true }
     }
@@ -43,14 +39,6 @@ actor NotificationService {
         body: String,
         category: SessionNotificationCategory
     ) async {
-        let key = "\(category.rawValue)-\(sessionId)"
-
-        // Cooldown: skip if we already notified for this session+category recently.
-        if let last = lastNotifiedAt[key],
-           Date().timeIntervalSince(last) < cooldownInterval {
-            return
-        }
-
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -62,14 +50,13 @@ actor NotificationService {
         ]
 
         let request = UNNotificationRequest(
-            identifier: key,
+            identifier: "\(category.rawValue)-\(sessionId)",
             content: content,
             trigger: nil // Deliver immediately
         )
 
         do {
             try await center.add(request)
-            lastNotifiedAt[key] = Date()
         } catch {
             // Notification delivery failed silently
         }
