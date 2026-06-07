@@ -1,6 +1,6 @@
 ---
 name: testing-ios-app
-description: Test the Devin Command Center iOS app end-to-end using Limrun simulator. Use when verifying UI changes, auth flows, or session list behavior.
+description: Test the Cog iOS app end-to-end using Limrun simulator. Use when verifying UI changes, auth flows, or session list behavior.
 ---
 
 # Testing the iOS App via Limrun
@@ -13,8 +13,8 @@ description: Test the Devin Command Center iOS app end-to-end using Limrun simul
 ## Build & Launch
 
 ```bash
-cd /home/ubuntu/repos/research/DevinCommandCenter
-lim xcode build . --scheme DevinCommandCenter --configuration Debug --ios
+cd /home/ubuntu/repos/research/Cog
+lim xcode build . --scheme Cog --configuration Debug --ios
 ```
 
 The `--ios` flag creates a simulator-backed instance, builds, and installs the app automatically.
@@ -30,7 +30,7 @@ The `--ios` flag creates a simulator-backed instance, builds, and installs the a
 If the standard `--ios` build installs but crashes on launch, the widget extension's Info.plist may be malformed. Use `--upload` to get an artifact URL and install via `install-app` for better error messages:
 
 ```bash
-lim xcode build . --scheme DevinCommandCenter --configuration Debug --ios --upload DevinCommandCenter.app
+lim xcode build . --scheme Cog --configuration Debug --ios --upload Cog.app
 # Copy the "Artifact download URL" from the output
 lim ios install-app "<artifact-url>" --launch-mode RelaunchIfRunning
 ```
@@ -114,7 +114,7 @@ lim ios scroll down --amount 500  # Custom scroll amount in pixels
 
 ### Open URLs (for deep linking)
 ```bash
-lim ios open-url "devincommand://session/{sessionId}"
+lim ios open-url "cog://session/{sessionId}"
 ```
 Opens a URL in the simulator. Use this to test deep linking — the app should navigate to the specified session detail view.
 
@@ -160,7 +160,7 @@ Opens a URL in the simulator. Use this to test deep linking — the app should n
 
 ### Deep Linking
 1. Get a session ID (from element-tree or API: `curl -s -H "Authorization: Bearer ${DEVIN_API_KEY}" "https://api.devin.ai/v3/organizations/org-ef33adaca3a84b72839816853d18d23f/sessions?first=1"`)
-2. `lim ios open-url "devincommand://session/{sessionId}"`
+2. `lim ios open-url "cog://session/{sessionId}"`
 3. Verify app navigates to the session detail view for that specific session
 
 #### Testing Notification Toggle Persistence
@@ -178,7 +178,7 @@ Note: The toggle checks both OS notification authorization AND the app-level pre
 
 ### Deep Linking
 ```bash
-lim ios open-url "devincommand://session/{session_id}"
+lim ios open-url "cog://session/{session_id}"
 ```
 Opens the session detail view for the given session ID. Get a real session ID from the session list first.
 
@@ -207,6 +207,123 @@ lim ios delete <id>   # Clean up
 lim xcode list        # See Xcode targets  
 lim xcode delete <id> # Clean up
 ```
+
+## TestFlight Build & Upload
+
+### Devin Secrets Needed (Org-Level)
+
+- `APPLE_TEAM_ID` — Apple Developer team ID (Y9ZLF8R6XZ)
+- `ASC_KEY_ID` — App Store Connect API Key ID
+- `ASC_ISSUER_ID` — App Store Connect Issuer ID
+- `ASC_PRIVATE_KEY` — App Store Connect API private key (.p8 contents)
+
+### App Store Connect IDs
+
+- **App ID:** 6777732746
+- **Bundle ID (main):** com.cogfordevin.ios (ASC resource: 73WHP4Q899)
+- **Bundle ID (widget):** com.cogfordevin.ios.sessions-widget (ASC resource: 5QPDTYJW94)
+- **Distribution Certificate ID:** 4B6DM29V7J (expires 2027-06-07)
+- **App Store Profile (main):** V4X6328GWB — "Cog Distribution"
+- **App Store Profile (widget):** 8B68MPWHVY — "Cog Widget Distribution"
+
+### Build Pipeline (3 steps)
+
+**Step 1: Build with Limrun**
+```bash
+cd /home/ubuntu/repos/research/Cog
+lim xcode build . \
+  --scheme Cog \
+  --configuration Release \
+  --sdk iphoneos \
+  --certificate-p12 /home/ubuntu/.asc/apple_dist_chain.p12 \
+  --certificate-password devin \
+  --provisioning-profile "/home/ubuntu/.asc/Cog Distribution.mobileprovision" \
+  --additional-file "/home/ubuntu/.asc/Cog_Widget_Distribution.mobileprovision=Library/MobileDevice/Provisioning Profiles/Cog_Widget_Distribution.mobileprovision" \
+  --upload Cog.ipa
+```
+
+**Step 2: Re-sign with rcodesign (adds Apple timestamps + fixes widget entitlements)**
+
+Limrun's signing omits Apple timestamp counter-signatures, which App Store Connect requires (error 90034). Also, Limrun applies the main app's entitlements to the widget extension (wrong `application-identifier`). Fix both by re-signing on Linux with `rcodesign`:
+
+```bash
+RCODESIGN=/tmp/apple-codesign-0.29.0-x86_64-unknown-linux-musl/rcodesign
+
+# Download rcodesign if not present
+if [ ! -f "$RCODESIGN" ]; then
+  curl -sL "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.29.0/apple-codesign-0.29.0-x86_64-unknown-linux-musl.tar.gz" -o /tmp/rcodesign.tar.gz
+  tar xzf /tmp/rcodesign.tar.gz -C /tmp/
+  chmod +x $RCODESIGN
+fi
+
+# Download IPA from Limrun artifact URL
+curl -L -o /home/ubuntu/.asc/Cog.ipa "<artifact-url>"
+
+# Extract IPA
+rm -rf /tmp/ipa_inspect && mkdir -p /tmp/ipa_inspect && cd /tmp/ipa_inspect
+unzip -q /home/ubuntu/.asc/Cog.ipa
+
+# Embed widget provisioning profile (Limrun only embeds main app profile)
+cp "/home/ubuntu/.asc/Cog_Widget_Distribution.mobileprovision" \
+   Payload/Cog.app/PlugIns/SessionsWidgetExtension.appex/embedded.mobileprovision
+
+# Re-sign widget with CORRECT entitlements (application-identifier must be .sessions-widget)
+$RCODESIGN sign \
+  --pem-file /home/ubuntu/.asc/apple_dist_cert.pem \
+  --pem-file /home/ubuntu/.asc/dist_key.pem \
+  --pem-file /home/ubuntu/.asc/AppleWWDRCAG3.pem \
+  --timestamp-url http://timestamp.apple.com/ts01 \
+  --entitlements-xml-file /tmp/widget_entitlements.plist \
+  Payload/Cog.app/PlugIns/SessionsWidgetExtension.appex
+
+# Re-sign main app (seals updated widget contents)
+$RCODESIGN sign \
+  --pem-file /home/ubuntu/.asc/apple_dist_cert.pem \
+  --pem-file /home/ubuntu/.asc/dist_key.pem \
+  --pem-file /home/ubuntu/.asc/AppleWWDRCAG3.pem \
+  --timestamp-url http://timestamp.apple.com/ts01 \
+  Payload/Cog.app
+
+# Repackage IPA
+zip -qr /home/ubuntu/.asc/Cog_final.ipa Payload/
+```
+
+The widget entitlements plist (`/tmp/widget_entitlements.plist`) must have `application-identifier` set to `Y9ZLF8R6XZ.com.cogfordevin.ios.sessions-widget` (not the main app's bundle ID).
+
+**Step 3: Upload to TestFlight via ASC API**
+
+Use `/home/ubuntu/.asc/upload_ipa.py` (or direct API calls):
+```bash
+python3 /home/ubuntu/.asc/upload_ipa.py 6777732746 /home/ubuntu/.asc/Cog_final.ipa
+```
+
+The upload script:
+1. Creates a `buildUpload` with version/build number from IPA's Info.plist
+2. Creates a `buildUploadFile` entry
+3. Uploads IPA bytes to presigned URL
+4. Confirms upload
+5. Polls processing state
+
+Poll status with:
+```bash
+python3 /home/ubuntu/.asc/asc_helper.py get-jwt | xargs -I{} \
+  curl -s "https://api.appstoreconnect.apple.com/v1/buildUploads/<upload-id>" \
+  -H "Authorization: Bearer {}"
+```
+
+### Important Notes
+
+- **Build number must be unique** per version — Apple rejects duplicate build numbers. Increment `CURRENT_PROJECT_VERSION` in `project.yml` and `Cog.xcodeproj/project.pbxproj` before each upload.
+- **`asc` CLI (rork/asc) hangs** in Devin's environment due to terminal/PTY issues — use direct ASC API calls via Python JWT + requests instead.
+- **Signing files location:** All certs, profiles, and keys are stored in `/home/ubuntu/.asc/`:
+  - `AuthKey_PVAVMY3WV9.p8` — ASC API private key
+  - `apple_dist_cert.pem` — Distribution certificate (PEM)
+  - `dist_key.pem` — Distribution private key (PEM)
+  - `apple_dist_chain.p12` — P12 with full cert chain (password: devin)
+  - `AppleWWDRCAG3.pem` — Apple WWDR intermediate cert
+  - `Cog Distribution.mobileprovision` — Main app profile
+  - `Cog_Widget_Distribution.mobileprovision` — Widget profile
+- **ITSAppUsesNonExemptEncryption** is set to NO in Info.plist to skip the encryption compliance dialog on each TestFlight upload.
 
 ## Known Limitations
 

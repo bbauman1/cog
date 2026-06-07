@@ -3,13 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>Devin Command Center</string>
+	<string>Cog</string>
 	<key>CFBundleDisplayName</key>
-	<string>Devin Command Center</string>
+	<string>Cog</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>
@@ -27,17 +31,17 @@
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.devincommand.app.sessionRefresh</string>
+		<string>com.cogfordevin.ios.sessionRefresh</string>
 	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>devincommand</string>
+				<string>cog</string>
 			</array>
 			<key>CFBundleURLName</key>
-			<string>com.devincommand.app</string>
+			<string>com.cogfordevin.ios</string>
 		</dict>
 	</array>
 </dict>

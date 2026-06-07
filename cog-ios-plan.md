@@ -1,4 +1,4 @@
-# Devin Command Center — Native SwiftUI iOS App
+# Cog — Native SwiftUI iOS App
 
 ## Product Plan & Technical Architecture
 
@@ -6,7 +6,7 @@
 
 ## 1. Executive Summary
 
-**Devin Command Center** is a native SwiftUI iPhone app that gives developers on-the-go control over their Devin AI sessions. Think of it as mission control for your AI engineer — monitor active sessions, spin up new work, chat with Devin, manage your knowledge base and playbooks, and get notified the instant Devin needs you or finishes a task.
+**Cog** is a native SwiftUI iPhone app that gives developers on-the-go control over their Devin AI sessions. Think of it as mission control for your AI engineer — monitor active sessions, spin up new work, chat with Devin, manage your knowledge base and playbooks, and get notified the instant Devin needs you or finishes a task.
 
 The app is built on the [Devin API v3](https://docs.devin.ai/api-reference/overview), targets **iOS 26+** exclusively, and is designed to exploit the latest native iOS capabilities (Liquid Glass design language, Live Activities, Widgets, Foundation Models, SF Symbols, on-device speech-to-text, Siri, Shortcuts, biometrics) to deliver an experience that is impossible to replicate in a mobile browser.
 
@@ -92,7 +92,7 @@ This is the only viable approach today and is the standard pattern for third-par
 - App is protected behind Face ID / Touch ID on every cold launch.
 
 The onboarding UX matters a lot here — we need to make the key-entry flow as frictionless as possible:
-- Deep link / universal link support: user could tap a link from their browser that passes the key to the app (e.g., `devincommand://auth?token=cog_...&org=org-...`). This lets them copy the key on their Mac/desktop and send it to their phone via iMessage/AirDrop/universal clipboard.
+- Deep link / universal link support: user could tap a link from their browser that passes the key to the app (e.g., `cog://auth?token=cog_...&org=org-...`). This lets them copy the key on their Mac/desktop and send it to their phone via iMessage/AirDrop/universal clipboard.
 - Clipboard detection: offer to paste from clipboard if it contains a `cog_` prefix string.
 - Clear inline instructions with a "Open Devin Settings" button that links to `https://app.devin.ai`.
 
@@ -139,11 +139,11 @@ The app's onboarding flow should ask "What do you want to do?" and recommend the
 
 ## 4. Long-Term Vision
 
-The fully realized Devin Command Center is a **real-time, AI-native mobile command center** that makes Devin feel like a teammate in your pocket:
+The fully realized Cog is a **real-time, AI-native mobile command center** that makes Devin feel like a teammate in your pocket:
 
 ```
 ┌─────────────────────────────────────────────────┐
-│             DEVIN COMMAND CENTER                 │
+│             COG                 │
 │                                                  │
 │  ┌───────────┐  ┌──────────┐  ┌──────────────┐  │
 │  │ Sessions  │  │ Create   │  │  Knowledge   │  │
@@ -198,9 +198,9 @@ The MVP answers the #1 user need: **"What is Devin doing right now, and can I ta
 **Architecture for MVP:**
 
 ```
-DevinCommandCenter/
+Cog/
 ├── App/
-│   ├── DevinCommandCenterApp.swift     // @main entry point
+│   ├── CogApp.swift     // @main entry point
 │   └── AppState.swift                  // Global auth state (ObservableObject)
 ├── Services/
 │   ├── DevinAPIClient.swift            // URLSession-based API client
@@ -505,7 +505,7 @@ Ordered by expected user impact. Each item is a candidate for a 1-2 week sprint.
 
 18. **Haptic feedback language** — Distinct haptic patterns for different events: success (triple tap), error (buzz), waiting (gentle pulse).
 
-19. **Cross-device credential transfer** — Use Apple's universal clipboard or a custom URL scheme (`devincommand://auth?token=...&org=...`) so users can copy credentials on desktop and open them on phone with one tap.
+19. **Cross-device credential transfer** — Use Apple's universal clipboard or a custom URL scheme (`cog://auth?token=...&org=...`) so users can copy credentials on desktop and open them on phone with one tap.
 
 20. **App Clip** — Lightweight clip accessible via shared link. View a specific session's status without installing the full app.
 
@@ -635,9 +635,9 @@ We use [XcodeGen](https://github.com/yonaskolb/XcodeGen) to define the project i
 
 ```yaml
 # project.yml — the single source of truth for our Xcode project
-name: DevinCommandCenter
+name: Cog
 options:
-  bundleIdPrefix: com.devincommand
+  bundleIdPrefix: com.cogfordevin
   deploymentTarget:
     iOS: "26.0"
   xcodeVersion: "26.0"
@@ -648,7 +648,7 @@ settings:
     SWIFT_STRICT_CONCURRENCY: complete
 
 targets:
-  DevinCommandCenter:
+  Cog:
     type: application
     platform: iOS
     sources: [Sources]
@@ -656,45 +656,45 @@ targets:
     settings:
       base:
         INFOPLIST_FILE: Sources/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.devincommand.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.cogfordevin.ios
     dependencies: []
 
-  DevinCommandCenterTests:
+  CogTests:
     type: bundle.unit-test
     platform: iOS
     sources: [Tests]
     dependencies:
-      - target: DevinCommandCenter
+      - target: Cog
 
-  DevinCommandCenterUITests:
+  CogUITests:
     type: bundle.ui-testing
     platform: iOS
     sources: [UITests]
     dependencies:
-      - target: DevinCommandCenter
+      - target: Cog
 
 schemes:
-  DevinCommandCenter:
+  Cog:
     build:
       targets:
-        DevinCommandCenter: all
+        Cog: all
     run:
       config: Debug
     test:
       targets:
-        - DevinCommandCenterTests
-        - DevinCommandCenterUITests
+        - CogTests
+        - CogUITests
 ```
 
 ### File Layout
 
 ```
-DevinCommandCenter/
+Cog/
 ├── project.yml                    # XcodeGen spec (committed)
 ├── .gitignore                     # *.xcodeproj, DerivedData/, etc.
 ├── Sources/
 │   ├── App/
-│   │   └── DevinCommandCenterApp.swift
+│   │   └── CogApp.swift
 │   ├── Views/
 │   ├── ViewModels/
 │   ├── Services/
@@ -725,7 +725,7 @@ vim Sources/Views/SessionListView.swift
 xcodegen generate
 
 # 3. Build remotely via Limrun
-lim xcode build . --scheme DevinCommandCenter
+lim xcode build . --scheme Cog
 
 # 4. Test in cloud simulator
 lim ios element-tree              # read UI state
@@ -733,7 +733,7 @@ lim ios screenshot ./proof.png    # capture for PR
 lim ios tap-element --ax-label "Sessions"  # interact
 
 # 5. Run unit tests
-lim xcode build . --scheme DevinCommandCenterTests
+lim xcode build . --scheme CogTests
 ```
 
 ### Xcode Build MCP (Optional Enhancement)
@@ -988,7 +988,7 @@ Since the app's core purpose is managing Devin sessions, and we're building with
 **Deliverable:** A minimal SwiftUI app that builds via Limrun, runs in a cloud simulator, and produces a screenshot — proving the full Devin → Xcode → Simulator pipeline works.
 
 - [ ] Create Xcode project structure (Swift Package Manager or `project.yml` for XcodeGen)
-- [ ] Single `ContentView.swift` with "Hello, Devin Command Center" text
+- [ ] Single `ContentView.swift` with "Hello, Cog" text
 - [ ] Set up Limrun: `npm install -g lim`, configure `LIM_API_KEY`
 - [ ] Run `lim ios create --xcode --reuse-if-exists`
 - [ ] Run `lim xcode build .` — verify build succeeds

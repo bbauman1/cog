@@ -4,7 +4,7 @@ import Foundation
 final class SessionStatusTracker {
     static let shared = SessionStatusTracker()
 
-    private let defaults = UserDefaults(suiteName: "group.com.devincommand.app") ?? .standard
+    private let defaults = UserDefaults(suiteName: "group.com.cogfordevin.ios") ?? .standard
     private let statusKey = "tracked_session_statuses"
 
     private var statusCache: [String: String] = [:]

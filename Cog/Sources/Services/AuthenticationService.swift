@@ -33,7 +33,7 @@ final class AuthenticationService: Sendable {
         do {
             let success = try await context.evaluatePolicy(
                 .deviceOwnerAuthenticationWithBiometrics,
-                localizedReason: "Unlock Devin Command Center"
+                localizedReason: "Unlock Cog"
             )
             return success
         } catch let error as LAError {

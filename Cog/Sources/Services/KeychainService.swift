@@ -22,7 +22,7 @@ enum KeychainError: Error, LocalizedError {
 }
 
 struct KeychainService: Sendable {
-    private static let serviceName = "com.devincommand.app"
+    private static let serviceName = "com.cogfordevin.ios"
 
     enum Key: String, Sendable {
         case apiKey = "devin_api_key"

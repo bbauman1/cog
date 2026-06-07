@@ -159,7 +159,7 @@ struct SessionsWidgetView: View {
                 Spacer()
             } else {
                 ForEach(Array(entry.sessions.prefix(3).enumerated()), id: \.offset) { _, session in
-                    Link(destination: URL(string: "devincommand://session/\(session.sessionId)")!) {
+                    Link(destination: URL(string: "cog://session/\(session.sessionId)")!) {
                         sessionRow(session)
                     }
                 }
