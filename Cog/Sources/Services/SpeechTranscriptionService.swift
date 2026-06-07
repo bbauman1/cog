@@ -28,6 +28,19 @@ final class SpeechTranscriptionService {
             return
         }
 
+        // Request microphone permission before accessing audio hardware
+        let permissionGranted: Bool
+        if AVAudioApplication.shared.recordPermission == .undetermined {
+            permissionGranted = await AVAudioApplication.requestRecordPermission()
+        } else {
+            permissionGranted = AVAudioApplication.shared.recordPermission == .granted
+        }
+
+        guard permissionGranted else {
+            errorMessage = "Microphone access is required. Enable it in Settings > Privacy > Microphone."
+            return
+        }
+
         guard let locale = await SpeechTranscriber.supportedLocale(
             equivalentTo: Locale.current
         ) else {
