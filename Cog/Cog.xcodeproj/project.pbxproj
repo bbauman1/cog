@@ -11,7 +11,6 @@
 		B1000002 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000002 /* AppState.swift */; };
 		B1000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000003 /* ContentView.swift */; };
 		B1000004 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000004 /* LoginView.swift */; };
-		B1000005 /* BiometricUnlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000005 /* BiometricUnlockView.swift */; };
 		B1000006 /* SessionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000006 /* SessionListView.swift */; };
 		B1000007 /* SessionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000007 /* SessionRowView.swift */; };
 		B1000008 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000008 /* SettingsView.swift */; };
@@ -24,7 +23,6 @@
 		B1000015 /* SelfResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000015 /* SelfResponse.swift */; };
 		B1000016 /* DevinAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000016 /* DevinAPIClient.swift */; };
 		B1000017 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000017 /* KeychainService.swift */; };
-		B1000018 /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000018 /* AuthenticationService.swift */; };
 		B1000019 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F1000019 /* Assets.xcassets */; };
 		B1000020 /* Color+Devin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000021 /* Color+Devin.swift */; };
 		B1000021 /* Date+Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000022 /* Date+Formatting.swift */; };
@@ -50,7 +48,6 @@
 		F1000002 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		F1000003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		F1000004 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		F1000005 /* BiometricUnlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricUnlockView.swift; sourceTree = "<group>"; };
 		F1000006 /* SessionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListView.swift; sourceTree = "<group>"; };
 		F1000007 /* SessionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRowView.swift; sourceTree = "<group>"; };
 		F1000008 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -63,7 +60,6 @@
 		F1000015 /* SelfResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfResponse.swift; sourceTree = "<group>"; };
 		F1000016 /* DevinAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevinAPIClient.swift; sourceTree = "<group>"; };
 		F1000017 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
-		F1000018 /* AuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationService.swift; sourceTree = "<group>"; };
 		F1000019 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F1000020 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F1000021 /* Color+Devin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Devin.swift"; sourceTree = "<group>"; };
@@ -190,7 +186,6 @@
 			children = (
 				F1000016 /* DevinAPIClient.swift */,
 				F1000017 /* KeychainService.swift */,
-				F1000018 /* AuthenticationService.swift */,
 				F1000028 /* NotificationService.swift */,
 				F1000029 /* BackgroundRefreshManager.swift */,
 				F1000030 /* SessionStatusTracker.swift */,
@@ -215,7 +210,6 @@
 			isa = PBXGroup;
 			children = (
 				F1000004 /* LoginView.swift */,
-				F1000005 /* BiometricUnlockView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -373,7 +367,6 @@
 				B1000002 /* AppState.swift in Sources */,
 				B1000003 /* ContentView.swift in Sources */,
 				B1000004 /* LoginView.swift in Sources */,
-				B1000005 /* BiometricUnlockView.swift in Sources */,
 				B1000006 /* SessionListView.swift in Sources */,
 				B1000007 /* SessionRowView.swift in Sources */,
 				B1000008 /* SettingsView.swift in Sources */,
@@ -386,7 +379,6 @@
 				B1000015 /* SelfResponse.swift in Sources */,
 				B1000016 /* DevinAPIClient.swift in Sources */,
 				B1000017 /* KeychainService.swift in Sources */,
-				B1000018 /* AuthenticationService.swift in Sources */,
 				B1000020 /* Color+Devin.swift in Sources */,
 				B1000021 /* Date+Formatting.swift in Sources */,
 				B1000022 /* SessionDetailView.swift in Sources */,

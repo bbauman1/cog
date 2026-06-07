@@ -11,8 +11,6 @@ struct RootView: View {
                     .task { appState.checkStoredCredentials() }
             case .unauthenticated:
                 LoginView()
-            case .locked:
-                BiometricUnlockView()
             case .authenticated:
                 MainTabView()
             }

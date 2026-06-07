@@ -6,7 +6,6 @@ final class AppState {
     enum AuthState: Sendable {
         case unknown
         case unauthenticated
-        case locked
         case authenticated
     }
 
@@ -14,7 +13,6 @@ final class AppState {
     var apiClient: DevinAPIClient?
 
     private let keychain = KeychainService()
-    private let authService = AuthenticationService()
 
     func checkStoredCredentials() {
         guard keychain.hasStoredCredentials else {
@@ -22,9 +20,7 @@ final class AppState {
             return
         }
 
-        if authService.isDeviceAuthAvailable {
-            authState = .locked
-        } else if let apiKey = keychain.read(.apiKey),
+        if let apiKey = keychain.read(.apiKey),
                   let orgId = keychain.read(.orgId) {
             apiClient = DevinAPIClient(apiKey: apiKey, orgId: orgId)
             authState = .authenticated
@@ -41,20 +37,6 @@ final class AppState {
         try keychain.save(orgId, for: .orgId)
 
         apiClient = client
-        authState = .authenticated
-    }
-
-    func unlockWithBiometrics() async throws {
-        let success = try await authService.authenticateWithBiometrics()
-        guard success else { return }
-
-        guard let apiKey = keychain.read(.apiKey),
-              let orgId = keychain.read(.orgId) else {
-            authState = .unauthenticated
-            return
-        }
-
-        apiClient = DevinAPIClient(apiKey: apiKey, orgId: orgId)
         authState = .authenticated
     }
 
