@@ -38,6 +38,18 @@ enum APIError: Error, LocalizedError, Sendable {
     }
 }
 
+struct AttachmentUploadResponse: Codable, Sendable {
+    let attachmentId: String
+    let name: String
+    let url: String
+
+    enum CodingKeys: String, CodingKey {
+        case attachmentId = "attachment_id"
+        case name
+        case url
+    }
+}
+
 actor DevinAPIClient {
     private let baseURL = "https://api.devin.ai/v3"
     private let session: URLSession
@@ -62,13 +74,40 @@ actor DevinAPIClient {
 
     // MARK: - Generic Request
 
+    private func validateResponse(_ response: URLResponse, data: Data) throws -> HTTPURLResponse {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.unknown(statusCode: 0, data: nil)
+        }
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            return httpResponse
+        case 401:
+            throw APIError.unauthorized
+        case 403:
+            throw APIError.forbidden
+        case 404:
+            throw APIError.notFound
+        case 429:
+            let retryAfter = httpResponse.value(forHTTPHeaderField: "Retry-After")
+                .flatMap(Int.init)
+            throw APIError.rateLimited(retryAfter: retryAfter)
+        case 500...599:
+            throw APIError.serverError(statusCode: httpResponse.statusCode)
+        default:
+            throw APIError.unknown(statusCode: httpResponse.statusCode, data: data)
+        }
+    }
+
     private func performRequest(
         method: String = "GET",
         path: String,
         queryItems: [URLQueryItem]? = nil,
-        body: (any Encodable)? = nil
+        body: (any Encodable)? = nil,
+        apiVersion: String? = nil
     ) async throws -> (Data, HTTPURLResponse) {
-        var components = URLComponents(string: baseURL + path)
+        let base = apiVersion.map { "https://api.devin.ai/\($0)" } ?? baseURL
+        var components = URLComponents(string: base + path)
         components?.queryItems = queryItems?.isEmpty == false ? queryItems : nil
 
         guard let url = components?.url else {
@@ -92,37 +131,21 @@ actor DevinAPIClient {
             throw APIError.networkError(error)
         }
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.unknown(statusCode: 0, data: nil)
-        }
-
-        switch httpResponse.statusCode {
-        case 200...299:
-            return (data, httpResponse)
-        case 401:
-            throw APIError.unauthorized
-        case 403:
-            throw APIError.forbidden
-        case 404:
-            throw APIError.notFound
-        case 429:
-            let retryAfter = httpResponse.value(forHTTPHeaderField: "Retry-After")
-                .flatMap(Int.init)
-            throw APIError.rateLimited(retryAfter: retryAfter)
-        case 500...599:
-            throw APIError.serverError(statusCode: httpResponse.statusCode)
-        default:
-            throw APIError.unknown(statusCode: httpResponse.statusCode, data: data)
-        }
+        let httpResponse = try validateResponse(response, data: data)
+        return (data, httpResponse)
     }
 
     private func request<T: Decodable & Sendable>(
         method: String = "GET",
         path: String,
         queryItems: [URLQueryItem]? = nil,
-        body: (any Encodable)? = nil
+        body: (any Encodable)? = nil,
+        apiVersion: String? = nil
     ) async throws -> T {
-        let (data, _) = try await performRequest(method: method, path: path, queryItems: queryItems, body: body)
+        let (data, _) = try await performRequest(
+            method: method, path: path, queryItems: queryItems,
+            body: body, apiVersion: apiVersion
+        )
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
@@ -134,9 +157,13 @@ actor DevinAPIClient {
         method: String = "GET",
         path: String,
         queryItems: [URLQueryItem]? = nil,
-        body: (any Encodable)? = nil
+        body: (any Encodable)? = nil,
+        apiVersion: String? = nil
     ) async throws {
-        _ = try await performRequest(method: method, path: path, queryItems: queryItems, body: body)
+        _ = try await performRequest(
+            method: method, path: path, queryItems: queryItems,
+            body: body, apiVersion: apiVersion
+        )
     }
 
     // MARK: - Auth
@@ -178,22 +205,54 @@ actor DevinAPIClient {
         try await request(path: "/organizations/\(orgId)/sessions/\(devinId)")
     }
 
-    func createSession(prompt: String, playBookId: String? = nil, tags: [String]? = nil) async throws -> Session {
+    func createSession(
+        prompt: String,
+        playbookId: String? = nil,
+        tags: [String]? = nil,
+        repos: [String]? = nil,
+        devinMode: DevinMode? = nil,
+        platform: String? = nil,
+        attachmentURLs: [String]? = nil,
+        title: String? = nil,
+        maxAcuLimit: Int? = nil
+    ) async throws -> Session {
         struct CreateSessionBody: Encodable {
             let prompt: String
             let playbookId: String?
             let tags: [String]?
+            let repos: [String]?
+            let devinMode: String?
+            let platform: String?
+            let attachmentUrls: [String]?
+            let title: String?
+            let maxAcuLimit: Int?
 
             enum CodingKeys: String, CodingKey {
                 case prompt
                 case playbookId = "playbook_id"
                 case tags
+                case repos
+                case devinMode = "devin_mode"
+                case platform
+                case attachmentUrls = "attachment_urls"
+                case title
+                case maxAcuLimit = "max_acu_limit"
             }
         }
         return try await request(
             method: "POST",
             path: "/organizations/\(orgId)/sessions",
-            body: CreateSessionBody(prompt: prompt, playbookId: playBookId, tags: tags)
+            body: CreateSessionBody(
+                prompt: prompt,
+                playbookId: playbookId,
+                tags: tags,
+                repos: repos,
+                devinMode: devinMode?.rawValue,
+                platform: platform,
+                attachmentUrls: attachmentURLs,
+                title: title,
+                maxAcuLimit: maxAcuLimit
+            )
         )
     }
 
@@ -260,5 +319,68 @@ actor DevinAPIClient {
             path: "/organizations/\(orgId)/knowledge/notes",
             queryItems: queryItems
         )
+    }
+
+    // MARK: - Repositories
+
+    func listRepositories(
+        first: Int = 100,
+        filterName: String? = nil
+    ) async throws -> PaginatedResponse<Repository> {
+        var queryItems = [
+            URLQueryItem(name: "first", value: "\(first)"),
+            URLQueryItem(name: "load_indexing_status", value: "false")
+        ]
+        if let filterName, !filterName.isEmpty {
+            queryItems.append(URLQueryItem(name: "filter_name", value: filterName))
+        }
+
+        return try await request(
+            path: "/organizations/\(orgId)/repositories",
+            queryItems: queryItems,
+            apiVersion: "v3beta1"
+        )
+    }
+
+    // MARK: - Attachments
+
+    func uploadAttachment(
+        fileData: Data,
+        fileName: String,
+        mimeType: String
+    ) async throws -> AttachmentUploadResponse {
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var body = Data()
+        body.append(Data("--\(boundary)\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".utf8))
+        body.append(Data("Content-Type: \(mimeType)\r\n\r\n".utf8))
+        body.append(fileData)
+        body.append(Data("\r\n--\(boundary)--\r\n".utf8))
+
+        guard let url = URL(string: "\(baseURL)/organizations/\(orgId)/attachments") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw APIError.networkError(error)
+        }
+
+        _ = try validateResponse(response, data: data)
+
+        do {
+            return try decoder.decode(AttachmentUploadResponse.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
     }
 }
