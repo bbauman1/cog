@@ -3,16 +3,13 @@ set -e
 
 echo "=== ci_post_clone.sh ==="
 
-# The committed .xcodeproj includes the widget extension target which
-# isn't yet in project.yml, so we skip XcodeGen regeneration for now.
-# If project.yml becomes the sole source of truth (with widget target
-# defined), uncomment the lines below:
-#
-# echo "Installing XcodeGen..."
-# brew install xcodegen
-# echo "Generating Xcode project..."
-# cd "$CI_PRIMARY_REPOSITORY_PATH/Cog"
-# xcodegen generate
+# Install XcodeGen to regenerate .xcodeproj from project.yml
+echo "Installing XcodeGen..."
+brew install xcodegen
 
-echo "Using committed .xcodeproj"
+# Regenerate Xcode project from project.yml (source of truth)
+echo "Generating Xcode project..."
+cd "$CI_PRIMARY_REPOSITORY_PATH/Cog"
+xcodegen generate
+
 echo "=== ci_post_clone.sh complete ==="
