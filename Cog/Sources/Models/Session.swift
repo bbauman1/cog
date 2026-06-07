@@ -1,5 +1,33 @@
 import Foundation
 
+enum DevinMode: String, Codable, CaseIterable, Sendable {
+    case normal
+    case fast
+    case lite
+
+    var displayName: String {
+        switch self {
+        case .normal: return "Agent"
+        case .fast: return "Fast"
+        case .lite: return "Lite"
+        }
+    }
+}
+
+struct Repository: Codable, Identifiable, Sendable {
+    let repositoryPath: String
+    let gitConnectionHost: String?
+    let gitConnectionId: String?
+
+    var id: String { repositoryPath }
+
+    enum CodingKeys: String, CodingKey {
+        case repositoryPath = "repo_path"
+        case gitConnectionHost = "git_connection_host"
+        case gitConnectionId = "git_connection_id"
+    }
+}
+
 enum SessionStatus: String, Codable, CaseIterable, Sendable {
     case new
     case claimed
