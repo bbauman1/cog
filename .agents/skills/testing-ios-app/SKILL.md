@@ -44,6 +44,26 @@ The `install-app` command gives detailed error messages (e.g., "extensionDiction
 lim ios screenshot output.png
 ```
 
+### Recording Simulator Video
+The simulator runs remotely on Limrun's servers — it is NOT rendered on the local desktop. **Do NOT use `recording_start`/`recording_stop` (desktop recording) for iOS testing** — the simulator will not appear in the video. Instead, use `lim ios record` to capture the simulator screen directly:
+
+```bash
+# Start recording before your test sequence
+lim ios record start
+
+# ... run your test interactions (tap, type, screenshot, etc.) ...
+
+# Stop recording and download the mp4
+lim ios record stop -o /home/ubuntu/simulator_recording.mp4
+```
+
+Send the resulting mp4 to the user via `send_to_user` attachments. You can combine this with `lim ios screenshot` for key assertion snapshots.
+
+**Quality:** Default quality is 5 (range 5–10). Use `--quality 8` for higher fidelity if needed:
+```bash
+lim ios record start --quality 8
+```
+
 ### Inspect UI (Accessibility Tree)
 ```bash
 lim ios element-tree
@@ -313,7 +333,7 @@ The script uploads, confirms, and polls processing state until VALID/FAILED.
 - Face ID/Touch ID cannot be tested programmatically via Limrun
 - The Devin API may return 403 (not 401) for invalid tokens — both are handled correctly
 - Session list testing requires a valid Devin API key to reach the authenticated state
-- Simulator runs remotely, so desktop screen recording won't capture it — use `lim ios screenshot` for evidence instead
+- Simulator runs remotely, so **desktop screen recording (`recording_start`/`recording_stop`) won't capture it** — use `lim ios record start/stop` for video and `lim ios screenshot` for snapshots
 - `lim ios type` does NOT sync SwiftUI bindings — always follow with `lim ios press-key` or tap elsewhere to force sync
 - Toolbar buttons are not always in the accessibility element tree — use coordinate-based taps
 - There is no `lim ios swipe` command — use `lim ios perform` with touchDown/touchMove/touchUp
