@@ -8,7 +8,7 @@ final class SessionListViewModel {
     var isLoading = false
     var isLoadingMore = false
     var errorMessage: String?
-    var selectedFilter: StatusFilter = .all
+    var selectedFilter: StatusFilter = .running
 
     private var endCursor: String?
     private var hasNextPage = false
