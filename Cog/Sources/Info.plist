@@ -36,8 +36,6 @@
 	<string>Cog uses the microphone to transcribe your voice into text for session prompts and messages.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Cog uses on-device speech recognition to convert your voice to text.</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>Cog uses Face ID to securely unlock the app and protect your API credentials.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
