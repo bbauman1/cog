@@ -5,6 +5,16 @@ actor NotificationService {
     static let shared = NotificationService()
 
     private let center = UNUserNotificationCenter.current()
+    private nonisolated(unsafe) static let preferenceSuite = UserDefaults(suiteName: WidgetDataStore.suiteName)
+    private static let alertsEnabledKey = "notifications_alerts_enabled"
+
+    var alertsEnabled: Bool {
+        get { Self.preferenceSuite?.object(forKey: Self.alertsEnabledKey) as? Bool ?? true }
+    }
+
+    func setAlertsEnabled(_ enabled: Bool) {
+        Self.preferenceSuite?.set(enabled, forKey: Self.alertsEnabledKey)
+    }
 
     // MARK: - Authorization
 
@@ -60,6 +70,7 @@ actor NotificationService {
         oldStatus: SessionStatusDetail?,
         newStatus: SessionStatusDetail?
     ) async {
+        guard alertsEnabled else { return }
         guard let newStatus else { return }
 
         let displayName = sessionTitle ?? "Session"

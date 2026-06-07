@@ -1,5 +1,6 @@
 import Foundation
 import BackgroundTasks
+import WidgetKit
 
 @MainActor
 final class BackgroundRefreshManager: Sendable {
@@ -69,6 +70,27 @@ final class BackgroundRefreshManager: Sendable {
                     }
                     tracker.updateStatus(for: session.sessionId, status: newStatus)
                 }
+
+                let activeSessions = response.items.filter {
+                    $0.status == .running || $0.status == .claimed || $0.status == .resuming
+                }
+                let entries = response.items.prefix(5).map { session in
+                    WidgetSessionEntry(
+                        sessionId: session.sessionId,
+                        title: session.title ?? session.sessionId,
+                        statusRaw: session.status.rawValue,
+                        statusDetailRaw: session.statusDetail?.rawValue,
+                        acusConsumed: session.acusConsumed,
+                        createdAt: session.createdAt
+                    )
+                }
+                let snapshot = WidgetSessionSnapshot(
+                    sessions: Array(entries),
+                    totalActive: activeSessions.count,
+                    updatedAt: Date()
+                )
+                WidgetDataStore.save(snapshot)
+                WidgetCenter.shared.reloadTimelines(ofKind: "ActiveSessionsWidget")
             } catch {
                 // Background refresh failed silently
             }

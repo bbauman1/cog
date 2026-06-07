@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import WidgetKit
 
 @MainActor @Observable
 final class SessionListViewModel {
@@ -148,5 +149,6 @@ final class SessionListViewModel {
             updatedAt: Date()
         )
         WidgetDataStore.save(snapshot)
+        WidgetCenter.shared.reloadTimelines(ofKind: "ActiveSessionsWidget")
     }
 }

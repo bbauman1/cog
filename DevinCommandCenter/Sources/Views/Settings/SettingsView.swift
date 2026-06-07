@@ -31,11 +31,13 @@ struct SettingsView: View {
             Section("Notifications") {
                 Toggle("Session Alerts", isOn: $notificationsEnabled)
                     .onChange(of: notificationsEnabled) {
-                        if notificationsEnabled {
-                            Task {
+                        Task {
+                            await NotificationService.shared.setAlertsEnabled(notificationsEnabled)
+                            if notificationsEnabled {
                                 let granted = await NotificationService.shared.requestAuthorization()
                                 if !granted {
                                     notificationsEnabled = false
+                                    await NotificationService.shared.setAlertsEnabled(false)
                                 }
                             }
                         }
@@ -70,7 +72,9 @@ struct SettingsView: View {
         }
         .task {
             await loadSelfInfo()
-            notificationsEnabled = await NotificationService.shared.isAuthorized()
+            let osAuthorized = await NotificationService.shared.isAuthorized()
+            let appEnabled = await NotificationService.shared.alertsEnabled
+            notificationsEnabled = osAuthorized && appEnabled
         }
     }
 
