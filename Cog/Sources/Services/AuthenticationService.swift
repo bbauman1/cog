@@ -46,6 +46,11 @@ final class AuthenticationService: Sendable {
         }
     }
 
+    var isBiometricAvailable: Bool {
+        let context = LAContext()
+        return context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
+    }
+
     var biometricType: LABiometryType {
         let context = LAContext()
         _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)

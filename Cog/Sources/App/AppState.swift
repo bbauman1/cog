@@ -17,8 +17,17 @@ final class AppState {
     private let authService = AuthenticationService()
 
     func checkStoredCredentials() {
-        if keychain.hasStoredCredentials {
+        guard keychain.hasStoredCredentials else {
+            authState = .unauthenticated
+            return
+        }
+
+        if authService.isBiometricAvailable {
             authState = .locked
+        } else if let apiKey = keychain.read(.apiKey),
+                  let orgId = keychain.read(.orgId) {
+            apiClient = DevinAPIClient(apiKey: apiKey, orgId: orgId)
+            authState = .authenticated
         } else {
             authState = .unauthenticated
         }
