@@ -656,7 +656,7 @@ targets:
     settings:
       base:
         INFOPLIST_FILE: Sources/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.cogfordevin.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.cogfordevin.ios
     dependencies: []
 
   CogTests:

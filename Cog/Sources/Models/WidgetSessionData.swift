@@ -45,7 +45,7 @@ struct WidgetSessionSnapshot: Codable, Sendable {
 }
 
 enum WidgetDataStore {
-    static let suiteName = "group.com.cogfordevin.app"
+    static let suiteName = "group.com.cogfordevin.ios"
     static let sessionsKey = "widget_sessions"
 
     static func save(_ snapshot: WidgetSessionSnapshot) {

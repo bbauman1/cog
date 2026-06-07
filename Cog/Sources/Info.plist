@@ -27,7 +27,7 @@
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.cogfordevin.app.sessionRefresh</string>
+		<string>com.cogfordevin.ios.sessionRefresh</string>
 	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
@@ -37,7 +37,7 @@
 				<string>cog</string>
 			</array>
 			<key>CFBundleURLName</key>
-			<string>com.cogfordevin.app</string>
+			<string>com.cogfordevin.ios</string>
 		</dict>
 	</array>
 </dict>
