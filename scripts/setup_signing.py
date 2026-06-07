@@ -190,7 +190,12 @@ def find_or_create_cert():
 
 
 def create_p12(cert_pem, key_pem, wwdr_pem):
-    """Create P12 keystore with full chain."""
+    """Create P12 keystores for signing.
+
+    Creates two P12 files:
+    - apple_dist_chain.p12: Full chain (cert + WWDR) for Limrun's --certificate-p12
+    - dist_only.p12: Distribution cert only (legacy format) for rcodesign compatibility
+    """
     p12_path = os.path.join(ASC_DIR, "apple_dist_chain.p12")
     run(
         f"openssl pkcs12 -export "
@@ -201,6 +206,18 @@ def create_p12(cert_pem, key_pem, wwdr_pem):
         f"-passout pass:devin"
     )
     print(f"Created P12: {p12_path}")
+
+    # Create a distribution-only P12 with legacy encryption for rcodesign
+    dist_only_p12 = os.path.join(ASC_DIR, "dist_only.p12")
+    run(
+        f"openssl pkcs12 -export "
+        f"-inkey '{key_pem}' "
+        f"-in '{cert_pem}' "
+        f"-out '{dist_only_p12}' "
+        f"-passout pass:devin "
+        f"-legacy"
+    )
+    print(f"Created dist-only P12 (rcodesign): {dist_only_p12}")
     return p12_path
 
 
