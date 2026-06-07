@@ -197,6 +197,122 @@ struct SessionDetailView: View {
     }
 }
 
+// MARK: - Markdown Rendering
+
+private enum MarkdownBlock {
+    case text(String)
+    case codeBlock(language: String?, code: String)
+}
+
+private func parseMarkdownBlocks(_ markdown: String) -> [MarkdownBlock] {
+    var blocks: [MarkdownBlock] = []
+    var currentText = ""
+    var inCodeBlock = false
+    var codeLanguage: String?
+    var codeContent = ""
+
+    let lines = markdown.components(separatedBy: "\n")
+    for line in lines {
+        if !inCodeBlock, line.hasPrefix("```") {
+            let trimmed = currentText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                blocks.append(.text(trimmed))
+            }
+            currentText = ""
+            inCodeBlock = true
+            let lang = String(line.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+            codeLanguage = lang.isEmpty ? nil : lang
+            codeContent = ""
+        } else if inCodeBlock, line.hasPrefix("```") {
+            blocks.append(.codeBlock(language: codeLanguage, code: codeContent))
+            inCodeBlock = false
+            codeLanguage = nil
+            codeContent = ""
+        } else if inCodeBlock {
+            if !codeContent.isEmpty { codeContent += "\n" }
+            codeContent += line
+        } else {
+            if !currentText.isEmpty { currentText += "\n" }
+            currentText += line
+        }
+    }
+
+    if inCodeBlock {
+        let remaining = "```\(codeLanguage ?? "")\n\(codeContent)"
+        if !currentText.isEmpty { currentText += "\n" }
+        currentText += remaining
+    }
+    let trimmed = currentText.trimmingCharacters(in: .whitespacesAndNewlines)
+    if !trimmed.isEmpty {
+        blocks.append(.text(trimmed))
+    }
+
+    return blocks
+}
+
+struct MarkdownMessageView: View {
+    let text: String
+    let isUser: Bool
+
+    private var blocks: [MarkdownBlock] { parseMarkdownBlocks(text) }
+    private var textColor: Color { isUser ? .white : .primary }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                switch block {
+                case .text(let content):
+                    inlineMarkdownText(content)
+                case .codeBlock(let language, let code):
+                    codeBlockView(language: language, code: code)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func inlineMarkdownText(_ content: String) -> some View {
+        if let attributed = try? AttributedString(
+            markdown: content,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        ) {
+            Text(attributed)
+                .font(.body)
+                .foregroundStyle(textColor)
+                .tint(isUser ? .white : .blue)
+        } else {
+            Text(content)
+                .font(.body)
+                .foregroundStyle(textColor)
+        }
+    }
+
+    @ViewBuilder
+    private func codeBlockView(language: String?, code: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let language, !language.isEmpty {
+                Text(language)
+                    .font(.caption2)
+                    .foregroundStyle(isUser ? .white.opacity(0.7) : .secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 6)
+                    .padding(.bottom, 2)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                Text(code)
+                    .font(.system(.callout, design: .monospaced))
+                    .foregroundStyle(textColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, language != nil ? 6 : 10)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(isUser ? Color.white.opacity(0.15) : Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
 // MARK: - Message Bubble
 
 struct MessageBubbleView: View {
@@ -209,9 +325,7 @@ struct MessageBubbleView: View {
             if isUser { Spacer(minLength: 60) }
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
-                Text(message.message)
-                    .font(.body)
-                    .foregroundStyle(isUser ? .white : .primary)
+                MarkdownMessageView(text: message.message, isUser: isUser)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(isUser ? Color.blue : Color(.systemGray5))
