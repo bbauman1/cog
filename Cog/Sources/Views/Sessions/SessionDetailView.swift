@@ -87,6 +87,9 @@ struct SessionDetailView: View {
         }
         .onDisappear {
             viewModel.stopPolling()
+            if speechService.isTranscribing {
+                _ = speechService.stopTranscription()
+            }
         }
     }
 
@@ -225,8 +228,10 @@ struct SessionDetailView: View {
     }
 
     private var canSend: Bool {
-        viewModel.canSendMessage &&
-        !viewModel.messageDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        viewModel.canSendMessage && (
+            !viewModel.messageDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            (speechService.isTranscribing && !speechService.transcribedText.isEmpty)
+        )
     }
 
     private func toggleTranscription() async {

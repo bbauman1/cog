@@ -26,13 +26,21 @@ struct CreateSessionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") {
+                        if speechService.isTranscribing {
+                            _ = speechService.stopTranscription()
+                        }
+                        dismiss()
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
                         Task { await createSession() }
                     }
-                    .disabled(!viewModel.isFormValid || viewModel.isCreating)
+                    .disabled(
+                        (!viewModel.isFormValid && !(speechService.isTranscribing && !speechService.transcribedText.isEmpty)) ||
+                        viewModel.isCreating
+                    )
                 }
             }
             .task {
@@ -42,6 +50,11 @@ struct CreateSessionView: View {
                 }
             }
             .interactiveDismissDisabled(viewModel.isCreating)
+            .onDisappear {
+                if speechService.isTranscribing {
+                    _ = speechService.stopTranscription()
+                }
+            }
         }
     }
 
