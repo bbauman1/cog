@@ -210,23 +210,36 @@ lim xcode delete <id> # Clean up
 
 ## TestFlight Build & Upload
 
+### Prerequisites
+
+Run the signing setup script first — it generates all certs, profiles, and keys from the existing org secrets:
+```bash
+cd /home/ubuntu/repos/research
+python3 scripts/setup_signing.py
+```
+This is idempotent: reuses existing certs/keys if present, creates new ones if the VM was rebuilt. All files land in `~/.asc/`.
+
 ### Devin Secrets Needed (Org-Level)
 
-- `APPLE_TEAM_ID` — Apple Developer team ID (Y9ZLF8R6XZ)
+- `APPLE_TEAM_ID` — Apple Developer team ID
 - `ASC_KEY_ID` — App Store Connect API Key ID
 - `ASC_ISSUER_ID` — App Store Connect Issuer ID
 - `ASC_PRIVATE_KEY` — App Store Connect API private key (.p8 contents)
 
+No additional secrets required — the setup script derives distribution certs, profiles, and P12 bundles from these 4 secrets via the ASC API.
+
 ### App Store Connect IDs
 
 - **App ID:** 6777732746
-- **Bundle ID (main):** com.cogfordevin.ios (ASC resource: 73WHP4Q899)
-- **Bundle ID (widget):** com.cogfordevin.ios.sessions-widget (ASC resource: 5QPDTYJW94)
-- **Distribution Certificate ID:** 4B6DM29V7J (expires 2027-06-07)
-- **App Store Profile (main):** V4X6328GWB — "Cog Distribution"
-- **App Store Profile (widget):** 8B68MPWHVY — "Cog Widget Distribution"
+- **Bundle ID (main):** com.cogfordevin.ios
+- **Bundle ID (widget):** com.cogfordevin.ios.sessions-widget
 
-### Build Pipeline (3 steps)
+### Build Pipeline (4 steps)
+
+**Step 0: Set up signing (if not already done)**
+```bash
+python3 scripts/setup_signing.py
+```
 
 **Step 1: Build with Limrun**
 ```bash
@@ -235,95 +248,65 @@ lim xcode build . \
   --scheme Cog \
   --configuration Release \
   --sdk iphoneos \
-  --certificate-p12 /home/ubuntu/.asc/apple_dist_chain.p12 \
+  --certificate-p12 ~/.asc/apple_dist_chain.p12 \
   --certificate-password devin \
-  --provisioning-profile "/home/ubuntu/.asc/Cog Distribution.mobileprovision" \
-  --additional-file "/home/ubuntu/.asc/Cog_Widget_Distribution.mobileprovision=Library/MobileDevice/Provisioning Profiles/Cog_Widget_Distribution.mobileprovision" \
+  --provisioning-profile "$HOME/.asc/Cog Distribution.mobileprovision" \
+  --additional-file "$HOME/.asc/Cog_Widget_Distribution.mobileprovision=Library/MobileDevice/Provisioning Profiles/Cog_Widget_Distribution.mobileprovision" \
   --upload Cog.ipa
 ```
 
 **Step 2: Re-sign with rcodesign (adds Apple timestamps + fixes widget entitlements)**
 
-Limrun's signing omits Apple timestamp counter-signatures, which App Store Connect requires (error 90034). Also, Limrun applies the main app's entitlements to the widget extension (wrong `application-identifier`). Fix both by re-signing on Linux with `rcodesign`:
+Limrun's signing omits Apple timestamp counter-signatures (causes error 90034) and applies main app entitlements to the widget (wrong `application-identifier`). Re-sign with `rcodesign`:
 
 ```bash
 RCODESIGN=/tmp/apple-codesign-0.29.0-x86_64-unknown-linux-musl/rcodesign
 
-# Download rcodesign if not present
-if [ ! -f "$RCODESIGN" ]; then
-  curl -sL "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.29.0/apple-codesign-0.29.0-x86_64-unknown-linux-musl.tar.gz" -o /tmp/rcodesign.tar.gz
-  tar xzf /tmp/rcodesign.tar.gz -C /tmp/
-  chmod +x $RCODESIGN
-fi
-
 # Download IPA from Limrun artifact URL
-curl -L -o /home/ubuntu/.asc/Cog.ipa "<artifact-url>"
+curl -L -o ~/.asc/Cog.ipa "<artifact-url-from-limrun-output>"
 
-# Extract IPA
+# Extract
 rm -rf /tmp/ipa_inspect && mkdir -p /tmp/ipa_inspect && cd /tmp/ipa_inspect
-unzip -q /home/ubuntu/.asc/Cog.ipa
+unzip -q ~/.asc/Cog.ipa
 
-# Embed widget provisioning profile (Limrun only embeds main app profile)
-cp "/home/ubuntu/.asc/Cog_Widget_Distribution.mobileprovision" \
+# Embed widget provisioning profile
+cp "$HOME/.asc/Cog_Widget_Distribution.mobileprovision" \
    Payload/Cog.app/PlugIns/SessionsWidgetExtension.appex/embedded.mobileprovision
 
-# Re-sign widget with CORRECT entitlements (application-identifier must be .sessions-widget)
+# Re-sign widget with correct entitlements
 $RCODESIGN sign \
-  --pem-file /home/ubuntu/.asc/apple_dist_cert.pem \
-  --pem-file /home/ubuntu/.asc/dist_key.pem \
-  --pem-file /home/ubuntu/.asc/AppleWWDRCAG3.pem \
+  --pem-file ~/.asc/apple_dist_cert.pem \
+  --pem-file ~/.asc/dist_key.pem \
+  --pem-file ~/.asc/AppleWWDRCAG3.pem \
   --timestamp-url http://timestamp.apple.com/ts01 \
-  --entitlements-xml-file /tmp/widget_entitlements.plist \
+  --entitlements-xml-file ~/.asc/widget_entitlements.plist \
   Payload/Cog.app/PlugIns/SessionsWidgetExtension.appex
 
-# Re-sign main app (seals updated widget contents)
+# Re-sign main app
 $RCODESIGN sign \
-  --pem-file /home/ubuntu/.asc/apple_dist_cert.pem \
-  --pem-file /home/ubuntu/.asc/dist_key.pem \
-  --pem-file /home/ubuntu/.asc/AppleWWDRCAG3.pem \
+  --pem-file ~/.asc/apple_dist_cert.pem \
+  --pem-file ~/.asc/dist_key.pem \
+  --pem-file ~/.asc/AppleWWDRCAG3.pem \
   --timestamp-url http://timestamp.apple.com/ts01 \
   Payload/Cog.app
 
-# Repackage IPA
-zip -qr /home/ubuntu/.asc/Cog_final.ipa Payload/
+# Repackage
+zip -qr ~/.asc/Cog_final.ipa Payload/
 ```
 
-The widget entitlements plist (`/tmp/widget_entitlements.plist`) must have `application-identifier` set to `Y9ZLF8R6XZ.com.cogfordevin.ios.sessions-widget` (not the main app's bundle ID).
-
-**Step 3: Upload to TestFlight via ASC API**
-
-Use `/home/ubuntu/.asc/upload_ipa.py` (or direct API calls):
+**Step 3: Upload to TestFlight**
 ```bash
-python3 /home/ubuntu/.asc/upload_ipa.py 6777732746 /home/ubuntu/.asc/Cog_final.ipa
+cd /home/ubuntu/repos/research
+python3 scripts/upload_ipa.py 6777732746 ~/.asc/Cog_final.ipa
 ```
-
-The upload script:
-1. Creates a `buildUpload` with version/build number from IPA's Info.plist
-2. Creates a `buildUploadFile` entry
-3. Uploads IPA bytes to presigned URL
-4. Confirms upload
-5. Polls processing state
-
-Poll status with:
-```bash
-python3 /home/ubuntu/.asc/asc_helper.py get-jwt | xargs -I{} \
-  curl -s "https://api.appstoreconnect.apple.com/v1/buildUploads/<upload-id>" \
-  -H "Authorization: Bearer {}"
-```
+The script uploads, confirms, and polls processing state until VALID/FAILED.
 
 ### Important Notes
 
-- **Build number must be unique** per version — Apple rejects duplicate build numbers. Increment `CURRENT_PROJECT_VERSION` in `project.yml` and `Cog.xcodeproj/project.pbxproj` before each upload.
-- **`asc` CLI (rork/asc) hangs** in Devin's environment due to terminal/PTY issues — use direct ASC API calls via Python JWT + requests instead.
-- **Signing files location:** All certs, profiles, and keys are stored in `/home/ubuntu/.asc/`:
-  - `AuthKey_PVAVMY3WV9.p8` — ASC API private key
-  - `apple_dist_cert.pem` — Distribution certificate (PEM)
-  - `dist_key.pem` — Distribution private key (PEM)
-  - `apple_dist_chain.p12` — P12 with full cert chain (password: devin)
-  - `AppleWWDRCAG3.pem` — Apple WWDR intermediate cert
-  - `Cog Distribution.mobileprovision` — Main app profile
-  - `Cog_Widget_Distribution.mobileprovision` — Widget profile
-- **ITSAppUsesNonExemptEncryption** is set to NO in Info.plist to skip the encryption compliance dialog on each TestFlight upload.
+- **Build number must be unique** per version — increment `CURRENT_PROJECT_VERSION` in `project.yml` and `project.pbxproj` before each upload.
+- **`asc` CLI (rork/asc) hangs** in Devin's PTY — use `scripts/asc_api.py` and `scripts/upload_ipa.py` instead.
+- **Signing files** are in `~/.asc/` — generated by `scripts/setup_signing.py`, not checked into the repo.
+- **ITSAppUsesNonExemptEncryption** is set to NO in Info.plist to skip the encryption dialog.
 
 ## Known Limitations
 
