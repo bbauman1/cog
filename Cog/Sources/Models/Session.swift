@@ -16,8 +16,8 @@ enum DevinMode: String, Codable, CaseIterable, Sendable {
 
 struct Repository: Codable, Identifiable, Sendable {
     let repositoryPath: String
-    let gitConnectionHost: String
-    let gitConnectionId: String
+    let gitConnectionHost: String?
+    let gitConnectionId: String?
 
     var id: String { repositoryPath }
 

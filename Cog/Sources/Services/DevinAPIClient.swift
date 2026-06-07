@@ -352,7 +352,8 @@ actor DevinAPIClient {
         let boundary = "Boundary-\(UUID().uuidString)"
         var body = Data()
         body.append(Data("--\(boundary)\r\n".utf8))
-        body.append(Data("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".utf8))
+        let sanitizedFileName = fileName.replacingOccurrences(of: "\"", with: "%22")
+        body.append(Data("Content-Disposition: form-data; name=\"file\"; filename=\"\(sanitizedFileName)\"\r\n".utf8))
         body.append(Data("Content-Type: \(mimeType)\r\n\r\n".utf8))
         body.append(fileData)
         body.append(Data("\r\n--\(boundary)--\r\n".utf8))

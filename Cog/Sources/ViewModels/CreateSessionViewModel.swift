@@ -97,11 +97,11 @@ final class CreateSessionViewModel {
     // MARK: - Attachments
 
     func uploadAttachment(data: Data, fileName: String, mimeType: String) async {
+        guard let apiClient else { return }
+
         let item = AttachmentItem(fileName: fileName)
         attachments.append(item)
         let itemId = item.id
-
-        guard let apiClient else { return }
 
         do {
             let response = try await apiClient.uploadAttachment(

@@ -23,7 +23,7 @@ final class AuthenticationService: Sendable {
         let context = LAContext()
         var error: NSError?
 
-        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
             if let error {
                 throw AuthError.biometricFailed(error)
             }
@@ -32,7 +32,7 @@ final class AuthenticationService: Sendable {
 
         do {
             let success = try await context.evaluatePolicy(
-                .deviceOwnerAuthenticationWithBiometrics,
+                .deviceOwnerAuthentication,
                 localizedReason: "Unlock Cog"
             )
             return success
@@ -44,6 +44,11 @@ final class AuthenticationService: Sendable {
                 throw AuthError.biometricFailed(error)
             }
         }
+    }
+
+    var isDeviceAuthAvailable: Bool {
+        let context = LAContext()
+        return context.canEvaluatePolicy(.deviceOwnerAuthentication, error: nil)
     }
 
     var isBiometricAvailable: Bool {
