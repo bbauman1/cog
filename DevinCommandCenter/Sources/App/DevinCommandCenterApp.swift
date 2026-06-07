@@ -21,7 +21,6 @@ struct DevinCommandCenterApp: App {
     }
 
     private func handleDeepLink(_ url: URL) {
-        // Handle devincommand://session/{sessionId}
         guard url.scheme == "devincommand",
               url.host == "session",
               let sessionId = url.pathComponents.dropFirst().first else { return }
