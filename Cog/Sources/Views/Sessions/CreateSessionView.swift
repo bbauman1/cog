@@ -4,6 +4,7 @@ struct CreateSessionView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = CreateSessionViewModel()
+    @State private var speechService = SpeechTranscriptionService()
     var onSessionCreated: ((Session) -> Void)?
 
     var body: some View {
@@ -50,11 +51,47 @@ struct CreateSessionView: View {
         Section {
             TextField("What should Devin work on?", text: $viewModel.prompt, axis: .vertical)
                 .lineLimit(3...10)
+
+            if speechService.isAvailable {
+                HStack {
+                    if speechService.isTranscribing {
+                        Text(speechService.transcribedText.isEmpty
+                             ? "Listening..."
+                             : speechService.transcribedText)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+
+                        Spacer()
+                    }
+
+                    microphoneButton
+                }
+            }
+
+            if let error = speechService.errorMessage {
+                Text(error)
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+            }
         } header: {
             Text("Prompt")
         } footer: {
             Text("Describe the task you want Devin to work on.")
         }
+    }
+
+    private var microphoneButton: some View {
+        Button {
+            Task { await toggleTranscription() }
+        } label: {
+            Image(systemName: speechService.isTranscribing ? "mic.fill" : "mic")
+                .font(.title3)
+                .foregroundStyle(speechService.isTranscribing ? .red : .blue)
+                .symbolEffect(.pulse, isActive: speechService.isTranscribing)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(speechService.isTranscribing ? "Stop dictation" : "Start dictation")
     }
 
     // MARK: - Playbook Picker
@@ -130,9 +167,31 @@ struct CreateSessionView: View {
         }
     }
 
-    // MARK: - Create
+    // MARK: - Actions
+
+    private func toggleTranscription() async {
+        if speechService.isTranscribing {
+            let text = speechService.stopTranscription()
+            if !text.isEmpty {
+                if viewModel.prompt.isEmpty {
+                    viewModel.prompt = text
+                } else {
+                    viewModel.prompt += " " + text
+                }
+            }
+        } else {
+            await speechService.startTranscription()
+        }
+    }
 
     private func createSession() async {
+        if speechService.isTranscribing {
+            let text = speechService.stopTranscription()
+            if !text.isEmpty {
+                viewModel.prompt += (viewModel.prompt.isEmpty ? "" : " ") + text
+            }
+        }
+
         if let session = await viewModel.createSession() {
             onSessionCreated?(session)
             dismiss()

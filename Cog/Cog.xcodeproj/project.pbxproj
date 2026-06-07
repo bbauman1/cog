@@ -38,6 +38,7 @@
 		B1000029 /* SessionStatusTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000030 /* SessionStatusTracker.swift */; };
 		B1000030 /* DeepLinkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000031 /* DeepLinkManager.swift */; };
 		B1000031 /* WidgetSessionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000032 /* WidgetSessionData.swift */; };
+		B1000033 /* SpeechTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000033 /* SpeechTranscriptionService.swift */; };
 		B2000001 /* SessionsWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000001 /* SessionsWidgetBundle.swift */; };
 		B2000002 /* ActiveSessionsWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000002 /* ActiveSessionsWidget.swift */; };
 		B2000003 /* WidgetSessionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000003 /* WidgetSessionData.swift */; };
@@ -77,6 +78,7 @@
 		F1000030 /* SessionStatusTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStatusTracker.swift; sourceTree = "<group>"; };
 		F1000031 /* DeepLinkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkManager.swift; sourceTree = "<group>"; };
 		F1000032 /* WidgetSessionData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSessionData.swift; sourceTree = "<group>"; };
+		F1000033 /* SpeechTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTranscriptionService.swift; sourceTree = "<group>"; };
 		F1000099 /* Cog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2000001 /* SessionsWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsWidgetBundle.swift; sourceTree = "<group>"; };
 		F2000002 /* ActiveSessionsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSessionsWidget.swift; sourceTree = "<group>"; };
@@ -193,6 +195,7 @@
 				F1000029 /* BackgroundRefreshManager.swift */,
 				F1000030 /* SessionStatusTracker.swift */,
 				F1000031 /* DeepLinkManager.swift */,
+				F1000033 /* SpeechTranscriptionService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -396,6 +399,7 @@
 				B1000029 /* SessionStatusTracker.swift in Sources */,
 				B1000030 /* DeepLinkManager.swift in Sources */,
 				B1000031 /* WidgetSessionData.swift in Sources */,
+				B1000033 /* SpeechTranscriptionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
