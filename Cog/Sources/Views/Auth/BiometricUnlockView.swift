@@ -11,7 +11,7 @@ struct BiometricUnlockView: View {
                 .font(.system(size: 60))
                 .foregroundStyle(.blue)
 
-            Text("Devin Command Center")
+            Text("Cog")
                 .font(.title2.bold())
 
             Text("Authenticate to continue")

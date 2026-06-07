@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E0000001"
-               BuildableName = "DevinCommandCenter.app"
-               BlueprintName = "DevinCommandCenter"
-               ReferencedContainer = "container:DevinCommandCenter.xcodeproj">
+               BuildableName = "Cog.app"
+               BlueprintName = "Cog"
+               ReferencedContainer = "container:Cog.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E0000001"
-            BuildableName = "DevinCommandCenter.app"
-            BlueprintName = "DevinCommandCenter"
-            ReferencedContainer = "container:DevinCommandCenter.xcodeproj">
+            BuildableName = "Cog.app"
+            BlueprintName = "Cog"
+            ReferencedContainer = "container:Cog.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E0000001"
-            BuildableName = "DevinCommandCenter.app"
-            BlueprintName = "DevinCommandCenter"
-            ReferencedContainer = "container:DevinCommandCenter.xcodeproj">
+            BuildableName = "Cog.app"
+            BlueprintName = "Cog"
+            ReferencedContainer = "container:Cog.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

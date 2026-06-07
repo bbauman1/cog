@@ -1,6 +1,6 @@
 ---
 name: testing-ios-app
-description: Test the Devin Command Center iOS app end-to-end using Limrun simulator. Use when verifying UI changes, auth flows, or session list behavior.
+description: Test the Cog iOS app end-to-end using Limrun simulator. Use when verifying UI changes, auth flows, or session list behavior.
 ---
 
 # Testing the iOS App via Limrun
@@ -13,8 +13,8 @@ description: Test the Devin Command Center iOS app end-to-end using Limrun simul
 ## Build & Launch
 
 ```bash
-cd /home/ubuntu/repos/research/DevinCommandCenter
-lim xcode build . --scheme DevinCommandCenter --configuration Debug --ios
+cd /home/ubuntu/repos/research/Cog
+lim xcode build . --scheme Cog --configuration Debug --ios
 ```
 
 The `--ios` flag creates a simulator-backed instance, builds, and installs the app automatically.
@@ -30,7 +30,7 @@ The `--ios` flag creates a simulator-backed instance, builds, and installs the a
 If the standard `--ios` build installs but crashes on launch, the widget extension's Info.plist may be malformed. Use `--upload` to get an artifact URL and install via `install-app` for better error messages:
 
 ```bash
-lim xcode build . --scheme DevinCommandCenter --configuration Debug --ios --upload DevinCommandCenter.app
+lim xcode build . --scheme Cog --configuration Debug --ios --upload Cog.app
 # Copy the "Artifact download URL" from the output
 lim ios install-app "<artifact-url>" --launch-mode RelaunchIfRunning
 ```
@@ -114,7 +114,7 @@ lim ios scroll down --amount 500  # Custom scroll amount in pixels
 
 ### Open URLs (for deep linking)
 ```bash
-lim ios open-url "devincommand://session/{sessionId}"
+lim ios open-url "cog://session/{sessionId}"
 ```
 Opens a URL in the simulator. Use this to test deep linking — the app should navigate to the specified session detail view.
 
@@ -160,7 +160,7 @@ Opens a URL in the simulator. Use this to test deep linking — the app should n
 
 ### Deep Linking
 1. Get a session ID (from element-tree or API: `curl -s -H "Authorization: Bearer ${DEVIN_API_KEY}" "https://api.devin.ai/v3/organizations/org-ef33adaca3a84b72839816853d18d23f/sessions?first=1"`)
-2. `lim ios open-url "devincommand://session/{sessionId}"`
+2. `lim ios open-url "cog://session/{sessionId}"`
 3. Verify app navigates to the session detail view for that specific session
 
 #### Testing Notification Toggle Persistence
@@ -178,7 +178,7 @@ Note: The toggle checks both OS notification authorization AND the app-level pre
 
 ### Deep Linking
 ```bash
-lim ios open-url "devincommand://session/{session_id}"
+lim ios open-url "cog://session/{session_id}"
 ```
 Opens the session detail view for the given session ID. Get a real session ID from the session list first.
 

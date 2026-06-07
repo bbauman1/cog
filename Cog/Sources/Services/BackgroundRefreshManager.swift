@@ -4,7 +4,7 @@ import WidgetKit
 
 @MainActor
 final class BackgroundRefreshManager: Sendable {
-    nonisolated static let refreshTaskIdentifier = "com.devincommand.app.sessionRefresh"
+    nonisolated static let refreshTaskIdentifier = "com.cogfordevin.app.sessionRefresh"
 
     private let keychain = KeychainService()
 

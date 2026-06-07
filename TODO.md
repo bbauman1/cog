@@ -1,4 +1,4 @@
-# Devin Command Center — Master TODO
+# Cog — Master TODO
 
 > Living backlog for the iOS app. Items are ordered by priority within each phase.
 > Mark items `[x]` as completed. Add new items as needed.
@@ -177,7 +177,7 @@
 - [ ] **Remote push notifications** — Cloudflare Worker relay, real APNs push (<30s latency)
 - [ ] **Session templates** — save configs (repo + playbook + tags + mode) for one-tap creation
 - [ ] **Haptic feedback language** — distinct patterns: success (triple tap), error (buzz), waiting (pulse)
-- [ ] **Cross-device credential transfer** — Apple universal clipboard or `devincommand://auth?token=...&org=...`
+- [ ] **Cross-device credential transfer** — Apple universal clipboard or `cog://auth?token=...&org=...`
 - [ ] **App Clip** — lightweight session status viewer accessible via shared link
 
 ---

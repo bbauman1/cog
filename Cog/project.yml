@@ -1,6 +1,6 @@
-name: DevinCommandCenter
+name: Cog
 options:
-  bundleIdPrefix: com.devincommand
+  bundleIdPrefix: com.cogfordevin
   deploymentTarget:
     iOS: "26.0"
   xcodeVersion: "26.0"
@@ -14,7 +14,7 @@ settings:
     DEVELOPMENT_TEAM: ""
 
 targets:
-  DevinCommandCenter:
+  Cog:
     type: application
     platform: iOS
     sources:
@@ -24,14 +24,14 @@ targets:
     settings:
       base:
         INFOPLIST_FILE: Sources/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.devincommand.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.cogfordevin.app
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
     info:
       path: Sources/Info.plist
       properties:
-        CFBundleName: "Devin Command Center"
-        CFBundleDisplayName: "Devin Command Center"
+        CFBundleName: "Cog"
+        CFBundleDisplayName: "Cog"
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen: {}
