@@ -204,20 +204,22 @@ struct SessionDetailView: View {
                     Button {
                         Task { await toggleTranscription() }
                     } label: {
-                        Image(systemName: speechService.isTranscribing ? "mic.fill" : "mic")
+                        Label(speechService.isTranscribing ? "Stop dictation" : "Start dictation",
+                              systemImage: speechService.isTranscribing ? "mic.fill" : "mic")
                             .font(.title2)
                             .foregroundStyle(speechService.isTranscribing ? .red : .blue)
                             .symbolEffect(.pulse, isActive: speechService.isTranscribing)
+                            .labelStyle(.iconOnly)
                     }
-                    .accessibilityLabel(speechService.isTranscribing ? "Stop dictation" : "Start dictation")
                 }
 
                 Button {
                     Task { await sendMessageWithSpeech() }
                 } label: {
-                    Image(systemName: "arrow.up.circle.fill")
+                    Label("Send message", systemImage: "arrow.up.circle.fill")
                         .font(.title2)
                         .foregroundStyle(canSend ? .blue : .gray)
+                        .labelStyle(.iconOnly)
                 }
                 .disabled(!canSend)
             }

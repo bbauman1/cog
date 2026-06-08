@@ -133,13 +133,14 @@ struct CreateSessionView: View {
         Button {
             Task { await toggleTranscription() }
         } label: {
-            Image(systemName: speechService.isTranscribing ? "mic.fill" : "mic")
+            Label(speechService.isTranscribing ? "Stop dictation" : "Start dictation",
+                  systemImage: speechService.isTranscribing ? "mic.fill" : "mic")
                 .font(.title3)
                 .foregroundStyle(speechService.isTranscribing ? .red : .blue)
                 .symbolEffect(.pulse, isActive: speechService.isTranscribing)
+                .labelStyle(.iconOnly)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(speechService.isTranscribing ? "Stop dictation" : "Start dictation")
     }
 
     // MARK: - Configuration
@@ -217,8 +218,9 @@ struct CreateSessionView: View {
                     Button {
                         viewModel.removeAttachment(attachment)
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
+                        Label("Remove attachment", systemImage: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
+                            .labelStyle(.iconOnly)
                     }
                     .buttonStyle(.plain)
                 }
@@ -283,9 +285,10 @@ struct CreateSessionView: View {
                             Button {
                                 viewModel.removeTag(tag)
                             } label: {
-                                Image(systemName: "xmark.circle.fill")
+                                Label("Remove tag", systemImage: "xmark.circle.fill")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
+                                    .labelStyle(.iconOnly)
                             }
                         }
                         .padding(.horizontal, 8)
@@ -305,8 +308,9 @@ struct CreateSessionView: View {
                 Button {
                     viewModel.addTag()
                 } label: {
-                    Image(systemName: "plus.circle.fill")
+                    Label("Add tag", systemImage: "plus.circle.fill")
                         .foregroundStyle(.blue)
+                        .labelStyle(.iconOnly)
                 }
                 .disabled(viewModel.tagInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
