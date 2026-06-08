@@ -19,7 +19,7 @@ final class CreateSessionViewModel {
     var errorMessage: String?
 
     var selectedMode: DevinMode = .normal
-    var selectedRepos: [String] = []
+    var selectedRepos: [String] = RepoPickerStorage.shared.savedSelectedRepos
     var selectedPlatform: String?
     var customTitle = ""
     var maxAcuLimit: Int?

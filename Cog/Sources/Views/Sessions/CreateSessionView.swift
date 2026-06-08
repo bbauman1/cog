@@ -172,7 +172,7 @@ struct CreateSessionView: View {
                         Text("None")
                             .foregroundStyle(.secondary)
                     } else {
-                        Text(viewModel.selectedRepos.joined(separator: ", "))
+                        Text(viewModel.selectedRepos.map { repoDisplayName($0) }.joined(separator: ", "))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.tail)
@@ -449,6 +449,48 @@ struct CreateSessionView: View {
             viewModel.errorMessage = error.localizedDescription
         }
     }
+
+    private func repoDisplayName(_ path: String) -> String {
+        let components = path.split(separator: "/")
+        return components.count > 1 ? String(components.last!) : path
+    }
+}
+
+// MARK: - Repository Picker Storage
+
+@MainActor
+final class RepoPickerStorage {
+    static let shared = RepoPickerStorage()
+
+    private let defaults = UserDefaults(suiteName: "group.com.cogfordevin.ios") ?? .standard
+    private let selectedReposKey = "repo_picker_selected_repos"
+    private let recentReposKey = "repo_picker_recent_repos"
+    private let maxRecents = 5
+
+    private init() {}
+
+    var savedSelectedRepos: [String] {
+        get { defaults.stringArray(forKey: selectedReposKey) ?? [] }
+        set { defaults.set(newValue, forKey: selectedReposKey) }
+    }
+
+    var recentRepos: [String] {
+        get { defaults.stringArray(forKey: recentReposKey) ?? [] }
+        set { defaults.set(Array(newValue.prefix(maxRecents)), forKey: recentReposKey) }
+    }
+
+    func addToRecents(_ path: String) {
+        var recents = recentRepos
+        recents.removeAll { $0 == path }
+        recents.insert(path, at: 0)
+        recentRepos = recents
+    }
+
+    func removeFromRecents(_ path: String) {
+        var recents = recentRepos
+        recents.removeAll { $0 == path }
+        recentRepos = recents
+    }
 }
 
 // MARK: - Repository Picker
@@ -457,6 +499,8 @@ struct RepositoryPickerView: View {
     var viewModel: CreateSessionViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
+
+    private var storage: RepoPickerStorage { .shared }
 
     var body: some View {
         NavigationStack {
@@ -475,21 +519,17 @@ struct RepositoryPickerView: View {
                         description: Text("No repositories match your search.")
                     )
                 } else {
-                    ForEach(viewModel.repositories) { repo in
-                        Button {
-                            toggleRepo(repo.repositoryPath)
-                        } label: {
-                            HStack {
-                                Image(systemName: "folder.fill")
-                                    .foregroundStyle(.secondary)
-                                Text(repo.repositoryPath)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                if viewModel.selectedRepos.contains(repo.repositoryPath) {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.blue)
-                                }
+                    if !recentsToShow.isEmpty {
+                        Section("Recents") {
+                            ForEach(recentsToShow, id: \.self) { path in
+                                repoRow(for: path)
                             }
+                        }
+                    }
+
+                    Section("All Repositories") {
+                        ForEach(sortedRepositories) { repo in
+                            repoRow(for: repo.repositoryPath)
                         }
                     }
                 }
@@ -514,12 +554,70 @@ struct RepositoryPickerView: View {
         }
     }
 
+    // MARK: - Computed Properties
+
+    private var recentsToShow: [String] {
+        let recents = storage.recentRepos
+        let available = Set(viewModel.repositories.map(\.repositoryPath))
+        return recents.filter { available.contains($0) }
+    }
+
+    private var sortedRepositories: [Repository] {
+        viewModel.repositories.sorted { repoName(from: $0.repositoryPath).localizedCaseInsensitiveCompare(repoName(from: $1.repositoryPath)) == .orderedAscending }
+    }
+
+    // MARK: - Row View
+
+    private func repoRow(for path: String) -> some View {
+        Button {
+            toggleRepo(path)
+        } label: {
+            HStack {
+                Image(systemName: "folder.fill")
+                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(repoName(from: path))
+                        .foregroundStyle(.primary)
+                    Text(orgName(from: path))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if viewModel.selectedRepos.contains(path) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.blue)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Helpers
+
+    private func repoName(from path: String) -> String {
+        let components = path.split(separator: "/")
+        return components.count > 1 ? String(components.last!) : path
+    }
+
+    private func orgName(from path: String) -> String {
+        let components = path.split(separator: "/")
+        if components.count > 2 {
+            return components.dropFirst().dropLast().joined(separator: "/")
+        } else if components.count == 2 {
+            return String(components.first!)
+        }
+        return ""
+    }
+
     private func toggleRepo(_ path: String) {
         if let index = viewModel.selectedRepos.firstIndex(of: path) {
             viewModel.selectedRepos.remove(at: index)
+            storage.removeFromRecents(path)
         } else {
             viewModel.selectedRepos.append(path)
+            storage.addToRecents(path)
         }
+        storage.savedSelectedRepos = viewModel.selectedRepos
     }
 }
 
