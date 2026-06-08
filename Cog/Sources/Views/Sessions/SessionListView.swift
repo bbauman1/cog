@@ -5,7 +5,6 @@ struct SessionListView: View {
     @Namespace private var sessionTransition
     @State private var viewModel = SessionListViewModel()
     @State private var navigationPath = NavigationPath()
-    @State private var searchText = ""
     @State private var showCreateSession = false
     @State private var showSettings = false
     @State private var terminateSessionId: String?
@@ -30,7 +29,6 @@ struct SessionListView: View {
                     }
                 }
             }
-            .searchable(text: $searchText, prompt: "Search sessions")
             .sheet(isPresented: $showCreateSession) {
                 CreateSessionView { _ in
                     Task { await viewModel.refresh() }
@@ -114,11 +112,11 @@ struct SessionListView: View {
                 loadingView
             } else if let error = viewModel.errorMessage, viewModel.sessions.isEmpty {
                 errorView(error)
-            } else if filteredAndSearched.isEmpty {
+            } else if viewModel.filteredSessions.isEmpty {
                 emptyView
             } else {
                 List {
-                    ForEach(filteredAndSearched) { session in
+                    ForEach(viewModel.filteredSessions) { session in
                         NavigationLink(value: session.sessionId) {
                             SessionRowView(session: session)
                         }
@@ -158,14 +156,6 @@ struct SessionListView: View {
         }
     }
 
-    private var filteredAndSearched: [Session] {
-        let filtered = viewModel.filteredSessions
-        if searchText.isEmpty { return filtered }
-        return filtered.filter { session in
-            session.sessionId.localizedCaseInsensitiveContains(searchText) ||
-            (session.title?.localizedCaseInsensitiveContains(searchText) ?? false)
-        }
-    }
 
     private func isSessionActive(_ session: Session) -> Bool {
         session.status == .running || session.status == .claimed ||
