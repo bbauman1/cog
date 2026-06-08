@@ -10,6 +10,7 @@ struct CreateSessionView: View {
     @State private var showRepositoryPicker = false
     @State private var showFilePicker = false
     @State private var showCamera = false
+    @State private var showCameraUnavailableAlert = false
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var showAdvanced = false
     var onSessionCreated: ((Session) -> Void)?
@@ -76,6 +77,11 @@ struct CreateSessionView: View {
                     Task { await handleCameraCapture(image) }
                 }
                 .ignoresSafeArea()
+            }
+            .alert("Camera Unavailable", isPresented: $showCameraUnavailableAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("This device does not have a camera.")
             }
         }
     }
@@ -220,7 +226,11 @@ struct CreateSessionView: View {
 
             Menu {
                 Button {
-                    showCamera = true
+                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        showCamera = true
+                    } else {
+                        showCameraUnavailableAlert = true
+                    }
                 } label: {
                     Label("Camera", systemImage: "camera")
                 }
