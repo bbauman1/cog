@@ -391,6 +391,7 @@ struct MessageBubbleView: View {
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
                 MarkdownMessageView(text: message.message, isUser: isUser)
+                    .textSelection(.enabled)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(isUser ? Color.blue : Color(.systemGray5))
