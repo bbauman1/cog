@@ -25,7 +25,8 @@ struct SessionListView: View {
                     Button {
                         showSettings = true
                     } label: {
-                        Image(systemName: "gearshape")
+                        Label("Settings", systemImage: "gearshape")
+                            .labelStyle(.iconOnly)
                     }
                 }
             }
@@ -50,12 +51,13 @@ struct SessionListView: View {
                 Button {
                     showCreateSession = true
                 } label: {
-                    Image(systemName: "plus")
+                    Label("New session", systemImage: "plus")
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
                         .background(.blue, in: Circle())
                         .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+                        .labelStyle(.iconOnly)
                 }
                 .padding(20)
             }
