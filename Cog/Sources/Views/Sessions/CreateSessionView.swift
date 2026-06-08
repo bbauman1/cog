@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -8,6 +9,9 @@ struct CreateSessionView: View {
     @State private var speechService = SpeechTranscriptionService()
     @State private var showRepositoryPicker = false
     @State private var showFilePicker = false
+    @State private var showCamera = false
+    @State private var showCameraUnavailableAlert = false
+    @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var showAdvanced = false
     var onSessionCreated: ((Session) -> Void)?
 
@@ -64,6 +68,20 @@ struct CreateSessionView: View {
                 allowsMultipleSelection: true
             ) { result in
                 Task { await handleFileImport(result) }
+            }
+            .onChange(of: selectedPhotoItems) { _, items in
+                Task { await handlePhotoSelection(items) }
+            }
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraImagePicker { image in
+                    Task { await handleCameraCapture(image) }
+                }
+                .ignoresSafeArea()
+            }
+            .alert("Camera Unavailable", isPresented: $showCameraUnavailableAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("This device does not have a camera.")
             }
         }
     }
@@ -206,8 +224,30 @@ struct CreateSessionView: View {
                 }
             }
 
-            Button {
-                showFilePicker = true
+            Menu {
+                Button {
+                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        showCamera = true
+                    } else {
+                        showCameraUnavailableAlert = true
+                    }
+                } label: {
+                    Label("Camera", systemImage: "camera")
+                }
+
+                PhotosPicker(
+                    selection: $selectedPhotoItems,
+                    maxSelectionCount: 10,
+                    matching: .any(of: [.images, .screenshots, .videos])
+                ) {
+                    Label("Photos", systemImage: "photo.on.rectangle")
+                }
+
+                Button {
+                    showFilePicker = true
+                } label: {
+                    Label("Files", systemImage: "folder")
+                }
             } label: {
                 Label("Add File", systemImage: "plus.circle")
             }
@@ -341,6 +381,40 @@ struct CreateSessionView: View {
         }
     }
 
+    private func handlePhotoSelection(_ items: [PhotosPickerItem]) async {
+        for item in items {
+            if let data = try? await item.loadTransferable(type: Data.self) {
+                let mimeType: String
+                let ext: String
+                if let contentType = item.supportedContentTypes.first,
+                   let mime = contentType.preferredMIMEType {
+                    mimeType = mime
+                    ext = contentType.preferredFilenameExtension ?? "jpg"
+                } else {
+                    mimeType = "image/jpeg"
+                    ext = "jpg"
+                }
+                let fileName = "photo_\(UUID().uuidString.prefix(8)).\(ext)"
+                await viewModel.uploadAttachment(
+                    data: data,
+                    fileName: fileName,
+                    mimeType: mimeType
+                )
+            }
+        }
+        selectedPhotoItems = []
+    }
+
+    private func handleCameraCapture(_ image: UIImage) async {
+        guard let data = image.jpegData(compressionQuality: 0.85) else { return }
+        let fileName = "camera_\(UUID().uuidString.prefix(8)).jpg"
+        await viewModel.uploadAttachment(
+            data: data,
+            fileName: fileName,
+            mimeType: "image/jpeg"
+        )
+    }
+
     private func handleFileImport(_ result: Result<[URL], Error>) async {
         switch result {
         case .success(let urls):
@@ -433,6 +507,50 @@ struct RepositoryPickerView: View {
             viewModel.selectedRepos.remove(at: index)
         } else {
             viewModel.selectedRepos.append(path)
+        }
+    }
+}
+
+// MARK: - Camera Image Picker
+
+struct CameraImagePicker: UIViewControllerRepresentable {
+    @Environment(\.dismiss) private var dismiss
+    var onCapture: (UIImage) -> Void
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_: UIImagePickerController, context _: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(dismiss: dismiss, onCapture: onCapture)
+    }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        private let dismiss: DismissAction
+        private let onCapture: (UIImage) -> Void
+
+        init(dismiss: DismissAction, onCapture: @escaping (UIImage) -> Void) {
+            self.dismiss = dismiss
+            self.onCapture = onCapture
+        }
+
+        func imagePickerController(
+            _: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            if let image = info[.originalImage] as? UIImage {
+                onCapture(image)
+            }
+            dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_: UIImagePickerController) {
+            dismiss()
         }
     }
 }

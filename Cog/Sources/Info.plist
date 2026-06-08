@@ -32,6 +32,10 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Cog uses the camera to capture photos for session attachments.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cog accesses your photo library to attach images to sessions.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Cog uses the microphone to transcribe your voice into text for session prompts and messages.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
