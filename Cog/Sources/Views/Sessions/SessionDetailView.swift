@@ -383,8 +383,6 @@ struct MarkdownMessageView: View {
 struct MessageBubbleView: View {
     let message: Message
 
-    @State private var showCopied = false
-
     private var isUser: Bool { message.source == .user }
 
     var body: some View {
@@ -393,34 +391,11 @@ struct MessageBubbleView: View {
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
                 MarkdownMessageView(text: message.message, isUser: isUser)
+                    .textSelection(.enabled)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(isUser ? Color.blue : Color(.systemGray5))
                     .clipShape(RoundedRectangle(cornerRadius: 18))
-                    .overlay {
-                        if showCopied {
-                            Text("Copied")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(.black.opacity(0.7))
-                                .clipShape(Capsule())
-                                .transition(.opacity.combined(with: .scale))
-                        }
-                    }
-                    .onTapGesture {
-                        UIPasteboard.general.string = message.message
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showCopied = true
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                showCopied = false
-                            }
-                        }
-                    }
 
                 Text(message.createdDate.relativeString)
                     .font(.caption2)
