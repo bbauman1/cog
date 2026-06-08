@@ -11,8 +11,10 @@ struct CreateSessionView: View {
     @State private var showFilePicker = false
     @State private var showCamera = false
     @State private var showCameraUnavailableAlert = false
+    @State private var showPhotoPicker = false
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var showAdvanced = false
+    @FocusState private var isPromptFocused: Bool
     var onSessionCreated: ((Session) -> Void)?
 
     var body: some View {
@@ -48,6 +50,7 @@ struct CreateSessionView: View {
                 }
             }
             .task {
+                isPromptFocused = true
                 if let client = appState.apiClient {
                     viewModel.configure(with: client)
                     await viewModel.loadInitialData()
@@ -69,6 +72,12 @@ struct CreateSessionView: View {
             ) { result in
                 Task { await handleFileImport(result) }
             }
+            .photosPicker(
+                isPresented: $showPhotoPicker,
+                selection: $selectedPhotoItems,
+                maxSelectionCount: 10,
+                matching: .any(of: [.images, .screenshots, .videos])
+            )
             .onChange(of: selectedPhotoItems) { _, items in
                 Task { await handlePhotoSelection(items) }
             }
@@ -98,6 +107,7 @@ struct CreateSessionView: View {
     private var promptSection: some View {
         Section {
             TextField("What should Devin work on?", text: $viewModel.prompt, axis: .vertical)
+                .focused($isPromptFocused)
                 .lineLimit(3...10)
 
             if speechService.isAvailable {
@@ -237,11 +247,9 @@ struct CreateSessionView: View {
                     Label("Camera", systemImage: "camera")
                 }
 
-                PhotosPicker(
-                    selection: $selectedPhotoItems,
-                    maxSelectionCount: 10,
-                    matching: .any(of: [.images, .screenshots, .videos])
-                ) {
+                Button {
+                    showPhotoPicker = true
+                } label: {
                     Label("Photos", systemImage: "photo.on.rectangle")
                 }
 
