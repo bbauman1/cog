@@ -563,7 +563,7 @@ struct RepositoryPickerView: View {
     }
 
     private var sortedRepositories: [Repository] {
-        viewModel.repositories.sorted { repoName(from: $0.repositoryPath) < repoName(from: $1.repositoryPath) }
+        viewModel.repositories.sorted { repoName(from: $0.repositoryPath).localizedCaseInsensitiveCompare(repoName(from: $1.repositoryPath)) == .orderedAscending }
     }
 
     // MARK: - Row View
@@ -589,6 +589,7 @@ struct RepositoryPickerView: View {
                 }
             }
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers
