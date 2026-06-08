@@ -49,6 +49,18 @@ targets:
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
 
+  CogTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: Cog
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cogfordevin.ios.tests
+        GENERATE_INFOPLIST_FILE: YES
+
   SessionsWidgetExtension:
     type: app-extension
     platform: iOS

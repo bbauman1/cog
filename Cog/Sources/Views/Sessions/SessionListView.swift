@@ -84,10 +84,11 @@ struct SessionListView: View {
         .onDisappear {
             viewModel.stopPolling()
         }
+        .onAppear {
+            consumeDeepLink()
+        }
         .onChange(of: DeepLinkManager.shared.pendingSessionId) {
-            if let sessionId = DeepLinkManager.shared.consumePendingSession() {
-                navigationPath.append(sessionId)
-            }
+            consumeDeepLink()
         }
     }
 
@@ -158,6 +159,12 @@ struct SessionListView: View {
         }
     }
 
+
+    private func consumeDeepLink() {
+        if let sessionId = DeepLinkManager.shared.consumePendingSession() {
+            navigationPath.append(sessionId)
+        }
+    }
 
     private func isSessionActive(_ session: Session) -> Bool {
         session.status == .running || session.status == .claimed ||

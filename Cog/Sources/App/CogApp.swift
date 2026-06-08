@@ -21,9 +21,18 @@ struct CogApp: App {
     }
 
     private func handleDeepLink(_ url: URL) {
-        guard url.scheme == "cog",
-              url.host == "session",
-              let sessionId = url.pathComponents.dropFirst().first else { return }
-        DeepLinkManager.shared.pendingSessionId = sessionId
+        guard url.scheme == "cog" else { return }
+
+        switch url.host {
+        case "session":
+            if let sessionId = url.pathComponents.dropFirst().first {
+                DeepLinkManager.shared.pendingSessionId = sessionId
+            }
+        case "sessions":
+            // Opens the app to the session list (no specific session)
+            break
+        default:
+            break
+        }
     }
 }

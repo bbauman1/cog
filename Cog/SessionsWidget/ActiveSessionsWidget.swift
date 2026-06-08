@@ -131,6 +131,7 @@ struct SessionsWidgetView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .widgetURL(URL(string: "cog://sessions"))
     }
 
     // MARK: - Medium Widget (top 3 sessions)
