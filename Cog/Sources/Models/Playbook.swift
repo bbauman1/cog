@@ -28,8 +28,8 @@ struct CreatePlaybookBody: Encodable, Sendable {
 }
 
 struct UpdatePlaybookBody: Encodable, Sendable {
-    let title: String?
-    let body: String?
+    let title: String
+    let body: String
 
     enum CodingKeys: String, CodingKey {
         case title, body

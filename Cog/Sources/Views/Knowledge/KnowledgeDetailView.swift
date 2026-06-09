@@ -154,7 +154,7 @@ struct KnowledgeDetailView: View {
         let body = UpdateKnowledgeBody(
             name: editName.trimmingCharacters(in: .whitespacesAndNewlines),
             body: editBody,
-            trigger: editTrigger.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : editTrigger.trimmingCharacters(in: .whitespacesAndNewlines),
+            trigger: editTrigger.trimmingCharacters(in: .whitespacesAndNewlines),
             isEnabled: editEnabled,
             pinnedRepo: editPinnedRepo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : editPinnedRepo.trimmingCharacters(in: .whitespacesAndNewlines)
         )

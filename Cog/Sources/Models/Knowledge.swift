@@ -41,10 +41,10 @@ struct CreateKnowledgeBody: Encodable, Sendable {
 }
 
 struct UpdateKnowledgeBody: Encodable, Sendable {
-    let name: String?
-    let body: String?
-    let trigger: String?
-    let isEnabled: Bool?
+    let name: String
+    let body: String
+    let trigger: String
+    let isEnabled: Bool
     let pinnedRepo: String?
 
     enum CodingKeys: String, CodingKey {

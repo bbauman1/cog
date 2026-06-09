@@ -87,8 +87,11 @@ final class KnowledgeListViewModel {
             let updated = try await apiClient.updateKnowledge(
                 noteId: note.noteId,
                 body: UpdateKnowledgeBody(
-                    name: nil, body: nil, trigger: nil,
-                    isEnabled: newEnabled, pinnedRepo: nil
+                    name: note.name,
+                    body: note.body ?? "",
+                    trigger: note.trigger ?? "",
+                    isEnabled: newEnabled,
+                    pinnedRepo: note.pinnedRepo
                 )
             )
             if let index = notes.firstIndex(where: { $0.noteId == note.noteId }) {
