@@ -5,14 +5,16 @@ struct Playbook: Codable, Identifiable, Sendable {
     let name: String
     let instructions: String?
     let createdAt: Int?
+    let updatedAt: Int?
 
     var id: String { playbookId }
 
     enum CodingKeys: String, CodingKey {
         case playbookId = "playbook_id"
-        case name
-        case instructions
+        case name = "title"
+        case instructions = "body"
         case createdAt = "created_at"
+        case updatedAt = "updated_at"
     }
 }
 

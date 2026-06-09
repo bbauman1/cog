@@ -29,7 +29,7 @@ struct KnowledgeNote: Codable, Identifiable, Sendable {
 struct CreateKnowledgeBody: Encodable, Sendable {
     let name: String
     let body: String
-    let trigger: String?
+    let trigger: String
     let isEnabled: Bool
     let pinnedRepo: String?
 

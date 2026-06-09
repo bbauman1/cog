@@ -76,7 +76,7 @@ struct CreateKnowledgeView: View {
         let createBody = CreateKnowledgeBody(
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             body: noteBody.trimmingCharacters(in: .whitespacesAndNewlines),
-            trigger: trigger.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : trigger.trimmingCharacters(in: .whitespacesAndNewlines),
+            trigger: trigger.trimmingCharacters(in: .whitespacesAndNewlines),
             isEnabled: isEnabled,
             pinnedRepo: pinnedRepo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : pinnedRepo.trimmingCharacters(in: .whitespacesAndNewlines)
         )
