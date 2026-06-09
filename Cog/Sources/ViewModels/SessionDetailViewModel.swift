@@ -178,7 +178,8 @@ final class SessionDetailViewModel {
     var isSessionActive: Bool {
         guard let session else { return false }
         return session.status == .running || session.status == .claimed ||
-               session.status == .new || session.status == .resuming
+               session.status == .new || session.status == .resuming ||
+               session.status == .suspended
     }
 
     var isDevinWorking: Bool {
