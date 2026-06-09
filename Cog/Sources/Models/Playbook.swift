@@ -15,3 +15,21 @@ struct Playbook: Codable, Identifiable, Sendable {
         case createdAt = "created_at"
     }
 }
+
+struct CreatePlaybookBody: Encodable, Sendable {
+    let title: String
+    let body: String
+
+    enum CodingKeys: String, CodingKey {
+        case title, body
+    }
+}
+
+struct UpdatePlaybookBody: Encodable, Sendable {
+    let title: String?
+    let body: String?
+
+    enum CodingKeys: String, CodingKey {
+        case title, body
+    }
+}

@@ -321,6 +321,60 @@ actor DevinAPIClient {
         )
     }
 
+    func createKnowledge(_ body: CreateKnowledgeBody) async throws -> KnowledgeNote {
+        try await request(
+            method: "POST",
+            path: "/organizations/\(orgId)/knowledge/notes",
+            body: body
+        )
+    }
+
+    func updateKnowledge(noteId: String, body: UpdateKnowledgeBody) async throws -> KnowledgeNote {
+        try await request(
+            method: "PUT",
+            path: "/organizations/\(orgId)/knowledge/notes/\(noteId)",
+            body: body
+        )
+    }
+
+    func deleteKnowledge(noteId: String) async throws {
+        try await requestVoid(
+            method: "DELETE",
+            path: "/organizations/\(orgId)/knowledge/notes/\(noteId)"
+        )
+    }
+
+    // MARK: - Playbooks (CRUD)
+
+    func getPlaybook(playbookId: String) async throws -> Playbook {
+        try await request(
+            path: "/organizations/\(orgId)/playbooks/\(playbookId)"
+        )
+    }
+
+    func createPlaybook(_ body: CreatePlaybookBody) async throws -> Playbook {
+        try await request(
+            method: "POST",
+            path: "/organizations/\(orgId)/playbooks",
+            body: body
+        )
+    }
+
+    func updatePlaybook(playbookId: String, body: UpdatePlaybookBody) async throws -> Playbook {
+        try await request(
+            method: "PUT",
+            path: "/organizations/\(orgId)/playbooks/\(playbookId)",
+            body: body
+        )
+    }
+
+    func deletePlaybook(playbookId: String) async throws {
+        try await requestVoid(
+            method: "DELETE",
+            path: "/organizations/\(orgId)/playbooks/\(playbookId)"
+        )
+    }
+
     // MARK: - Repositories
 
     func listRepositories(

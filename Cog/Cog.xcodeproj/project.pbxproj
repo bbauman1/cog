@@ -37,6 +37,15 @@
 		B1000030 /* DeepLinkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000031 /* DeepLinkManager.swift */; };
 		B1000031 /* WidgetSessionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000032 /* WidgetSessionData.swift */; };
 		B1000033 /* SpeechTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000033 /* SpeechTranscriptionService.swift */; };
+		B1000034 /* KnowledgeListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000034 /* KnowledgeListViewModel.swift */; };
+		B1000035 /* PlaybookListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000035 /* PlaybookListViewModel.swift */; };
+		B1000036 /* KnowledgeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000036 /* KnowledgeListView.swift */; };
+		B1000037 /* KnowledgeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000037 /* KnowledgeDetailView.swift */; };
+		B1000038 /* CreateKnowledgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000038 /* CreateKnowledgeView.swift */; };
+		B1000039 /* PlaybookListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000039 /* PlaybookListView.swift */; };
+		B1000040 /* PlaybookDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000040 /* PlaybookDetailView.swift */; };
+		B1000041 /* CreatePlaybookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000041 /* CreatePlaybookView.swift */; };
+		B1000042 /* SchedulePlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1000042 /* SchedulePlaceholderView.swift */; };
 		B2000001 /* SessionsWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000001 /* SessionsWidgetBundle.swift */; };
 		B2000002 /* ActiveSessionsWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000002 /* ActiveSessionsWidget.swift */; };
 		B2000003 /* WidgetSessionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2000003 /* WidgetSessionData.swift */; };
@@ -75,6 +84,15 @@
 		F1000031 /* DeepLinkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkManager.swift; sourceTree = "<group>"; };
 		F1000032 /* WidgetSessionData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSessionData.swift; sourceTree = "<group>"; };
 		F1000033 /* SpeechTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTranscriptionService.swift; sourceTree = "<group>"; };
+		F1000034 /* KnowledgeListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeListViewModel.swift; sourceTree = "<group>"; };
+		F1000035 /* PlaybookListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybookListViewModel.swift; sourceTree = "<group>"; };
+		F1000036 /* KnowledgeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeListView.swift; sourceTree = "<group>"; };
+		F1000037 /* KnowledgeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeDetailView.swift; sourceTree = "<group>"; };
+		F1000038 /* CreateKnowledgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateKnowledgeView.swift; sourceTree = "<group>"; };
+		F1000039 /* PlaybookListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybookListView.swift; sourceTree = "<group>"; };
+		F1000040 /* PlaybookDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybookDetailView.swift; sourceTree = "<group>"; };
+		F1000041 /* CreatePlaybookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePlaybookView.swift; sourceTree = "<group>"; };
+		F1000042 /* SchedulePlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulePlaceholderView.swift; sourceTree = "<group>"; };
 		F1000099 /* Cog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2000001 /* SessionsWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsWidgetBundle.swift; sourceTree = "<group>"; };
 		F2000002 /* ActiveSessionsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSessionsWidget.swift; sourceTree = "<group>"; };
@@ -201,6 +219,9 @@
 				F1000003 /* ContentView.swift */,
 				D0000007 /* Auth */,
 				D0000008 /* Sessions */,
+				D0000014 /* Knowledge */,
+				D0000015 /* Playbooks */,
+				D0000016 /* Schedules */,
 				D0000011 /* Settings */,
 			);
 			path = Views;
@@ -231,6 +252,8 @@
 				F1000009 /* SessionListViewModel.swift */,
 				F1000025 /* SessionDetailViewModel.swift */,
 				F1000026 /* CreateSessionViewModel.swift */,
+				F1000034 /* KnowledgeListViewModel.swift */,
+				F1000035 /* PlaybookListViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -278,6 +301,34 @@
 				F2000099 /* SessionsWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D0000014 /* Knowledge */ = {
+			isa = PBXGroup;
+			children = (
+				F1000036 /* KnowledgeListView.swift */,
+				F1000037 /* KnowledgeDetailView.swift */,
+				F1000038 /* CreateKnowledgeView.swift */,
+			);
+			path = Knowledge;
+			sourceTree = "<group>";
+		};
+		D0000015 /* Playbooks */ = {
+			isa = PBXGroup;
+			children = (
+				F1000039 /* PlaybookListView.swift */,
+				F1000040 /* PlaybookDetailView.swift */,
+				F1000041 /* CreatePlaybookView.swift */,
+			);
+			path = Playbooks;
+			sourceTree = "<group>";
+		};
+		D0000016 /* Schedules */ = {
+			isa = PBXGroup;
+			children = (
+				F1000042 /* SchedulePlaceholderView.swift */,
+			);
+			path = Schedules;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -392,6 +443,15 @@
 				B1000030 /* DeepLinkManager.swift in Sources */,
 				B1000031 /* WidgetSessionData.swift in Sources */,
 				B1000033 /* SpeechTranscriptionService.swift in Sources */,
+				B1000034 /* KnowledgeListViewModel.swift in Sources */,
+				B1000035 /* PlaybookListViewModel.swift in Sources */,
+				B1000036 /* KnowledgeListView.swift in Sources */,
+				B1000037 /* KnowledgeDetailView.swift in Sources */,
+				B1000038 /* CreateKnowledgeView.swift in Sources */,
+				B1000039 /* PlaybookListView.swift in Sources */,
+				B1000040 /* PlaybookDetailView.swift in Sources */,
+				B1000041 /* CreatePlaybookView.swift in Sources */,
+				B1000042 /* SchedulePlaceholderView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -6,7 +6,6 @@ struct SessionListView: View {
     @State private var viewModel = SessionListViewModel()
     @State private var navigationPath = NavigationPath()
     @State private var showCreateSession = false
-    @State private var showSettings = false
     @State private var terminateSessionId: String?
     @State private var showTerminateConfirmation = false
 
@@ -20,31 +19,9 @@ struct SessionListView: View {
             .navigationDestination(for: String.self) { sessionId in
                 SessionDetailView(sessionId: sessionId, transitionNamespace: sessionTransition)
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Label("Settings", systemImage: "gearshape")
-                            .labelStyle(.iconOnly)
-                    }
-                }
-            }
             .sheet(isPresented: $showCreateSession) {
                 CreateSessionView { _ in
                     Task { await viewModel.refresh() }
-                }
-            }
-            .sheet(isPresented: $showSettings) {
-                NavigationStack {
-                    SettingsView()
-                        .toolbar {
-                            ToolbarItem(placement: .topBarLeading) {
-                                Button("Done") {
-                                    showSettings = false
-                                }
-                            }
-                        }
                 }
             }
             .overlay(alignment: .bottomTrailing) {
