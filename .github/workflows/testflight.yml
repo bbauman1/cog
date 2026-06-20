@@ -1,0 +1,172 @@
+name: Deploy to TestFlight
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: testflight-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      ASC_BYPASS_KEYCHAIN: "1"
+      ASC_NO_UPDATE: "1"
+      ASC_TELEMETRY_DISABLED: "1"
+      APP_ID: "6777732746"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: Cog
+        run: xcodegen generate
+
+      - name: Install asc CLI
+        uses: rudrankriyam/setup-asc@v1
+
+      - name: Configure asc auth
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          echo "$ASC_PRIVATE_KEY" > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
+          asc auth login --bypass-keychain --name "CI" \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --private-key "$KEY_PATH"
+
+      - name: Fetch signing assets
+        run: |
+          asc signing fetch \
+            --bundle-id com.cogfordevin.ios \
+            --profile-type IOS_APP_STORE \
+            --output ./signing \
+            --create-missing
+
+          asc signing fetch \
+            --bundle-id com.cogfordevin.ios.sessions-widget \
+            --profile-type IOS_APP_STORE \
+            --output ./signing \
+            --create-missing
+
+      - name: Set up keychain
+        env:
+          APPLE_DIST_KEY_PEM: ${{ secrets.APPLE_DIST_KEY_PEM }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Write distribution private key
+          echo "$APPLE_DIST_KEY_PEM" > "$RUNNER_TEMP/dist_key.pem"
+          chmod 600 "$RUNNER_TEMP/dist_key.pem"
+
+          # Convert downloaded cert to PEM and create P12
+          CERT_FILE=$(find ./signing -name "*.cer" | head -1)
+          openssl x509 -inform DER -in "$CERT_FILE" -out "$RUNNER_TEMP/dist_cert.pem"
+          openssl pkcs12 -export \
+            -inkey "$RUNNER_TEMP/dist_key.pem" \
+            -in "$RUNNER_TEMP/dist_cert.pem" \
+            -out "$RUNNER_TEMP/dist.p12" \
+            -passout pass:ci
+
+          # Import P12 into keychain
+          security import "$RUNNER_TEMP/dist.p12" -P "ci" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain
+
+          # Install provisioning profiles
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp ./signing/*.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+
+      - name: Read version from project.yml
+        id: version
+        working-directory: Cog
+        run: |
+          VERSION=$(grep 'MARKETING_VERSION:' project.yml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Get next build number
+        id: build-number
+        run: |
+          BUILD_NUMBER=$(asc builds next-build-number \
+            --app "$APP_ID" \
+            --version "${{ steps.version.outputs.VERSION }}" \
+            --platform IOS \
+            --initial-build-number 1 \
+            --output json | jq -r '.nextBuildNumber')
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "Build: ${{ steps.version.outputs.VERSION }} ($BUILD_NUMBER)"
+
+      - name: Archive
+        working-directory: Cog
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          asc xcode archive \
+            --project Cog.xcodeproj \
+            --scheme Cog \
+            --configuration Release \
+            --archive-path "$RUNNER_TEMP/Cog.xcarchive" \
+            --clean \
+            --overwrite \
+            --xcodebuild-flag=-destination \
+            --xcodebuild-flag="generic/platform=iOS" \
+            --xcodebuild-flag=-allowProvisioningUpdates \
+            --xcodebuild-flag=-authenticationKeyPath \
+            --xcodebuild-flag="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8" \
+            --xcodebuild-flag=-authenticationKeyID \
+            --xcodebuild-flag="$ASC_KEY_ID" \
+            --xcodebuild-flag=-authenticationKeyIssuerID \
+            --xcodebuild-flag="$ASC_ISSUER_ID" \
+            --xcodebuild-flag="CURRENT_PROJECT_VERSION=${{ steps.build-number.outputs.BUILD_NUMBER }}"
+
+      - name: Export IPA
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          asc xcode export \
+            --archive-path "$RUNNER_TEMP/Cog.xcarchive" \
+            --export-options Cog/.asc/export-options.plist \
+            --ipa-path "$RUNNER_TEMP/Cog.ipa" \
+            --overwrite \
+            --timeout 10m \
+            --xcodebuild-flag=-allowProvisioningUpdates \
+            --xcodebuild-flag=-authenticationKeyPath \
+            --xcodebuild-flag="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8" \
+            --xcodebuild-flag=-authenticationKeyID \
+            --xcodebuild-flag="$ASC_KEY_ID" \
+            --xcodebuild-flag=-authenticationKeyIssuerID \
+            --xcodebuild-flag="$ASC_ISSUER_ID"
+
+      - name: Publish to TestFlight
+        run: |
+          asc publish testflight \
+            --app "$APP_ID" \
+            --ipa "$RUNNER_TEMP/Cog.ipa" \
+            --wait \
+            --poll-interval 15s
+
+      - name: Cleanup
+        if: always()
+        run: |
+          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/dist_key.pem" "$RUNNER_TEMP/dist_cert.pem" \
+                "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP/AuthKey_"*.p8
