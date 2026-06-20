@@ -13,9 +13,6 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 45
     env:
-      ASC_BYPASS_KEYCHAIN: "1"
-      ASC_NO_UPDATE: "1"
-      ASC_TELEMETRY_DISABLED: "1"
       APP_ID: "6777732746"
     steps:
       - uses: actions/checkout@v4
@@ -60,85 +57,6 @@ jobs:
             --key-id "$ASC_KEY_ID" \
             --issuer-id "$ASC_ISSUER_ID" \
             --private-key "$KEY_PATH"
-
-      - name: Fetch signing assets
-        run: |
-          mkdir -p ./signing
-
-          asc signing fetch \
-            --bundle-id com.cogfordevin.ios \
-            --profile-type IOS_APP_STORE \
-            --output ./signing \
-            --create-missing
-
-          # Widget profile/cert may already be fetched by the main bundle fetch;
-          # allow this to fail with "file exists" as long as files are present.
-          asc signing fetch \
-            --bundle-id com.cogfordevin.ios.sessions-widget \
-            --profile-type IOS_APP_STORE \
-            --output ./signing \
-            --create-missing 2>&1 || true
-
-          # Verify required assets exist
-          echo "Profiles: $(ls ./signing/*.mobileprovision 2>/dev/null | wc -l)"
-          echo "Certs: $(ls ./signing/*.cer 2>/dev/null | wc -l)"
-          if ! ls ./signing/*.mobileprovision >/dev/null 2>&1; then
-            echo "::error::No provisioning profiles found"
-            exit 1
-          fi
-          if ! ls ./signing/*.cer >/dev/null 2>&1; then
-            echo "::error::No certificates found"
-            exit 1
-          fi
-
-      - name: Set up keychain
-        env:
-          APPLE_DIST_KEY_PEM: ${{ secrets.APPLE_DIST_KEY_PEM }}
-        run: |
-          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
-          KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          # Reformat PEM: handles single-line, missing newlines, or correct format
-          printf '%s' "$APPLE_DIST_KEY_PEM" \
-            | tr -d '\r' \
-            | sed 's/-----BEGIN [A-Z ]*-----//' \
-            | sed 's/-----END [A-Z ]*-----//' \
-            | tr -d ' \n' \
-            | fold -w 64 \
-            | { echo "-----BEGIN PRIVATE KEY-----"; cat; echo; echo "-----END PRIVATE KEY-----"; } \
-            > "$RUNNER_TEMP/dist_key.pem"
-          chmod 600 "$RUNNER_TEMP/dist_key.pem"
-
-          echo "Dist key: $(wc -l < "$RUNNER_TEMP/dist_key.pem") lines, $(wc -c < "$RUNNER_TEMP/dist_key.pem") bytes"
-          if ! openssl pkey -in "$RUNNER_TEMP/dist_key.pem" -noout 2>/dev/null; then
-            echo "::error::APPLE_DIST_KEY_PEM could not be parsed as a valid private key."
-            exit 1
-          fi
-
-          # Convert downloaded cert to PEM and create P12
-          CERT_FILE=$(find ./signing -name "*.cer" | head -1)
-          openssl x509 -inform DER -in "$CERT_FILE" -out "$RUNNER_TEMP/dist_cert.pem"
-          openssl pkcs12 -export \
-            -inkey "$RUNNER_TEMP/dist_key.pem" \
-            -in "$RUNNER_TEMP/dist_cert.pem" \
-            -out "$RUNNER_TEMP/dist.p12" \
-            -passout pass:ci
-
-          # Import P12 into keychain
-          security import "$RUNNER_TEMP/dist.p12" -P "ci" \
-            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
-          security set-key-partition-list -S apple-tool:,apple: \
-            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain
-
-          # Install provisioning profiles
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp ./signing/*.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
-
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
 
       - name: Read version from project.yml
         id: version
@@ -213,6 +131,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
-          rm -f "$RUNNER_TEMP/dist_key.pem" "$RUNNER_TEMP/dist_cert.pem" \
-                "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP/AuthKey_"*.p8
+          rm -f "$RUNNER_TEMP/AuthKey_"*.p8
