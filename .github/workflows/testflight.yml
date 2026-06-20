@@ -63,17 +63,33 @@ jobs:
 
       - name: Fetch signing assets
         run: |
+          mkdir -p ./signing
+
           asc signing fetch \
             --bundle-id com.cogfordevin.ios \
             --profile-type IOS_APP_STORE \
             --output ./signing \
             --create-missing
 
+          # Widget profile/cert may already be fetched by the main bundle fetch;
+          # allow this to fail with "file exists" as long as files are present.
           asc signing fetch \
             --bundle-id com.cogfordevin.ios.sessions-widget \
             --profile-type IOS_APP_STORE \
             --output ./signing \
-            --create-missing
+            --create-missing 2>&1 || true
+
+          # Verify required assets exist
+          echo "Profiles: $(ls ./signing/*.mobileprovision 2>/dev/null | wc -l)"
+          echo "Certs: $(ls ./signing/*.cer 2>/dev/null | wc -l)"
+          if ! ls ./signing/*.mobileprovision >/dev/null 2>&1; then
+            echo "::error::No provisioning profiles found"
+            exit 1
+          fi
+          if ! ls ./signing/*.cer >/dev/null 2>&1; then
+            echo "::error::No certificates found"
+            exit 1
+          fi
 
       - name: Set up keychain
         env:
