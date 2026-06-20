@@ -38,21 +38,21 @@ jobs:
         run: |
           KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
 
-          # Write the .p8 key, sanitizing line endings
-          printf '%s\n' "$ASC_PRIVATE_KEY" | tr -d '\r' > "$KEY_PATH"
+          # Reformat PEM: handles single-line, missing newlines, or correct format
+          printf '%s' "$ASC_PRIVATE_KEY" \
+            | tr -d '\r' \
+            | sed 's/-----BEGIN PRIVATE KEY-----//' \
+            | sed 's/-----END PRIVATE KEY-----//' \
+            | tr -d ' \n' \
+            | fold -w 64 \
+            | { echo "-----BEGIN PRIVATE KEY-----"; cat; echo "-----END PRIVATE KEY-----"; } \
+            > "$KEY_PATH"
           chmod 600 "$KEY_PATH"
 
-          # Diagnostic: show file structure (no secret content)
           echo "Key file: $(wc -l < "$KEY_PATH") lines, $(wc -c < "$KEY_PATH") bytes"
-          echo "First line: $(head -1 "$KEY_PATH" | cut -c1-30)..."
-          echo "Last line: $(tail -1 "$KEY_PATH" | cut -c1-30)..."
 
-          if ! grep -q 'BEGIN PRIVATE KEY' "$KEY_PATH"; then
-            echo "::error::ASC_PRIVATE_KEY secret is not a valid .p8 key."
-            echo "The secret should contain the raw .p8 file contents, e.g.:"
-            echo "  -----BEGIN PRIVATE KEY-----"
-            echo "  MIGTAgEAMBM..."
-            echo "  -----END PRIVATE KEY-----"
+          if ! openssl pkey -in "$KEY_PATH" -noout 2>/dev/null; then
+            echo "::error::ASC_PRIVATE_KEY could not be parsed. Verify the .p8 contents."
             exit 1
           fi
 
@@ -85,13 +85,20 @@ jobs:
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-          # Write distribution private key, sanitizing line endings
-          printf '%s\n' "$APPLE_DIST_KEY_PEM" | tr -d '\r' > "$RUNNER_TEMP/dist_key.pem"
+          # Reformat PEM: handles single-line, missing newlines, or correct format
+          printf '%s' "$APPLE_DIST_KEY_PEM" \
+            | tr -d '\r' \
+            | sed 's/-----BEGIN [A-Z ]*-----//' \
+            | sed 's/-----END [A-Z ]*-----//' \
+            | tr -d ' \n' \
+            | fold -w 64 \
+            | { echo "-----BEGIN PRIVATE KEY-----"; cat; echo "-----END PRIVATE KEY-----"; } \
+            > "$RUNNER_TEMP/dist_key.pem"
           chmod 600 "$RUNNER_TEMP/dist_key.pem"
 
           echo "Dist key: $(wc -l < "$RUNNER_TEMP/dist_key.pem") lines, $(wc -c < "$RUNNER_TEMP/dist_key.pem") bytes"
-          if ! grep -q 'BEGIN' "$RUNNER_TEMP/dist_key.pem"; then
-            echo "::error::APPLE_DIST_KEY_PEM is not valid PEM. Paste the raw key including BEGIN/END lines."
+          if ! openssl pkey -in "$RUNNER_TEMP/dist_key.pem" -noout 2>/dev/null; then
+            echo "::error::APPLE_DIST_KEY_PEM could not be parsed as a valid private key."
             exit 1
           fi
 
