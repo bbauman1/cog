@@ -30,25 +30,32 @@ jobs:
       - name: Install asc CLI
         uses: rudrankriyam/setup-asc@v1
 
-      - name: Configure asc auth
+      - name: Write ASC API key
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          ASC_PRIVATE_KEY_B64: ${{ secrets.ASC_PRIVATE_KEY_B64 }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: |
           KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
 
-          # Decode base64 secret; handle both standard and URL-safe base64
-          printf '%s' "$ASC_PRIVATE_KEY_B64" | base64 --decode > "$KEY_PATH" 2>/dev/null
+          # Write the .p8 key, sanitizing line endings
+          printf '%s\n' "$ASC_PRIVATE_KEY" | tr -d '\r' > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
 
-          # Validate the decoded key is valid PEM
-          if ! head -1 "$KEY_PATH" | grep -q "BEGIN"; then
-            echo "::error::ASC_PRIVATE_KEY_B64 did not decode to valid PEM."
-            echo "To create this secret, run: cat /path/to/AuthKey.p8 | base64 | pbcopy"
+          # Diagnostic: show file structure (no secret content)
+          echo "Key file: $(wc -l < "$KEY_PATH") lines, $(wc -c < "$KEY_PATH") bytes"
+          echo "First line: $(head -1 "$KEY_PATH" | cut -c1-30)..."
+          echo "Last line: $(tail -1 "$KEY_PATH" | cut -c1-30)..."
+
+          if ! grep -q 'BEGIN PRIVATE KEY' "$KEY_PATH"; then
+            echo "::error::ASC_PRIVATE_KEY secret is not a valid .p8 key."
+            echo "The secret should contain the raw .p8 file contents, e.g.:"
+            echo "  -----BEGIN PRIVATE KEY-----"
+            echo "  MIGTAgEAMBM..."
+            echo "  -----END PRIVATE KEY-----"
             exit 1
           fi
 
-          chmod 600 "$KEY_PATH"
           asc auth login --bypass-keychain --name "CI" \
             --key-id "$ASC_KEY_ID" \
             --issuer-id "$ASC_ISSUER_ID" \
@@ -70,7 +77,7 @@ jobs:
 
       - name: Set up keychain
         env:
-          APPLE_DIST_KEY_PEM_B64: ${{ secrets.APPLE_DIST_KEY_PEM_B64 }}
+          APPLE_DIST_KEY_PEM: ${{ secrets.APPLE_DIST_KEY_PEM }}
         run: |
           KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
           KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
@@ -78,14 +85,15 @@ jobs:
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-          # Write distribution private key
-          printf '%s' "$APPLE_DIST_KEY_PEM_B64" | base64 --decode > "$RUNNER_TEMP/dist_key.pem"
-          if ! head -1 "$RUNNER_TEMP/dist_key.pem" | grep -q "BEGIN"; then
-            echo "::error::APPLE_DIST_KEY_PEM_B64 did not decode to valid PEM."
-            echo "To create this secret, run: cat /path/to/key.pem | base64 | pbcopy"
+          # Write distribution private key, sanitizing line endings
+          printf '%s\n' "$APPLE_DIST_KEY_PEM" | tr -d '\r' > "$RUNNER_TEMP/dist_key.pem"
+          chmod 600 "$RUNNER_TEMP/dist_key.pem"
+
+          echo "Dist key: $(wc -l < "$RUNNER_TEMP/dist_key.pem") lines, $(wc -c < "$RUNNER_TEMP/dist_key.pem") bytes"
+          if ! grep -q 'BEGIN' "$RUNNER_TEMP/dist_key.pem"; then
+            echo "::error::APPLE_DIST_KEY_PEM is not valid PEM. Paste the raw key including BEGIN/END lines."
             exit 1
           fi
-          chmod 600 "$RUNNER_TEMP/dist_key.pem"
 
           # Convert downloaded cert to PEM and create P12
           CERT_FILE=$(find ./signing -name "*.cer" | head -1)
