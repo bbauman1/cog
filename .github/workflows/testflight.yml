@@ -45,7 +45,7 @@ jobs:
             | sed 's/-----END PRIVATE KEY-----//' \
             | tr -d ' \n' \
             | fold -w 64 \
-            | { echo "-----BEGIN PRIVATE KEY-----"; cat; echo "-----END PRIVATE KEY-----"; } \
+            | { echo "-----BEGIN PRIVATE KEY-----"; cat; echo; echo "-----END PRIVATE KEY-----"; } \
             > "$KEY_PATH"
           chmod 600 "$KEY_PATH"
 
@@ -92,7 +92,7 @@ jobs:
             | sed 's/-----END [A-Z ]*-----//' \
             | tr -d ' \n' \
             | fold -w 64 \
-            | { echo "-----BEGIN PRIVATE KEY-----"; cat; echo "-----END PRIVATE KEY-----"; } \
+            | { echo "-----BEGIN PRIVATE KEY-----"; cat; echo; echo "-----END PRIVATE KEY-----"; } \
             > "$RUNNER_TEMP/dist_key.pem"
           chmod 600 "$RUNNER_TEMP/dist_key.pem"
 
