@@ -25,8 +25,8 @@ struct CreateSessionView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    contextArea
                     Spacer()
+                    contextArea
                     composerArea
                 }
             }
@@ -39,7 +39,7 @@ struct CreateSessionView: View {
                         }
                         dismiss()
                     } label: {
-                        Image(systemName: "chevron.left")
+                        Image(systemName: "xmark")
                             .font(.body.weight(.medium))
                     }
                 }
@@ -103,51 +103,45 @@ struct CreateSessionView: View {
     // MARK: - Context Area
 
     private var contextArea: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: 0) {
-                    Spacer()
-                        .frame(minHeight: geometry.size.height * 0.25)
-
-                    VStack(spacing: 2) {
-                        contextRow(
-                            icon: "folder",
-                            label: viewModel.selectedRepos.isEmpty
-                                ? "No repository"
-                                : viewModel.selectedRepos.map { repoDisplayName($0) }.joined(separator: ", ")
-                        ) {
-                            showRepositoryPicker = true
-                        }
-
-                        contextRow(
-                            icon: "desktopcomputer",
-                            label: platformLabel
-                        ) {
-                            cyclePlatform()
-                        }
-
-                        contextRow(
-                            icon: "book",
-                            label: playbookLabel
-                        ) {
-                            cyclePlaybook()
-                        }
-
-                        contextRow(
-                            icon: "bolt.horizontal",
-                            label: viewModel.selectedMode.displayName
-                        ) {
-                            cycleMode()
-                        }
-                    }
-                    .padding(.horizontal, 24)
-
-                    Spacer()
-                        .frame(minHeight: geometry.size.height * 0.25)
-                }
-                .frame(minHeight: geometry.size.height)
+        VStack(spacing: 2) {
+            contextRow(
+                icon: "folder",
+                label: repoLabel
+            ) {
+                showRepositoryPicker = true
             }
-            .scrollDismissesKeyboard(.interactively)
+
+            contextRow(
+                icon: "desktopcomputer",
+                label: platformLabel
+            ) {
+                cyclePlatform()
+            }
+
+            contextRow(
+                icon: "book",
+                label: playbookLabel
+            ) {
+                cyclePlaybook()
+            }
+
+            contextRow(
+                icon: "bolt.horizontal",
+                label: viewModel.selectedMode.displayName
+            ) {
+                cycleMode()
+            }
+        }
+        .padding(.horizontal, 24)
+    }
+
+    private var repoLabel: String {
+        if viewModel.selectedRepos.isEmpty {
+            return "No repository"
+        } else if viewModel.selectedRepos.count == 1 {
+            return repoDisplayName(viewModel.selectedRepos[0])
+        } else {
+            return "\(viewModel.selectedRepos.count) repositories"
         }
     }
 
@@ -381,17 +375,15 @@ struct CreateSessionView: View {
 
             Spacer()
 
-            if speechService.isAvailable {
-                Button {
-                    Task { await toggleTranscription() }
-                } label: {
-                    Image(systemName: speechService.isTranscribing ? "mic.fill" : "mic")
-                        .font(.body)
-                        .foregroundStyle(speechService.isTranscribing ? .red : .secondary)
-                        .symbolEffect(.pulse, isActive: speechService.isTranscribing)
-                }
-                .buttonStyle(.plain)
+            Button {
+                Task { await toggleTranscription() }
+            } label: {
+                Image(systemName: speechService.isTranscribing ? "mic.fill" : "mic")
+                    .font(.body)
+                    .foregroundStyle(speechService.isTranscribing ? .red : .secondary)
+                    .symbolEffect(.pulse, isActive: speechService.isTranscribing)
             }
+            .buttonStyle(.plain)
 
             Button {
                 Task { await createSession() }
