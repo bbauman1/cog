@@ -150,6 +150,7 @@ jobs:
           asc publish testflight \
             --app "$APP_ID" \
             --ipa "$RUNNER_TEMP/Cog.ipa" \
+            --group "Internal" \
             --wait \
             --poll-interval 15s
 
