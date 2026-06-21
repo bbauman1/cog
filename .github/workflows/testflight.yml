@@ -161,6 +161,9 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
+          # Copy API key to altool's expected location
+          mkdir -p ~/.private_keys
+          cp "$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8" ~/.private_keys/
           xcrun altool --validate-app \
             --file "$RUNNER_TEMP/Cog.ipa" \
             --type ios \
