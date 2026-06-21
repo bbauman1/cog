@@ -1,4 +1,4 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import os
 import Speech
 import SwiftUI
@@ -14,6 +14,7 @@ final class SpeechTranscriptionService {
     private var audioEngine: AVAudioEngine?
     private var inputContinuation: AsyncStream<AnalyzerInput>.Continuation?
     private var resultsTask: Task<Void, Never>?
+    private var isInputTapInstalled = false
 
     private static let log = Logger(subsystem: "com.cogfordevin.ios", category: "Speech")
 
@@ -52,6 +53,12 @@ final class SpeechTranscriptionService {
             return
         }
 
+        guard await requestSpeechRecognitionPermission() else {
+            Self.log.warning("[mic] speech recognition permission denied")
+            errorMessage = "Speech recognition access is required. Enable it in Settings > Privacy > Speech Recognition."
+            return
+        }
+
         guard let locale = await SpeechTranscriber.supportedLocale(
             equivalentTo: Locale.current
         ) else {
@@ -60,6 +67,17 @@ final class SpeechTranscriptionService {
             return
         }
         Self.log.info("[mic] using locale: \(locale.identifier)")
+
+        Self.log.info("[mic] creating SpeechTranscriber")
+        let module = SpeechTranscriber(locale: locale, preset: .progressiveTranscription)
+        do {
+            try await prepareSpeechAssets(for: module, locale: locale)
+        } catch {
+            Self.log.error("[mic] speech asset setup failed: \(error.localizedDescription)")
+            errorMessage = "Failed to prepare speech recognition: \(error.localizedDescription)"
+            return
+        }
+        transcriber = module
 
         // Verify audio capture hardware exists (reliable even in simulator)
         guard AVCaptureDevice.default(for: .audio) != nil else {
@@ -115,24 +133,26 @@ final class SpeechTranscriptionService {
             return
         }
 
-        // Create speech modules
-        Self.log.info("[mic] creating SpeechTranscriber")
-        let module = SpeechTranscriber(locale: locale, preset: .progressiveTranscription)
-        transcriber = module
-
         let (stream, continuation) = AsyncStream<AnalyzerInput>.makeStream()
         inputContinuation = continuation
 
         Self.log.info("[mic] creating SpeechAnalyzer")
         let speechAnalyzer = SpeechAnalyzer(inputSequence: stream, modules: [module])
         analyzer = speechAnalyzer
-
-        // Install tap with nil format — lets Core Audio pick the hardware-native
-        // format, avoiding format-mismatch crashes.
-        Self.log.info("[mic] installing tap on inputNode (format=nil)")
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: nil) { buffer, _ in
-            continuation.yield(AnalyzerInput(buffer: buffer))
+        guard let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [module]) else {
+            Self.log.warning("[mic] SpeechAnalyzer.bestAvailableAudioFormat returned nil")
+            errorMessage = "Audio input format is not supported"
+            cleanup()
+            return
         }
+        let converter = AudioBufferConverter()
+
+        Self.log.info("[mic] installing tap on inputNode")
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { buffer, _ in
+            guard let convertedBuffer = try? converter.convert(buffer, to: analyzerFormat) else { return }
+            continuation.yield(AnalyzerInput(buffer: convertedBuffer))
+        }
+        isInputTapInstalled = true
 
         engine.prepare()
         Self.log.info("[mic] engine prepared, starting…")
@@ -170,12 +190,58 @@ final class SpeechTranscriptionService {
 
     // MARK: - Private
 
+    private func requestSpeechRecognitionPermission() async -> Bool {
+        let status = SFSpeechRecognizer.authorizationStatus()
+        Self.log.info("[mic] speech authorizationStatus = \(String(describing: status))")
+
+        switch status {
+        case .authorized:
+            return true
+        case .notDetermined:
+            let requestedStatus = await withCheckedContinuation { continuation in
+                SFSpeechRecognizer.requestAuthorization { status in
+                    continuation.resume(returning: status)
+                }
+            }
+            Self.log.info("[mic] speech authorization request result = \(String(describing: requestedStatus))")
+            return requestedStatus == .authorized
+        case .denied, .restricted:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
+    private func prepareSpeechAssets(for module: SpeechTranscriber, locale: Locale) async throws {
+        let installedLocales = await Set(SpeechTranscriber.installedLocales.map {
+            $0.identifier(.bcp47)
+        })
+        let localeIdentifier = locale.identifier(.bcp47)
+
+        guard !installedLocales.contains(localeIdentifier) else {
+            Self.log.info("[mic] speech asset already installed for \(localeIdentifier)")
+            return
+        }
+
+        Self.log.info("[mic] downloading speech asset for \(localeIdentifier)")
+        guard let request = try await AssetInventory.assetInstallationRequest(supporting: [module]) else {
+            throw SpeechAssetError.unavailable
+        }
+        try await request.downloadAndInstall()
+        Self.log.info("[mic] speech asset installed for \(localeIdentifier)")
+    }
+
     private func cleanup() {
         resultsTask?.cancel()
         resultsTask = nil
 
-        audioEngine?.stop()
-        audioEngine?.inputNode.removeTap(onBus: 0)
+        if let audioEngine {
+            audioEngine.stop()
+            if isInputTapInstalled {
+                audioEngine.inputNode.removeTap(onBus: 0)
+                isInputTapInstalled = false
+            }
+        }
         audioEngine = nil
 
         inputContinuation?.finish()
@@ -197,5 +263,98 @@ final class SpeechTranscriptionService {
     private func deactivateAudioSession() {
         let session = AVAudioSession.sharedInstance()
         try? session.setActive(false, options: .notifyOthersOnDeactivation)
+    }
+}
+
+private enum SpeechAssetError: LocalizedError {
+    case unavailable
+
+    var errorDescription: String? {
+        "Speech recognition language model is not available"
+    }
+}
+
+private final class AudioBufferConverter {
+    private var converter: AVAudioConverter?
+    private var sourceFormat: AVAudioFormat?
+    private var targetFormat: AVAudioFormat?
+
+    func convert(_ buffer: AVAudioPCMBuffer, to targetFormat: AVAudioFormat) throws -> AVAudioPCMBuffer {
+        if formatsMatch(buffer.format, targetFormat) {
+            return buffer
+        }
+
+        let converter = try converter(from: buffer.format, to: targetFormat)
+        let ratio = targetFormat.sampleRate / buffer.format.sampleRate
+        let capacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 1
+
+        guard let convertedBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: capacity) else {
+            throw AudioBufferConversionError.failed
+        }
+
+        var conversionError: NSError?
+        let state = AudioConverterInputState(buffer: buffer)
+        let status = converter.convert(to: convertedBuffer, error: &conversionError) { _, outStatus in
+            if state.didProvideInput {
+                outStatus.pointee = .noDataNow
+                return nil
+            }
+
+            state.didProvideInput = true
+            outStatus.pointee = .haveData
+            return state.buffer
+        }
+
+        if let conversionError {
+            throw conversionError
+        }
+
+        switch status {
+        case .haveData, .inputRanDry, .endOfStream:
+            return convertedBuffer
+        case .error:
+            throw AudioBufferConversionError.failed
+        @unknown default:
+            return convertedBuffer
+        }
+    }
+
+    private func converter(from sourceFormat: AVAudioFormat, to targetFormat: AVAudioFormat) throws -> AVAudioConverter {
+        if let converter,
+           let currentSourceFormat = self.sourceFormat,
+           let currentTargetFormat = self.targetFormat,
+           formatsMatch(currentSourceFormat, sourceFormat),
+           formatsMatch(currentTargetFormat, targetFormat) {
+            return converter
+        }
+
+        guard let converter = AVAudioConverter(from: sourceFormat, to: targetFormat) else {
+            throw AudioBufferConversionError.failed
+        }
+
+        self.converter = converter
+        self.sourceFormat = sourceFormat
+        self.targetFormat = targetFormat
+        return converter
+    }
+
+    private func formatsMatch(_ lhs: AVAudioFormat, _ rhs: AVAudioFormat) -> Bool {
+        lhs.sampleRate == rhs.sampleRate &&
+            lhs.channelCount == rhs.channelCount &&
+            lhs.commonFormat == rhs.commonFormat &&
+            lhs.isInterleaved == rhs.isInterleaved
+    }
+}
+
+private enum AudioBufferConversionError: Error {
+    case failed
+}
+
+private final class AudioConverterInputState: @unchecked Sendable {
+    var didProvideInput = false
+    let buffer: AVAudioPCMBuffer
+
+    init(buffer: AVAudioPCMBuffer) {
+        self.buffer = buffer
     }
 }

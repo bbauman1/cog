@@ -48,6 +48,18 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
+        NSCameraUsageDescription: "Cog uses the camera to capture photos for session attachments."
+        NSPhotoLibraryUsageDescription: "Cog accesses your photo library to attach images to sessions."
+        NSMicrophoneUsageDescription: "Cog uses the microphone to transcribe your voice into text for session prompts and messages."
+        NSSpeechRecognitionUsageDescription: "Cog uses on-device speech recognition to convert your voice to text."
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.cogfordevin.ios.sessionRefresh
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - cog
+            CFBundleURLName: com.cogfordevin.ios
 
   SessionsWidgetExtension:
     type: app-extension
