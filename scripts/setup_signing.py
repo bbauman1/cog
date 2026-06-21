@@ -190,9 +190,14 @@ def find_or_create_cert():
 
 
 def create_p12(cert_pem, key_pem, wwdr_pem):
-    """Create P12 keystore with full chain."""
+    """Create P12 keystore with full chain.
+
+    Uses -legacy flag on OpenSSL 3.x to produce a PKCS12 that macOS
+    security-import can read (macOS doesn't support AES-256-CBC PKCS12).
+    Falls back without -legacy for LibreSSL / older OpenSSL.
+    """
     p12_path = os.path.join(ASC_DIR, "apple_dist_chain.p12")
-    run(
+    base_cmd = (
         f"openssl pkcs12 -export "
         f"-inkey '{key_pem}' "
         f"-in '{cert_pem}' "
@@ -200,6 +205,9 @@ def create_p12(cert_pem, key_pem, wwdr_pem):
         f"-out '{p12_path}' "
         f"-passout pass:devin"
     )
+    result = run(f"{base_cmd} -legacy", check=False)
+    if result.returncode != 0:
+        run(base_cmd)
     print(f"Created P12: {p12_path}")
     return p12_path
 
