@@ -41,8 +41,12 @@ jobs:
       - name: Install asc CLI
         uses: rudrankriyam/setup-asc@v1
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Install Python dependencies
-        run: python3 -m pip install --user PyJWT cryptography requests
+        run: pip install PyJWT cryptography requests
 
       - name: Write ASC API key
         env:
