@@ -145,6 +145,17 @@ jobs:
             --xcodebuild-flag=-authenticationKeyIssuerID \
             --xcodebuild-flag="$ASC_ISSUER_ID"
 
+      - name: Validate IPA
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcrun altool --validate-app \
+            --file "$RUNNER_TEMP/Cog.ipa" \
+            --type ios \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID" 2>&1 || true
+
       - name: Publish to TestFlight
         run: |
           asc publish testflight \
