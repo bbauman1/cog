@@ -111,25 +111,44 @@ struct CreateSessionView: View {
                 showRepositoryPicker = true
             }
 
-            contextRow(
-                icon: "desktopcomputer",
-                label: platformLabel
-            ) {
-                cyclePlatform()
+            contextMenuRow(icon: "desktopcomputer", label: platformLabel) {
+                Button { viewModel.selectedPlatform = nil } label: {
+                    Label("Default", systemImage: viewModel.selectedPlatform == nil ? "checkmark" : "")
+                }
+                Button { viewModel.selectedPlatform = "ubuntu" } label: {
+                    Label("Ubuntu", systemImage: viewModel.selectedPlatform == "ubuntu" ? "checkmark" : "")
+                }
+                Button { viewModel.selectedPlatform = "windows" } label: {
+                    Label("Windows", systemImage: viewModel.selectedPlatform == "windows" ? "checkmark" : "")
+                }
             }
 
-            contextRow(
-                icon: "book",
-                label: playbookLabel
-            ) {
-                cyclePlaybook()
+            if viewModel.isLoadingPlaybooks {
+                contextRow(icon: "book", label: "Loading playbooks...") {}
+            } else if viewModel.playbooks.isEmpty {
+                contextRow(icon: "book", label: "No playbook") {}
+            } else {
+                contextMenuRow(icon: "book", label: playbookLabel) {
+                    Button { viewModel.selectedPlaybookId = nil } label: {
+                        Label("None", systemImage: viewModel.selectedPlaybookId == nil ? "checkmark" : "")
+                    }
+                    ForEach(viewModel.playbooks) { playbook in
+                        Button { viewModel.selectedPlaybookId = playbook.playbookId } label: {
+                            Label(
+                                playbook.name,
+                                systemImage: viewModel.selectedPlaybookId == playbook.playbookId ? "checkmark" : ""
+                            )
+                        }
+                    }
+                }
             }
 
-            contextRow(
-                icon: "bolt.horizontal",
-                label: viewModel.selectedMode.displayName
-            ) {
-                cycleMode()
+            contextMenuRow(icon: "bolt.horizontal", label: viewModel.selectedMode.displayName) {
+                ForEach(DevinMode.allCases, id: \.self) { mode in
+                    Button { viewModel.selectedMode = mode } label: {
+                        Label(mode.displayName, systemImage: viewModel.selectedMode == mode ? "checkmark" : "")
+                    }
+                }
             }
         }
         .padding(.horizontal, 24)
@@ -169,6 +188,36 @@ struct CreateSessionView: View {
         .buttonStyle(.plain)
     }
 
+    private func contextMenuRow<Content: View>(
+        icon: String,
+        label: String,
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        Menu {
+            content()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+
+                Text(label)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+
+                Spacer()
+            }
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+    }
+
     private var platformLabel: String {
         switch viewModel.selectedPlatform {
         case "ubuntu": return "Ubuntu"
@@ -185,34 +234,7 @@ struct CreateSessionView: View {
         return "No playbook"
     }
 
-    private func cyclePlatform() {
-        let platforms: [String?] = [nil, "ubuntu", "windows"]
-        if let idx = platforms.firstIndex(where: { $0 == viewModel.selectedPlatform }) {
-            let next = (idx + 1) % platforms.count
-            viewModel.selectedPlatform = platforms[next]
-        } else {
-            viewModel.selectedPlatform = nil
-        }
-    }
 
-    private func cyclePlaybook() {
-        guard !viewModel.playbooks.isEmpty else { return }
-        let ids: [String?] = [nil] + viewModel.playbooks.map(\.playbookId)
-        if let idx = ids.firstIndex(where: { $0 == viewModel.selectedPlaybookId }) {
-            let next = (idx + 1) % ids.count
-            viewModel.selectedPlaybookId = ids[next]
-        } else {
-            viewModel.selectedPlaybookId = nil
-        }
-    }
-
-    private func cycleMode() {
-        let modes = DevinMode.allCases
-        if let idx = modes.firstIndex(of: viewModel.selectedMode) {
-            let next = (idx + 1) % modes.count
-            viewModel.selectedMode = modes[next]
-        }
-    }
 
     // MARK: - Composer Area
 
