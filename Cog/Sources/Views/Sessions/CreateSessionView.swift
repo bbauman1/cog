@@ -30,6 +30,7 @@ struct CreateSessionView: View {
                     composerArea
                 }
             }
+            .navigationTitle("New Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -50,6 +51,9 @@ struct CreateSessionView: View {
                     viewModel.configure(with: client)
                     await viewModel.loadInitialData()
                 }
+            }
+            .onChange(of: viewModel.selectedPlatform) { _, newValue in
+                UserDefaults.standard.set(newValue, forKey: "create_session_selected_platform")
             }
             .interactiveDismissDisabled(viewModel.isCreating)
             .onDisappear {
@@ -112,42 +116,11 @@ struct CreateSessionView: View {
             }
 
             contextMenuRow(icon: "desktopcomputer", label: platformLabel) {
-                Button { viewModel.selectedPlatform = nil } label: {
-                    Label("Default", systemImage: viewModel.selectedPlatform == nil ? "checkmark" : "")
-                }
                 Button { viewModel.selectedPlatform = "ubuntu" } label: {
                     Label("Ubuntu", systemImage: viewModel.selectedPlatform == "ubuntu" ? "checkmark" : "")
                 }
                 Button { viewModel.selectedPlatform = "windows" } label: {
                     Label("Windows", systemImage: viewModel.selectedPlatform == "windows" ? "checkmark" : "")
-                }
-            }
-
-            if viewModel.isLoadingPlaybooks {
-                contextRow(icon: "book", label: "Loading playbooks...") {}
-            } else if viewModel.playbooks.isEmpty {
-                contextRow(icon: "book", label: "No playbook") {}
-            } else {
-                contextMenuRow(icon: "book", label: playbookLabel) {
-                    Button { viewModel.selectedPlaybookId = nil } label: {
-                        Label("None", systemImage: viewModel.selectedPlaybookId == nil ? "checkmark" : "")
-                    }
-                    ForEach(viewModel.playbooks) { playbook in
-                        Button { viewModel.selectedPlaybookId = playbook.playbookId } label: {
-                            Label(
-                                playbook.name,
-                                systemImage: viewModel.selectedPlaybookId == playbook.playbookId ? "checkmark" : ""
-                            )
-                        }
-                    }
-                }
-            }
-
-            contextMenuRow(icon: "bolt.horizontal", label: viewModel.selectedMode.displayName) {
-                ForEach(DevinMode.allCases, id: \.self) { mode in
-                    Button { viewModel.selectedMode = mode } label: {
-                        Label(mode.displayName, systemImage: viewModel.selectedMode == mode ? "checkmark" : "")
-                    }
                 }
             }
         }
@@ -220,18 +193,9 @@ struct CreateSessionView: View {
 
     private var platformLabel: String {
         switch viewModel.selectedPlatform {
-        case "ubuntu": return "Ubuntu"
         case "windows": return "Windows"
-        default: return "Default machine"
+        default: return "Ubuntu"
         }
-    }
-
-    private var playbookLabel: String {
-        if let id = viewModel.selectedPlaybookId,
-           let playbook = viewModel.playbooks.first(where: { $0.playbookId == id }) {
-            return playbook.name
-        }
-        return "No playbook"
     }
 
 
@@ -378,22 +342,33 @@ struct CreateSessionView: View {
                     Label("Files", systemImage: "folder")
                 }
             } label: {
-                Image(systemName: "plus")
+                Label("Attachments", systemImage: "plus")
+                    .labelStyle(.iconOnly)
                     .font(.body.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
             }
 
             Button {
                 showAdvanced = true
             } label: {
-                Image(systemName: "gearshape")
+                Label("Settings", systemImage: "gearshape")
+                    .labelStyle(.iconOnly)
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
             }
 
-            Text(modeDisplayText)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            Menu {
+                ForEach(DevinMode.allCases, id: \.self) { mode in
+                    Button { viewModel.selectedMode = mode } label: {
+                        Label(mode.displayName, systemImage: viewModel.selectedMode == mode ? "checkmark" : "")
+                    }
+                }
+            } label: {
+                Text(modeDisplayText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
 
             Spacer()
 
@@ -548,9 +523,8 @@ struct AdvancedOptionsSheet: View {
                     .pickerStyle(.segmented)
 
                     Picker("Machine", selection: Bindable(viewModel).selectedPlatform) {
-                        Text("Default").tag(nil as String?)
-                        Text("Ubuntu").tag("ubuntu" as String?)
-                        Text("Windows").tag("windows" as String?)
+                        Text("Ubuntu").tag("ubuntu")
+                        Text("Windows").tag("windows")
                     }
 
                     if viewModel.isLoadingPlaybooks {
