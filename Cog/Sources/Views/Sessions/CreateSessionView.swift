@@ -345,8 +345,9 @@ struct CreateSessionView: View {
                 Label("Attachments", systemImage: "plus")
                     .labelStyle(.iconOnly)
                     .font(.body.weight(.medium))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.primary)
             }
+            .tint(Color.primary)
 
             Button {
                 showAdvanced = true
@@ -354,8 +355,9 @@ struct CreateSessionView: View {
                 Label("Settings", systemImage: "gearshape")
                     .labelStyle(.iconOnly)
                     .font(.body)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.primary)
             }
+            .buttonStyle(.plain)
 
             Menu {
                 ForEach(DevinMode.allCases, id: \.self) { mode in
