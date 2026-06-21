@@ -18,7 +18,18 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Select Xcode 26
-        run: sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
+        run: |
+          # Find the latest Xcode 26.x installed on the runner
+          XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE_PATH" ]; then
+            echo "::error::No Xcode 26.x found on this runner"
+            ls /Applications/Xcode*.app
+            exit 1
+          fi
+          echo "Using $XCODE_PATH"
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+          xcodebuild -showsdks 2>/dev/null | grep -i ios || true
 
       - name: Install XcodeGen
         run: brew install xcodegen
