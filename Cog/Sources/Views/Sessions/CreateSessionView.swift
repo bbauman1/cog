@@ -14,38 +14,33 @@ struct CreateSessionView: View {
     @State private var showPhotoPicker = false
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var showAdvanced = false
+    @State private var showAttachmentMenu = false
     @FocusState private var isPromptFocused: Bool
     var onSessionCreated: ((Session) -> Void)?
 
     var body: some View {
         NavigationStack {
-            Form {
-                promptSection
-                configurationSection
-                attachmentsSection
-                tagsSection
-                advancedSection
-                errorSection
+            ZStack {
+                Color(.systemBackground)
+                    .ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    contextArea
+                    Spacer()
+                    composerArea
+                }
             }
-            .navigationTitle("New Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button {
                         if speechService.isTranscribing {
                             _ = speechService.stopTranscription()
                         }
                         dismiss()
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    if viewModel.isCreating {
-                        ProgressView()
-                    } else {
-                        Button("Create") {
-                            Task { await createSession() }
-                        }
-                        .disabled(!canCreate)
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.body.weight(.medium))
                     }
                 }
             }
@@ -64,6 +59,9 @@ struct CreateSessionView: View {
             }
             .sheet(isPresented: $showRepositoryPicker) {
                 RepositoryPickerView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showAdvanced) {
+                AdvancedOptionsSheet(viewModel: viewModel)
             }
             .fileImporter(
                 isPresented: $showFilePicker,
@@ -102,140 +100,245 @@ struct CreateSessionView: View {
         return hasPrompt && !viewModel.isCreating && !hasUploading
     }
 
-    // MARK: - Prompt
+    // MARK: - Context Area
 
-    private var promptSection: some View {
-        Section {
-            TextField("What should Devin work on?", text: $viewModel.prompt, axis: .vertical)
-                .focused($isPromptFocused)
-                .lineLimit(3...10)
+    private var contextArea: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
+                    Spacer()
+                        .frame(minHeight: geometry.size.height * 0.25)
 
-            if speechService.isAvailable {
+                    VStack(spacing: 2) {
+                        contextRow(
+                            icon: "folder",
+                            label: viewModel.selectedRepos.isEmpty
+                                ? "No repository"
+                                : viewModel.selectedRepos.map { repoDisplayName($0) }.joined(separator: ", ")
+                        ) {
+                            showRepositoryPicker = true
+                        }
+
+                        contextRow(
+                            icon: "desktopcomputer",
+                            label: platformLabel
+                        ) {
+                            cyclePlatform()
+                        }
+
+                        contextRow(
+                            icon: "book",
+                            label: playbookLabel
+                        ) {
+                            cyclePlaybook()
+                        }
+
+                        contextRow(
+                            icon: "bolt.horizontal",
+                            label: viewModel.selectedMode.displayName
+                        ) {
+                            cycleMode()
+                        }
+                    }
+                    .padding(.horizontal, 24)
+
+                    Spacer()
+                        .frame(minHeight: geometry.size.height * 0.25)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+    }
+
+    private func contextRow(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+
+                Text(label)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+
+                Spacer()
+            }
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var platformLabel: String {
+        switch viewModel.selectedPlatform {
+        case "ubuntu": return "Ubuntu"
+        case "windows": return "Windows"
+        default: return "Default machine"
+        }
+    }
+
+    private var playbookLabel: String {
+        if let id = viewModel.selectedPlaybookId,
+           let playbook = viewModel.playbooks.first(where: { $0.playbookId == id }) {
+            return playbook.name
+        }
+        return "No playbook"
+    }
+
+    private func cyclePlatform() {
+        let platforms: [String?] = [nil, "ubuntu", "windows"]
+        if let idx = platforms.firstIndex(where: { $0 == viewModel.selectedPlatform }) {
+            let next = (idx + 1) % platforms.count
+            viewModel.selectedPlatform = platforms[next]
+        } else {
+            viewModel.selectedPlatform = nil
+        }
+    }
+
+    private func cyclePlaybook() {
+        guard !viewModel.playbooks.isEmpty else { return }
+        let ids: [String?] = [nil] + viewModel.playbooks.map(\.playbookId)
+        if let idx = ids.firstIndex(where: { $0 == viewModel.selectedPlaybookId }) {
+            let next = (idx + 1) % ids.count
+            viewModel.selectedPlaybookId = ids[next]
+        } else {
+            viewModel.selectedPlaybookId = nil
+        }
+    }
+
+    private func cycleMode() {
+        let modes = DevinMode.allCases
+        if let idx = modes.firstIndex(of: viewModel.selectedMode) {
+            let next = (idx + 1) % modes.count
+            viewModel.selectedMode = modes[next]
+        }
+    }
+
+    // MARK: - Composer Area
+
+    private var composerArea: some View {
+        VStack(spacing: 0) {
+            if let error = viewModel.errorMessage {
                 HStack {
-                    if speechService.isTranscribing {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
+            }
+
+            if !viewModel.attachments.isEmpty {
+                attachmentStrip
+            }
+
+            VStack(spacing: 8) {
+                TextField("What should Devin work on?", text: $viewModel.prompt, axis: .vertical)
+                    .focused($isPromptFocused)
+                    .lineLimit(1...8)
+                    .font(.body)
+                    .padding(.horizontal, 4)
+
+                if speechService.isTranscribing {
+                    HStack {
                         Text(speechService.transcribedText.isEmpty
                              ? "Listening..."
                              : speechService.transcribedText)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
-
                         Spacer()
                     }
-
-                    microphoneButton
+                    .padding(.horizontal, 4)
                 }
+
+                composerToolbar
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.secondarySystemBackground))
+                    .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
 
             if let error = speechService.errorMessage {
                 Text(error)
                     .font(.caption2)
                     .foregroundStyle(.red)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 4)
             }
-        } header: {
-            Text("Prompt")
-        } footer: {
-            Text("Describe the task you want Devin to work on.")
         }
     }
 
-    private var microphoneButton: some View {
-        Button {
-            Task { await toggleTranscription() }
-        } label: {
-            Label(speechService.isTranscribing ? "Stop dictation" : "Start dictation",
-                  systemImage: speechService.isTranscribing ? "mic.fill" : "mic")
-                .font(.title3)
-                .foregroundStyle(speechService.isTranscribing ? .red : .blue)
-                .symbolEffect(.pulse, isActive: speechService.isTranscribing)
-                .labelStyle(.iconOnly)
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Configuration
-
-    private var configurationSection: some View {
-        Section("Configuration") {
-            Picker("Mode", selection: $viewModel.selectedMode) {
-                ForEach(DevinMode.allCases, id: \.self) { mode in
-                    Text(mode.displayName).tag(mode)
+    private var attachmentStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(viewModel.attachments) { attachment in
+                    attachmentChip(attachment)
                 }
             }
-            .pickerStyle(.segmented)
+            .padding(.horizontal, 20)
+        }
+        .padding(.bottom, 8)
+    }
+
+    private func attachmentChip(_ attachment: AttachmentItem) -> some View {
+        HStack(spacing: 6) {
+            if attachment.isUploading {
+                ProgressView()
+                    .controlSize(.mini)
+            } else if attachment.error != nil {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            } else {
+                Image(systemName: "doc.fill")
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+            }
+
+            Text(attachment.fileName)
+                .font(.caption)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(maxWidth: 120)
 
             Button {
-                showRepositoryPicker = true
+                viewModel.removeAttachment(attachment)
             } label: {
-                LabeledContent("Repository") {
-                    if viewModel.selectedRepos.isEmpty {
-                        Text("None")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text(viewModel.selectedRepos.map { repoDisplayName($0) }.joined(separator: ", "))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                    }
-                }
-                .foregroundStyle(.primary)
-            }
-
-            Picker("Machine", selection: $viewModel.selectedPlatform) {
-                Text("Default").tag(nil as String?)
-                Text("Ubuntu").tag("ubuntu" as String?)
-                Text("Windows").tag("windows" as String?)
-            }
-
-            if viewModel.isLoadingPlaybooks {
-                HStack {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("Loading playbooks...")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            } else if viewModel.playbooks.isEmpty {
-                Text("No playbooks available")
-                    .font(.subheadline)
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-            } else {
-                Picker("Playbook", selection: $viewModel.selectedPlaybookId) {
-                    Text("None").tag(nil as String?)
-                    ForEach(viewModel.playbooks) { playbook in
-                        Text(playbook.name).tag(playbook.playbookId as String?)
-                    }
-                }
             }
+            .buttonStyle(.plain)
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Color(.tertiarySystemBackground))
+        )
     }
 
-    // MARK: - Attachments
-
-    private var attachmentsSection: some View {
-        Section {
-            ForEach(viewModel.attachments) { attachment in
-                HStack {
-                    Image(systemName: iconForAttachment(attachment))
-                        .foregroundStyle(colorForAttachment(attachment))
-                    Text(attachment.fileName)
-                        .lineLimit(1)
-                    Spacer()
-                    if attachment.isUploading {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
-                    Button {
-                        viewModel.removeAttachment(attachment)
-                    } label: {
-                        Label("Remove attachment", systemImage: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                            .labelStyle(.iconOnly)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
+    private var composerToolbar: some View {
+        HStack(spacing: 16) {
             Menu {
                 Button {
                     if UIImagePickerController.isSourceTypeAvailable(.camera) {
@@ -259,107 +362,64 @@ struct CreateSessionView: View {
                     Label("Files", systemImage: "folder")
                 }
             } label: {
-                Label("Add File", systemImage: "plus.circle")
+                Image(systemName: "plus")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.secondary)
             }
-        } header: {
-            Text("Attachments")
-        }
-    }
 
-    private func iconForAttachment(_ attachment: AttachmentItem) -> String {
-        if attachment.isUploading { return "arrow.up.circle" }
-        if attachment.uploadedURL != nil { return "checkmark.circle.fill" }
-        if attachment.error != nil { return "exclamationmark.circle.fill" }
-        return "doc"
-    }
+            Button {
+                showAdvanced = true
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+            }
 
-    private func colorForAttachment(_ attachment: AttachmentItem) -> Color {
-        if attachment.isUploading { return .blue }
-        if attachment.uploadedURL != nil { return .green }
-        if attachment.error != nil { return .red }
-        return .secondary
-    }
+            Text(modeDisplayText)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
-    // MARK: - Tags
+            Spacer()
 
-    private var tagsSection: some View {
-        Section {
-            if !viewModel.tags.isEmpty {
-                FlowLayout(spacing: 6) {
-                    ForEach(viewModel.tags, id: \.self) { tag in
-                        HStack(spacing: 4) {
-                            Text(tag)
-                                .font(.caption)
-                            Button {
-                                viewModel.removeTag(tag)
-                            } label: {
-                                Label("Remove tag", systemImage: "xmark.circle.fill")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .labelStyle(.iconOnly)
-                            }
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color(.systemGray5))
-                        .clipShape(Capsule())
+            if speechService.isAvailable {
+                Button {
+                    Task { await toggleTranscription() }
+                } label: {
+                    Image(systemName: speechService.isTranscribing ? "mic.fill" : "mic")
+                        .font(.body)
+                        .foregroundStyle(speechService.isTranscribing ? .red : .secondary)
+                        .symbolEffect(.pulse, isActive: speechService.isTranscribing)
+                }
+                .buttonStyle(.plain)
+            }
+
+            Button {
+                Task { await createSession() }
+            } label: {
+                Group {
+                    if viewModel.isCreating {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(.white)
+                    } else {
+                        Image(systemName: "arrow.up")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.white)
                     }
                 }
+                .frame(width: 30, height: 30)
+                .background(
+                    Circle()
+                        .fill(canCreate ? Color.primary : Color(.systemGray4))
+                )
             }
-
-            HStack {
-                TextField("Add tag...", text: $viewModel.tagInput)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .onSubmit { viewModel.addTag() }
-
-                Button {
-                    viewModel.addTag()
-                } label: {
-                    Label("Add tag", systemImage: "plus.circle.fill")
-                        .foregroundStyle(.blue)
-                        .labelStyle(.iconOnly)
-                }
-                .disabled(viewModel.tagInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-        } header: {
-            Text("Tags")
-        } footer: {
-            Text("Optional tags to organize this session.")
+            .disabled(!canCreate)
+            .buttonStyle(.plain)
         }
     }
 
-    // MARK: - Advanced
-
-    private var advancedSection: some View {
-        Section {
-            DisclosureGroup("Advanced Options", isExpanded: $showAdvanced) {
-                TextField("Custom Title", text: $viewModel.customTitle)
-                    .textInputAutocapitalization(.sentences)
-
-                HStack {
-                    Text("ACU Limit")
-                    Spacer()
-                    TextField("None", value: $viewModel.maxAcuLimit, format: .number)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 80)
-                }
-            }
-        }
-    }
-
-    // MARK: - Error
-
-    @ViewBuilder
-    private var errorSection: some View {
-        if let error = viewModel.errorMessage {
-            Section {
-                Label(error, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
-                    .font(.caption)
-            }
-        }
+    private var modeDisplayText: String {
+        viewModel.selectedMode.displayName
     }
 
     // MARK: - Actions
@@ -453,6 +513,115 @@ struct CreateSessionView: View {
     private func repoDisplayName(_ path: String) -> String {
         let components = path.split(separator: "/")
         return components.count > 1 ? String(components.last!) : path
+    }
+}
+
+// MARK: - Advanced Options Sheet
+
+struct AdvancedOptionsSheet: View {
+    var viewModel: CreateSessionViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Configuration") {
+                    Picker("Mode", selection: Bindable(viewModel).selectedMode) {
+                        ForEach(DevinMode.allCases, id: \.self) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    Picker("Machine", selection: Bindable(viewModel).selectedPlatform) {
+                        Text("Default").tag(nil as String?)
+                        Text("Ubuntu").tag("ubuntu" as String?)
+                        Text("Windows").tag("windows" as String?)
+                    }
+
+                    if viewModel.isLoadingPlaybooks {
+                        HStack {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Loading playbooks...")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if viewModel.playbooks.isEmpty {
+                        Text("No playbooks available")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Picker("Playbook", selection: Bindable(viewModel).selectedPlaybookId) {
+                            Text("None").tag(nil as String?)
+                            ForEach(viewModel.playbooks) { playbook in
+                                Text(playbook.name).tag(playbook.playbookId as String?)
+                            }
+                        }
+                    }
+                }
+
+                Section("Tags") {
+                    if !viewModel.tags.isEmpty {
+                        FlowLayout(spacing: 6) {
+                            ForEach(viewModel.tags, id: \.self) { tag in
+                                HStack(spacing: 4) {
+                                    Text(tag)
+                                        .font(.caption)
+                                    Button {
+                                        viewModel.removeTag(tag)
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color(.systemGray5))
+                                .clipShape(Capsule())
+                            }
+                        }
+                    }
+
+                    HStack {
+                        TextField("Add tag...", text: Bindable(viewModel).tagInput)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .onSubmit { viewModel.addTag() }
+
+                        Button {
+                            viewModel.addTag()
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(.blue)
+                        }
+                        .disabled(viewModel.tagInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+
+                Section("Advanced") {
+                    TextField("Custom Title", text: Bindable(viewModel).customTitle)
+                        .textInputAutocapitalization(.sentences)
+
+                    HStack {
+                        Text("ACU Limit")
+                        Spacer()
+                        TextField("None", value: Bindable(viewModel).maxAcuLimit, format: .number)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 80)
+                    }
+                }
+            }
+            .navigationTitle("Options")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
     }
 }
 
