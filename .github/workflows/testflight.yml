@@ -61,6 +61,28 @@ jobs:
             --issuer-id "$ASC_ISSUER_ID" \
             --private-key "$KEY_PATH"
 
+      - name: Fetch and install provisioning profiles
+        run: |
+          mkdir -p ./signing
+
+          asc signing fetch \
+            --bundle-id com.cogfordevin.ios \
+            --profile-type IOS_APP_STORE \
+            --output ./signing \
+            --create-missing
+
+          asc signing fetch \
+            --bundle-id com.cogfordevin.ios.sessions-widget \
+            --profile-type IOS_APP_STORE \
+            --output ./signing \
+            --create-missing 2>&1 || true
+
+          # Install provisioning profiles
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp ./signing/*.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || true
+
+          echo "Installed profiles: $(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision 2>/dev/null | wc -l)"
+
       - name: Read version from project.yml
         id: version
         working-directory: Cog
