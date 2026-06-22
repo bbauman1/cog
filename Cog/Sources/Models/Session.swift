@@ -7,7 +7,7 @@ enum DevinMode: String, Codable, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
-        case .normal: return "Agent"
+        case .normal: return "Default"
         case .fast: return "Fast"
         case .lite: return "Lite"
         }
