@@ -435,13 +435,13 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					805E20FAF54EE77699543A49 = {
-						DevelopmentTeam = Y9ZLF8R6XZ;
+						DevelopmentTeam = "$(APPLE_TEAM_ID)";
 					};
 					C8A3C68A16CC1516267BC545 = {
-						DevelopmentTeam = Y9ZLF8R6XZ;
+						DevelopmentTeam = "$(APPLE_TEAM_ID)";
 					};
 					C97E4050CFFF9B31AB70E1DC = {
-						DevelopmentTeam = Y9ZLF8R6XZ;
+						DevelopmentTeam = "$(APPLE_TEAM_ID)";
 					};
 				};
 			};
@@ -620,7 +620,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = Y9ZLF8R6XZ;
+				DEVELOPMENT_TEAM = "$(APPLE_TEAM_ID)";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -658,7 +658,7 @@
 				);
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cogfordevin.ios;
-				PROVISIONING_PROFILE_SPECIFIER = "Cog Distribution";
+				PROVISIONING_PROFILE_SPECIFIER = "$(COG_MAIN_PROFILE_NAME)";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -680,7 +680,7 @@
 				);
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.cogfordevin.ios.sessions-widget";
-				PROVISIONING_PROFILE_SPECIFIER = Cog_Widget_Distribution;
+				PROVISIONING_PROFILE_SPECIFIER = "$(COG_WIDGET_PROFILE_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -777,7 +777,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = Y9ZLF8R6XZ;
+				DEVELOPMENT_TEAM = "$(APPLE_TEAM_ID)";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;

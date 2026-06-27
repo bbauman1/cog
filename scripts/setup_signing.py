@@ -1,17 +1,37 @@
 #!/usr/bin/env python3
-"""Set up Apple code signing from org secrets. Regenerates cert + profiles if needed.
+"""Set up Apple code signing from CI secrets. Regenerates cert + profiles if needed.
 
-Requires env vars: ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY, APPLE_TEAM_ID
+Requires env vars:
+ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY, APPLE_TEAM_ID,
+APPLE_DIST_P12_PASSWORD, COG_MAIN_BUNDLE_ID, COG_WIDGET_BUNDLE_ID,
+COG_MAIN_BUNDLE_ID_RESOURCE, COG_WIDGET_BUNDLE_ID_RESOURCE,
+COG_MAIN_PROFILE_NAME, COG_WIDGET_PROFILE_NAME.
+
 Creates all files in ~/.asc/ needed for the TestFlight build pipeline.
 """
-import base64, json, os, subprocess, sys, tempfile
+import base64, os, shlex, subprocess, sys
 
 sys.path.insert(0, os.path.dirname(__file__))
-from asc_api import api, get_token, ASC_DIR
+from asc_api import api, ASC_DIR
 
-TEAM_ID = os.environ.get("APPLE_TEAM_ID", "Y9ZLF8R6XZ")
-MAIN_BUNDLE_ID_RESOURCE = "73WHP4Q899"     # com.cogfordevin.ios
-WIDGET_BUNDLE_ID_RESOURCE = "5QPDTYJW94"   # com.cogfordevin.ios.sessions-widget
+
+def require_env(name):
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(f"{name} env var required")
+    return value
+
+
+TEAM_ID = require_env("APPLE_TEAM_ID")
+MAIN_BUNDLE_ID = require_env("COG_MAIN_BUNDLE_ID")
+WIDGET_BUNDLE_ID = require_env("COG_WIDGET_BUNDLE_ID")
+MAIN_BUNDLE_ID_RESOURCE = require_env("COG_MAIN_BUNDLE_ID_RESOURCE")
+WIDGET_BUNDLE_ID_RESOURCE = require_env("COG_WIDGET_BUNDLE_ID_RESOURCE")
+MAIN_PROFILE_NAME = require_env("COG_MAIN_PROFILE_NAME")
+WIDGET_PROFILE_NAME = require_env("COG_WIDGET_PROFILE_NAME")
+P12_PASSWORD = require_env("APPLE_DIST_P12_PASSWORD")
+BEGIN_PRIVATE_KEY = "-----BEGIN PRIVATE" " KEY-----"
+END_PRIVATE_KEY = "-----END PRIVATE" " KEY-----"
 WWDR_URL = "https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer"
 RCODESIGN_VERSION = "0.29.0"
 RCODESIGN_URL = f"https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F{RCODESIGN_VERSION}/apple-codesign-{RCODESIGN_VERSION}-x86_64-unknown-linux-musl.tar.gz"
@@ -23,7 +43,7 @@ WIDGET_ENTITLEMENTS = """<?xml version="1.0" encoding="UTF-8"?>
 \t<key>beta-reports-active</key>
 \t<true/>
 \t<key>application-identifier</key>
-\t<string>{team_id}.com.cogfordevin.ios.sessions-widget</string>
+\t<string>{team_id}.{widget_bundle_id}</string>
 \t<key>keychain-access-groups</key>
 \t<array>
 \t\t<string>{team_id}.*</string>
@@ -86,11 +106,11 @@ def _restore_key_from_secret():
     lines = key_pem.strip().splitlines()
     if len(lines) <= 2:
         # Newlines lost — extract base64 body and re-wrap at 64 chars
-        body = key_pem.replace("-----BEGIN PRIVATE KEY-----", "") \
-                      .replace("-----END PRIVATE KEY-----", "") \
+        body = key_pem.replace(BEGIN_PRIVATE_KEY, "") \
+                      .replace(END_PRIVATE_KEY, "") \
                       .replace(" ", "").replace("\n", "").replace("\r", "")
         wrapped = "\n".join(body[i:i+64] for i in range(0, len(body), 64))
-        key_pem = f"-----BEGIN PRIVATE KEY-----\n{wrapped}\n-----END PRIVATE KEY-----\n"
+        key_pem = f"{BEGIN_PRIVATE_KEY}\n{wrapped}\n{END_PRIVATE_KEY}\n"
 
     with open(key_pem_path, 'w') as f:
         f.write(key_pem)
@@ -158,7 +178,8 @@ def find_or_create_cert():
         api('DELETE', f"/v1/certificates/{oldest['id']}")
 
     csr_path = os.path.join(ASC_DIR, "dist.csr")
-    run(f"openssl req -new -key '{key_pem_path}' -out '{csr_path}' -subj '/CN=Cog Distribution/O={TEAM_ID}'")
+    subject = shlex.quote(f"/CN={MAIN_PROFILE_NAME}/O={TEAM_ID}")
+    run(f"openssl req -new -key '{key_pem_path}' -out '{csr_path}' -subj {subject}")
 
     with open(csr_path, 'r') as f:
         csr_content = f.read()
@@ -203,7 +224,7 @@ def create_p12(cert_pem, key_pem, wwdr_pem):
         f"-in '{cert_pem}' "
         f"-certfile '{wwdr_pem}' "
         f"-out '{p12_path}' "
-        f"-passout pass:devin"
+        f"-passout {shlex.quote('pass:' + P12_PASSWORD)}"
     )
     result = run(f"{base_cmd} -legacy", check=False)
     if result.returncode != 0:
@@ -219,16 +240,16 @@ def setup_profiles(cert_id, cert_is_new=False):
 
     # If cert was recreated, delete old profiles so they get recreated with new cert
     if cert_is_new:
-        for name in ['Cog Distribution', 'Cog_Widget_Distribution']:
+        for name in [MAIN_PROFILE_NAME, WIDGET_PROFILE_NAME]:
             if name in profiles:
                 print(f"  Deleting old profile {profiles[name]['id']} (cert changed)...")
                 api('DELETE', f"/v1/profiles/{profiles[name]['id']}")
         profiles = {}
 
     # Main app profile
-    main_profile_path = os.path.join(ASC_DIR, "Cog Distribution.mobileprovision")
-    if 'Cog Distribution' in profiles:
-        p = profiles['Cog Distribution']
+    main_profile_path = os.path.join(ASC_DIR, f"{MAIN_PROFILE_NAME}.mobileprovision")
+    if MAIN_PROFILE_NAME in profiles:
+        p = profiles[MAIN_PROFILE_NAME]
         content = p['attributes'].get('profileContent', '')
         if content:
             with open(main_profile_path, 'wb') as f:
@@ -245,12 +266,12 @@ def setup_profiles(cert_id, cert_is_new=False):
     else:
         print("Creating main app profile...")
         from asc_api import create_profile
-        create_profile("Cog Distribution", MAIN_BUNDLE_ID_RESOURCE, cert_id, "IOS_APP_STORE")
+        create_profile(MAIN_PROFILE_NAME, MAIN_BUNDLE_ID_RESOURCE, cert_id, "IOS_APP_STORE")
 
     # Widget profile
-    widget_profile_path = os.path.join(ASC_DIR, "Cog_Widget_Distribution.mobileprovision")
-    if 'Cog_Widget_Distribution' in profiles:
-        p = profiles['Cog_Widget_Distribution']
+    widget_profile_path = os.path.join(ASC_DIR, f"{WIDGET_PROFILE_NAME}.mobileprovision")
+    if WIDGET_PROFILE_NAME in profiles:
+        p = profiles[WIDGET_PROFILE_NAME]
         content = p['attributes'].get('profileContent', '')
         if content:
             with open(widget_profile_path, 'wb') as f:
@@ -266,7 +287,7 @@ def setup_profiles(cert_id, cert_is_new=False):
     else:
         print("Creating widget profile...")
         from asc_api import create_profile
-        create_profile("Cog_Widget_Distribution", WIDGET_BUNDLE_ID_RESOURCE, cert_id, "IOS_APP_STORE")
+        create_profile(WIDGET_PROFILE_NAME, WIDGET_BUNDLE_ID_RESOURCE, cert_id, "IOS_APP_STORE")
 
 
 def install_rcodesign():
@@ -286,7 +307,7 @@ def install_rcodesign():
 def write_widget_entitlements():
     path = os.path.join(ASC_DIR, "widget_entitlements.plist")
     with open(path, 'w') as f:
-        f.write(WIDGET_ENTITLEMENTS.format(team_id=TEAM_ID))
+        f.write(WIDGET_ENTITLEMENTS.format(team_id=TEAM_ID, widget_bundle_id=WIDGET_BUNDLE_ID))
     print(f"Wrote widget entitlements: {path}")
     return path
 

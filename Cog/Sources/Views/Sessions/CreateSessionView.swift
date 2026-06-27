@@ -41,7 +41,8 @@ struct CreateSessionView: View {
                         }
                         dismiss()
                     } label: {
-                        Image(systemName: "xmark")
+                        Label("Cancel", systemImage: "xmark")
+                            .labelStyle(.iconOnly)
                             .font(.body.weight(.medium))
                     }
                 }
@@ -306,7 +307,8 @@ struct CreateSessionView: View {
             Button {
                 viewModel.removeAttachment(attachment)
             } label: {
-                Image(systemName: "xmark.circle.fill")
+                Label("Remove \(attachment.fileName)", systemImage: "xmark.circle.fill")
+                    .labelStyle(.iconOnly)
                     .font(.system(size: 18))
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(.white, Color(.darkGray))
@@ -340,7 +342,8 @@ struct CreateSessionView: View {
             Button {
                 viewModel.removeAttachment(attachment)
             } label: {
-                Image(systemName: "xmark.circle.fill")
+                Label("Remove \(attachment.fileName)", systemImage: "xmark.circle.fill")
+                    .labelStyle(.iconOnly)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -414,7 +417,9 @@ struct CreateSessionView: View {
             Button {
                 Task { await toggleTranscription() }
             } label: {
-                Image(systemName: speechService.isTranscribing ? "mic.fill" : "mic")
+                Label(speechService.isTranscribing ? "Stop dictation" : "Start dictation",
+                      systemImage: speechService.isTranscribing ? "mic.fill" : "mic")
+                    .labelStyle(.iconOnly)
                     .font(.body)
                     .foregroundStyle(speechService.isTranscribing ? .red : .secondary)
                     .symbolEffect(.pulse, isActive: speechService.isTranscribing)
@@ -429,8 +434,10 @@ struct CreateSessionView: View {
                         ProgressView()
                             .controlSize(.small)
                             .tint(.white)
+                            .accessibilityLabel("Creating session")
                     } else {
-                        Image(systemName: "arrow.up")
+                        Label("Create session", systemImage: "arrow.up")
+                            .labelStyle(.iconOnly)
                             .font(.body.weight(.semibold))
                             .foregroundStyle(.white)
                     }
@@ -623,7 +630,8 @@ struct AdvancedOptionsSheet: View {
                                     Button {
                                         viewModel.removeTag(tag)
                                     } label: {
-                                        Image(systemName: "xmark.circle.fill")
+                                        Label("Remove \(tag)", systemImage: "xmark.circle.fill")
+                                            .labelStyle(.iconOnly)
                                             .font(.caption2)
                                             .foregroundStyle(.secondary)
                                     }
@@ -645,7 +653,8 @@ struct AdvancedOptionsSheet: View {
                         Button {
                             viewModel.addTag()
                         } label: {
-                            Image(systemName: "plus.circle.fill")
+                            Label("Add tag", systemImage: "plus.circle.fill")
+                                .labelStyle(.iconOnly)
                                 .foregroundStyle(.blue)
                         }
                         .disabled(viewModel.tagInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

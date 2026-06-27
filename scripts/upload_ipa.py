@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Upload an IPA to App Store Connect for TestFlight processing."""
-import hashlib, os, sys, zipfile, plistlib, time
+import os, sys, zipfile, plistlib, time
 import requests
 
 # Re-use auth from asc_api
 sys.path.insert(0, os.path.dirname(__file__))
-from asc_api import api_headers, get_token
+from asc_api import api_headers
 
 BASE = "https://api.appstoreconnect.apple.com"
-APP_ID = "6777732746"
 
 
 def extract_ipa_info(ipa_path):
@@ -132,6 +131,10 @@ def upload_ipa(app_id, ipa_path):
 
 
 if __name__ == '__main__':
-    app_id = sys.argv[1] if len(sys.argv) > 1 else APP_ID
+    app_id = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("COG_ASC_APP_ID", "")
+    if not app_id:
+        print("ERROR: pass app_id as the first argument or set COG_ASC_APP_ID")
+        sys.exit(2)
+
     ipa_path = sys.argv[2] if len(sys.argv) > 2 else os.path.expanduser("~/.asc/Cog_final.ipa")
     sys.exit(0 if upload_ipa(app_id, ipa_path) else 1)

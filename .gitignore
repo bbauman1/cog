@@ -1,1 +1,48 @@
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Local agent/editor state
+.agents/
+.codex/
+
+# Environment and secrets
+.env
+.env.*
+*.p8
+*.p12
+*.cer
+*.key
+*.pem
+*.mobileprovision
+
+# App Store Connect / signing output
+.asc/
+Cog/.asc/
+
+# Xcode
+*.xcworkspace
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+DerivedData/
+build/
+Cog/build/
+
+# Build artifacts
+*.ipa
+*.xcarchive
+*.dSYM
+*.dSYM.zip
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+
+# Python
+__pycache__/
+*.py[cod]
 scripts/__pycache__/

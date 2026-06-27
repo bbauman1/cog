@@ -3,6 +3,10 @@ name: Deploy to TestFlight
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: testflight-deploy
@@ -12,14 +16,44 @@ jobs:
   deploy:
     runs-on: macos-26
     timeout-minutes: 45
+    environment: testflight
     env:
-      APP_ID: "6777732746"
+      APP_ID: ${{ vars.COG_ASC_APP_ID }}
+      APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      COG_MAIN_BUNDLE_ID: ${{ vars.COG_MAIN_BUNDLE_ID }}
+      COG_WIDGET_BUNDLE_ID: ${{ vars.COG_WIDGET_BUNDLE_ID }}
+      COG_MAIN_BUNDLE_ID_RESOURCE: ${{ vars.COG_MAIN_BUNDLE_ID_RESOURCE }}
+      COG_WIDGET_BUNDLE_ID_RESOURCE: ${{ vars.COG_WIDGET_BUNDLE_ID_RESOURCE }}
+      COG_MAIN_PROFILE_NAME: ${{ vars.COG_MAIN_PROFILE_NAME }}
+      COG_WIDGET_PROFILE_NAME: ${{ vars.COG_WIDGET_PROFILE_NAME }}
+      TESTFLIGHT_GROUP: ${{ vars.TESTFLIGHT_GROUP || 'Internal' }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate release configuration
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          APPLE_DIST_KEY_PEM: ${{ secrets.APPLE_DIST_KEY_PEM }}
+          APPLE_DIST_P12_PASSWORD: ${{ secrets.APPLE_DIST_P12_PASSWORD }}
+        run: |
+          missing=0
+          for name in \
+            APP_ID APPLE_TEAM_ID COG_MAIN_BUNDLE_ID COG_WIDGET_BUNDLE_ID \
+            COG_MAIN_BUNDLE_ID_RESOURCE COG_WIDGET_BUNDLE_ID_RESOURCE \
+            COG_MAIN_PROFILE_NAME COG_WIDGET_PROFILE_NAME \
+            ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY APPLE_DIST_KEY_PEM APPLE_DIST_P12_PASSWORD
+          do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required release configuration: $name"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
       - name: Select Xcode 26
         run: |
-          # Find the latest Xcode 26.x installed on the runner
           XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           if [ -z "$XCODE_PATH" ]; then
             echo "::error::No Xcode 26.x found on this runner"
@@ -43,7 +77,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install Python dependencies
         run: pip install PyJWT cryptography requests
@@ -55,19 +89,20 @@ jobs:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: |
           KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          BEGIN_PRIVATE_KEY="-----BEGIN PRIVATE"
+          BEGIN_PRIVATE_KEY="${BEGIN_PRIVATE_KEY} KEY-----"
+          END_PRIVATE_KEY="-----END PRIVATE"
+          END_PRIVATE_KEY="${END_PRIVATE_KEY} KEY-----"
 
-          # Reformat PEM: handles single-line, missing newlines, or correct format
           printf '%s' "$ASC_PRIVATE_KEY" \
             | tr -d '\r' \
-            | sed 's/-----BEGIN PRIVATE KEY-----//' \
-            | sed 's/-----END PRIVATE KEY-----//' \
+            | sed "s/$BEGIN_PRIVATE_KEY//" \
+            | sed "s/$END_PRIVATE_KEY//" \
             | tr -d ' \n' \
             | fold -w 64 \
-            | { echo "-----BEGIN PRIVATE KEY-----"; cat; echo; echo "-----END PRIVATE KEY-----"; } \
+            | { echo "$BEGIN_PRIVATE_KEY"; cat; echo; echo "$END_PRIVATE_KEY"; } \
             > "$KEY_PATH"
           chmod 600 "$KEY_PATH"
-
-          echo "Key file: $(wc -l < "$KEY_PATH") lines, $(wc -c < "$KEY_PATH") bytes"
 
           if ! openssl pkey -in "$KEY_PATH" -noout 2>/dev/null; then
             echo "::error::ASC_PRIVATE_KEY could not be parsed. Verify the .p8 contents."
@@ -84,8 +119,8 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
-          APPLE_TEAM_ID: Y9ZLF8R6XZ
           APPLE_DIST_KEY_PEM: ${{ secrets.APPLE_DIST_KEY_PEM }}
+          APPLE_DIST_P12_PASSWORD: ${{ secrets.APPLE_DIST_P12_PASSWORD }}
         run: |
           mkdir -p "$HOME/.asc"
           cp "$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8" "$HOME/.asc/AuthKey_${ASC_KEY_ID}.p8"
@@ -101,15 +136,15 @@ jobs:
           security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | sed 's/"//g')
           security import "$HOME/.asc/apple_dist_chain.p12" \
             -k "$KEYCHAIN" \
-            -P devin \
+            -P "$APPLE_DIST_P12_PASSWORD" \
             -T /usr/bin/codesign \
             -T /usr/bin/security
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
 
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp "$HOME/.asc/Cog Distribution.mobileprovision" \
+          cp "$HOME/.asc/${COG_MAIN_PROFILE_NAME}.mobileprovision" \
             ~/Library/MobileDevice/Provisioning\ Profiles/
-          cp "$HOME/.asc/Cog_Widget_Distribution.mobileprovision" \
+          cp "$HOME/.asc/${COG_WIDGET_PROFILE_NAME}.mobileprovision" \
             ~/Library/MobileDevice/Provisioning\ Profiles/
 
           echo "Installed profiles: $(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision 2>/dev/null | wc -l)"
@@ -145,13 +180,39 @@ jobs:
             --overwrite \
             --xcodebuild-flag=-destination \
             --xcodebuild-flag="generic/platform=iOS" \
+            --xcodebuild-flag="APPLE_TEAM_ID=$APPLE_TEAM_ID" \
+            --xcodebuild-flag="COG_MAIN_PROFILE_NAME=$COG_MAIN_PROFILE_NAME" \
+            --xcodebuild-flag="COG_WIDGET_PROFILE_NAME=$COG_WIDGET_PROFILE_NAME" \
             --xcodebuild-flag="CURRENT_PROJECT_VERSION=${{ steps.build-number.outputs.BUILD_NUMBER }}"
+
+      - name: Generate export options
+        run: |
+          python3 - <<'PY'
+          import os, plistlib
+
+          export_options = {
+              "method": "app-store-connect",
+              "signingStyle": "manual",
+              "signingCertificate": "Apple Distribution",
+              "teamID": os.environ["APPLE_TEAM_ID"],
+              "uploadSymbols": True,
+              "provisioningProfiles": {
+                  os.environ["COG_MAIN_BUNDLE_ID"]: os.environ["COG_MAIN_PROFILE_NAME"],
+                  os.environ["COG_WIDGET_BUNDLE_ID"]: os.environ["COG_WIDGET_PROFILE_NAME"],
+              },
+          }
+
+          path = os.path.join(os.environ["RUNNER_TEMP"], "export-options.plist")
+          with open(path, "wb") as file:
+              plistlib.dump(export_options, file)
+          print(path)
+          PY
 
       - name: Export IPA
         run: |
           asc xcode export \
             --archive-path "$RUNNER_TEMP/Cog.xcarchive" \
-            --export-options Cog/.asc/export-options.plist \
+            --export-options "$RUNNER_TEMP/export-options.plist" \
             --ipa-path "$RUNNER_TEMP/Cog.ipa" \
             --overwrite \
             --timeout 10m
@@ -161,21 +222,20 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
-          # Copy API key to altool's expected location
           mkdir -p ~/.private_keys
           cp "$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8" ~/.private_keys/
           xcrun altool --validate-app \
             --file "$RUNNER_TEMP/Cog.ipa" \
             --type ios \
             --apiKey "$ASC_KEY_ID" \
-            --apiIssuer "$ASC_ISSUER_ID" 2>&1 || true
+            --apiIssuer "$ASC_ISSUER_ID"
 
       - name: Publish to TestFlight
         run: |
           asc publish testflight \
             --app "$APP_ID" \
             --ipa "$RUNNER_TEMP/Cog.ipa" \
-            --group "Internal" \
+            --group "$TESTFLIGHT_GROUP" \
             --wait \
             --poll-interval 15s
 
@@ -183,3 +243,4 @@ jobs:
         if: always()
         run: |
           rm -f "$RUNNER_TEMP/AuthKey_"*.p8
+          rm -f "$RUNNER_TEMP/export-options.plist"
