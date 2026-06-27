@@ -2,21 +2,14 @@ import SwiftUI
 
 struct SessionDetailView: View {
     @Environment(AppState.self) private var appState
-    @Namespace private var fallbackNamespace
     @State private var viewModel: SessionDetailViewModel
     @State private var selectedDetailTab: SessionDetailTab = .chat
     @State private var showTerminateConfirmation = false
     @State private var showSessionInfo = false
     @State private var speechService = SpeechTranscriptionService()
-    var transitionNamespace: Namespace.ID?
 
-    init(sessionId: String, transitionNamespace: Namespace.ID? = nil) {
+    init(sessionId: String) {
         _viewModel = State(initialValue: SessionDetailViewModel(sessionId: sessionId))
-        self.transitionNamespace = transitionNamespace
-    }
-
-    private var activeNamespace: Namespace.ID {
-        transitionNamespace ?? fallbackNamespace
     }
 
     var body: some View {
@@ -94,7 +87,6 @@ struct SessionDetailView: View {
             Text("This will stop Devin from working on this session. This action cannot be undone.")
         }
         .toolbar(.hidden, for: .tabBar)
-        .navigationTransition(.zoom(sourceID: viewModel.sessionId, in: activeNamespace))
         .task {
             if let client = appState.apiClient {
                 viewModel.configure(with: client)

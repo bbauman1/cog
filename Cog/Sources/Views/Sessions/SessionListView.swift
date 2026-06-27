@@ -4,7 +4,6 @@ struct SessionListView: View {
     let refreshToken: Int
 
     @Environment(AppState.self) private var appState
-    @Namespace private var sessionTransition
     @State private var viewModel = SessionListViewModel()
     @State private var navigationPath = NavigationPath()
     @State private var showCreateSession = false
@@ -23,7 +22,7 @@ struct SessionListView: View {
             }
             .navigationTitle("Sessions")
             .navigationDestination(for: String.self) { sessionId in
-                SessionDetailView(sessionId: sessionId, transitionNamespace: sessionTransition)
+                SessionDetailView(sessionId: sessionId)
             }
             .sheet(isPresented: $showCreateSession) {
                 CreateSessionView { _ in
@@ -98,7 +97,6 @@ struct SessionListView: View {
                         NavigationLink(value: session.sessionId) {
                             SessionRowView(session: session)
                         }
-                        .matchedTransitionSource(id: session.sessionId, in: sessionTransition)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             if isSessionActive(session) {
                                 Button(role: .destructive) {
