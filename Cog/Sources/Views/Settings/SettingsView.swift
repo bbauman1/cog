@@ -51,6 +51,7 @@ struct SettingsView: View {
                 LabeledContent("Version", value: "0.3.0")
                 LabeledContent("Build", value: "3")
                 Link("Devin API Docs", destination: URL(string: "https://docs.devin.ai")!)
+                Link("Contact", destination: URL(string: "mailto:bauman.brett3@gmail.com")!)
             }
         }
         .navigationTitle("Settings")
