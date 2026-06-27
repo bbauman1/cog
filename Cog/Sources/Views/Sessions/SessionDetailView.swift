@@ -229,8 +229,8 @@ struct SessionDetailView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .background(
-                .regularMaterial,
+            .glassEffect(
+                .regular.interactive(),
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
             .padding(.horizontal, 16)
