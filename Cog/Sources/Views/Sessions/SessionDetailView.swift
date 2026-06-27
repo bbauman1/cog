@@ -875,29 +875,62 @@ private struct AttachmentImageView: View {
 
 private struct FileAttachmentView: View {
     let attachment: ParsedAttachment
+    let apiClient: DevinAPIClient?
     let isUser: Bool
 
+    @State private var isDownloading = false
+    @State private var previewURL: URL?
+
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: iconName)
-                .font(.title3)
-                .foregroundStyle(isUser ? .white : .blue)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(attachment.fileName)
-                    .font(.caption.weight(.medium))
-                    .lineLimit(1)
-                if let size = attachment.fileSize {
-                    Text(ByteCountFormatter.string(fromByteCount: Int64(size),
-                                                   countStyle: .file))
-                        .font(.caption2)
-                        .foregroundStyle(isUser ? .white.opacity(0.7) : .secondary)
+        Button {
+            Task { await downloadAndPreview() }
+        } label: {
+            HStack(spacing: 8) {
+                if isDownloading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: iconName)
+                        .font(.title3)
+                        .foregroundStyle(isUser ? .white : .blue)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(attachment.fileName)
+                        .font(.caption.weight(.medium))
+                        .lineLimit(1)
+                    if let size = attachment.fileSize {
+                        Text(ByteCountFormatter.string(fromByteCount: Int64(size),
+                                                       countStyle: .file))
+                            .font(.caption2)
+                            .foregroundStyle(isUser ? .white.opacity(0.7) : .secondary)
+                    }
                 }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(isUser ? Color.white.opacity(0.15) : Color(.systemGray6))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(isUser ? Color.white.opacity(0.15) : Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .buttonStyle(.plain)
+        .disabled(isDownloading)
+        .quickLookPreview($previewURL)
+    }
+
+    private func downloadAndPreview() async {
+        guard let apiClient, let attachmentId = attachment.attachmentId else { return }
+        isDownloading = true
+        defer { isDownloading = false }
+        do {
+            let data = try await apiClient.downloadAttachmentData(
+                attachmentId: attachmentId, fileName: attachment.fileName
+            )
+            let tempDir = FileManager.default.temporaryDirectory
+            let fileURL = tempDir.appendingPathComponent(attachment.fileName)
+            try data.write(to: fileURL)
+            previewURL = fileURL
+        } catch {
+            // Download failed; no preview
+        }
     }
 
     private var iconName: String {
@@ -945,7 +978,11 @@ struct MessageBubbleView: View {
                             isUser: isUser
                         )
                     } else {
-                        FileAttachmentView(attachment: attachment, isUser: isUser)
+                        FileAttachmentView(
+                            attachment: attachment,
+                            apiClient: apiClient,
+                            isUser: isUser
+                        )
                     }
                 }
 
