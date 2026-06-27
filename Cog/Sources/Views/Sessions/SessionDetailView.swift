@@ -21,13 +21,12 @@ struct SessionDetailView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            VStack(spacing: 0) {
-                PullRequestLinksBar(pullRequests: viewModel.session?.pullRequests ?? [])
+        VStack(spacing: 0) {
+            PullRequestLinksBar(pullRequests: viewModel.session?.pullRequests ?? [])
 
-                chatMessages
-            }
-
+            chatMessages
+        }
+        .safeAreaInset(edge: .bottom) {
             if viewModel.isSessionActive {
                 messageInputBar
             }
@@ -166,7 +165,6 @@ struct SessionDetailView: View {
                         }
                     }
                     .padding()
-                    .padding(.bottom, viewModel.isSessionActive ? 60 : 0)
                 }
                 .scrollEdgeEffectHidden(true, for: .top)
                 .onChange(of: viewModel.messages.count) {
