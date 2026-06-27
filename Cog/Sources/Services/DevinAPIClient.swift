@@ -90,6 +90,18 @@ struct AttachmentUploadResponse: Codable, Sendable {
     }
 }
 
+private final class RedirectBlocker: NSObject, URLSessionTaskDelegate, Sendable {
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping @Sendable (URLRequest?) -> Void
+    ) {
+        completionHandler(nil)
+    }
+}
+
 actor DevinAPIClient {
     private let baseURL = "https://api.devin.ai/v3"
     private let session: URLSession
@@ -651,8 +663,35 @@ actor DevinAPIClient {
     // MARK: - Attachments
 
     func downloadAttachmentData(attachmentId: String, fileName: String) async throws -> Data {
-        let path = "/organizations/\(orgId)/attachments/\(attachmentId)/\(fileName)"
-        let (data, _) = try await performRequest(path: path)
+        let encodedFileName = fileName.addingPercentEncoding(
+            withAllowedCharacters: .urlPathAllowed
+        ) ?? fileName
+        let urlString = "\(baseURL)/organizations/\(orgId)/attachments/\(attachmentId)/\(encodedFileName)"
+        guard let url = URL(string: urlString) else { throw APIError.invalidURL }
+
+        var apiRequest = URLRequest(url: url)
+        apiRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        // Use a non-redirecting delegate to capture the presigned URL from the
+        // 307 response. Following the redirect with the Authorization header
+        // causes S3 to reject the request with 403.
+        let delegate = RedirectBlocker()
+        let (_, response) = try await session.data(for: apiRequest, delegate: delegate)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 307,
+              let location = httpResponse.value(forHTTPHeaderField: "Location"),
+              let presignedURL = URL(string: location) else {
+            throw APIError.unknown(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0, data: nil)
+        }
+
+        let (data, downloadResponse) = try await session.data(from: presignedURL)
+        guard let downloadHTTP = downloadResponse as? HTTPURLResponse,
+              (200...299).contains(downloadHTTP.statusCode) else {
+            throw APIError.serverError(
+                statusCode: (downloadResponse as? HTTPURLResponse)?.statusCode ?? 0
+            )
+        }
         return data
     }
 
