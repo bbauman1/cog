@@ -147,7 +147,10 @@ struct SessionDetailView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(viewModel.messages) { message in
-                            MessageBubbleView(message: message) { _ in
+                            MessageBubbleView(
+                                message: message,
+                                apiClient: appState.apiClient
+                            ) { _ in
                                 Task { await viewModel.sendOfferTestResponse() }
                             }
                                 .id(message.id)
@@ -652,6 +655,92 @@ struct MarkdownMessageView: View {
     }
 }
 
+// MARK: - Attachment Parsing
+
+private struct ParsedAttachment: Identifiable {
+    let id = UUID()
+    let url: String
+    let fileName: String
+    let fileSize: Int?
+    let attachmentId: String?
+
+    var isImage: Bool {
+        let ext = (fileName as NSString).pathExtension.lowercased()
+        return ["png", "jpg", "jpeg", "gif", "webp", "heic"].contains(ext)
+    }
+}
+
+private struct ParsedMessageContent {
+    let displayText: String
+    let attachments: [ParsedAttachment]
+}
+
+private func parseAttachments(from text: String) -> ParsedMessageContent {
+    guard text.contains("ATTACHMENT") else {
+        return ParsedMessageContent(displayText: text, attachments: [])
+    }
+
+    // Match both ATTACHMENT:{"url":"...","fileSize":...} and ATTACHMENT:"url"
+    let jsonPattern = #"ATTACHMENT:\{[^\}]+\}"#
+    let simplePattern = #"ATTACHMENT:"([^"]+)""#
+
+    var attachments: [ParsedAttachment] = []
+    var cleaned = text
+
+    // Parse JSON-style attachments
+    if let jsonRegex = try? NSRegularExpression(pattern: jsonPattern) {
+        let range = NSRange(cleaned.startIndex..., in: cleaned)
+        let matches = jsonRegex.matches(in: cleaned, range: range)
+        for match in matches.reversed() {
+            guard let matchRange = Range(match.range, in: cleaned) else { continue }
+            let matchStr = String(cleaned[matchRange])
+            let jsonStr = String(matchStr.dropFirst("ATTACHMENT:".count))
+            if let data = jsonStr.data(using: .utf8),
+               let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let url = obj["url"] as? String {
+                let fileSize = obj["fileSize"] as? Int
+                let attachment = makeAttachment(url: url, fileSize: fileSize)
+                attachments.append(attachment)
+            }
+            cleaned.removeSubrange(matchRange)
+        }
+    }
+
+    // Parse simple-style attachments
+    if let simpleRegex = try? NSRegularExpression(pattern: simplePattern) {
+        let range = NSRange(cleaned.startIndex..., in: cleaned)
+        let matches = simpleRegex.matches(in: cleaned, range: range)
+        for match in matches.reversed() {
+            guard let matchRange = Range(match.range, in: cleaned),
+                  let urlRange = Range(match.range(at: 1), in: cleaned) else { continue }
+            let url = String(cleaned[urlRange])
+            let attachment = makeAttachment(url: url, fileSize: nil)
+            attachments.append(attachment)
+            cleaned.removeSubrange(matchRange)
+        }
+    }
+
+    let trimmed = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+    return ParsedMessageContent(displayText: trimmed, attachments: attachments.reversed())
+}
+
+private func makeAttachment(url: String, fileSize: Int?) -> ParsedAttachment {
+    let components = url.split(separator: "/")
+    let fileName = components.last.map { String($0) }
+        .flatMap { $0.removingPercentEncoding } ?? "file"
+    // Extract attachment_id from URLs like .../attachments/{uuid}/filename
+    var attachmentId: String?
+    if let idx = components.firstIndex(of: "attachments"),
+       components.index(after: idx) < components.endIndex {
+        let candidate = String(components[components.index(after: idx)])
+        if candidate.count == 36, candidate.contains("-") {
+            attachmentId = candidate
+        }
+    }
+    return ParsedAttachment(url: url, fileName: fileName, fileSize: fileSize,
+                            attachmentId: attachmentId)
+}
+
 // MARK: - Offer Test App Parsing
 
 private struct OfferTestAppResult {
@@ -694,16 +783,134 @@ private enum OfferTestAppStore {
     }
 }
 
+// MARK: - Attachment Image View
+
+private struct AttachmentImageView: View {
+    let attachment: ParsedAttachment
+    let apiClient: DevinAPIClient?
+    let isUser: Bool
+
+    @State private var imageData: Data?
+    @State private var isLoading = true
+    @State private var loadFailed = false
+
+    var body: some View {
+        Group {
+            if let imageData, let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: 260, maxHeight: 300)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else if isLoading {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isUser ? Color.white.opacity(0.15) : Color(.systemGray6))
+                    .frame(width: 200, height: 120)
+                    .overlay {
+                        ProgressView()
+                    }
+            } else {
+                fileAttachmentLabel
+            }
+        }
+        .task(id: attachment.attachmentId) {
+            await loadImage()
+        }
+    }
+
+    private var fileAttachmentLabel: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "photo")
+                .font(.title3)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(attachment.fileName)
+                    .font(.caption)
+                    .lineLimit(1)
+                if let size = attachment.fileSize {
+                    Text(ByteCountFormatter.string(fromByteCount: Int64(size),
+                                                   countStyle: .file))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(isUser ? Color.white.opacity(0.15) : Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func loadImage() async {
+        guard let apiClient,
+              let attachmentId = attachment.attachmentId else {
+            isLoading = false
+            loadFailed = true
+            return
+        }
+
+        do {
+            let data = try await apiClient.downloadAttachmentData(
+                attachmentId: attachmentId,
+                fileName: attachment.fileName
+            )
+            imageData = data
+        } catch {
+            loadFailed = true
+        }
+        isLoading = false
+    }
+}
+
+private struct FileAttachmentView: View {
+    let attachment: ParsedAttachment
+    let isUser: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: iconName)
+                .font(.title3)
+                .foregroundStyle(isUser ? .white : .blue)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(attachment.fileName)
+                    .font(.caption.weight(.medium))
+                    .lineLimit(1)
+                if let size = attachment.fileSize {
+                    Text(ByteCountFormatter.string(fromByteCount: Int64(size),
+                                                   countStyle: .file))
+                        .font(.caption2)
+                        .foregroundStyle(isUser ? .white.opacity(0.7) : .secondary)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(isUser ? Color.white.opacity(0.15) : Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var iconName: String {
+        let ext = (attachment.fileName as NSString).pathExtension.lowercased()
+        switch ext {
+        case "md", "txt": return "doc.text"
+        case "pdf": return "doc.richtext"
+        case "zip", "tar", "gz": return "doc.zipper"
+        default: return "paperclip"
+        }
+    }
+}
+
 // MARK: - Message Bubble
 
 struct MessageBubbleView: View {
     let message: Message
+    let apiClient: DevinAPIClient?
     var onOfferTestTapped: ((String) -> Void)?
 
     private var isUser: Bool { message.source == .user }
 
     var body: some View {
-        let parsed = parseOfferTestApp(message.message)
+        let attachmentContent = parseAttachments(from: message.message)
+        let parsed = parseOfferTestApp(attachmentContent.displayText)
 
         HStack {
             if isUser { Spacer(minLength: 60) }
@@ -716,6 +923,18 @@ struct MessageBubbleView: View {
                         .padding(.vertical, 10)
                         .background(isUser ? Color.blue : Color(.systemGray5))
                         .clipShape(RoundedRectangle(cornerRadius: 18))
+                }
+
+                ForEach(attachmentContent.attachments) { attachment in
+                    if attachment.isImage {
+                        AttachmentImageView(
+                            attachment: attachment,
+                            apiClient: apiClient,
+                            isUser: isUser
+                        )
+                    } else {
+                        FileAttachmentView(attachment: attachment, isUser: isUser)
+                    }
                 }
 
                 if let label = parsed.buttonLabel {
