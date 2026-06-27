@@ -6,6 +6,7 @@ struct SessionDetailView: View {
     @State private var showTerminateConfirmation = false
     @State private var showSessionInfo = false
     @State private var speechService = SpeechTranscriptionService()
+    @State private var messageDraftBeforeTranscription = ""
 
     init(sessionId: String) {
         _viewModel = State(initialValue: SessionDetailViewModel(sessionId: sessionId))
@@ -74,6 +75,9 @@ struct SessionDetailView: View {
             Text("This will stop Devin from working on this session. This action cannot be undone.")
         }
         .toolbar(.hidden, for: .tabBar)
+        .onChange(of: speechService.transcribedText) { _, newValue in
+            applyLiveTranscription(newValue)
+        }
         .task {
             if let client = appState.apiClient {
                 viewModel.configure(with: client)
@@ -170,24 +174,6 @@ struct SessionDetailView: View {
 
     private var messageInputBar: some View {
         VStack(spacing: 4) {
-            if speechService.isTranscribing {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(.red)
-                        .frame(width: 8, height: 8)
-                        .symbolEffect(.pulse)
-                    Text(speechService.transcribedText.isEmpty
-                         ? "Listening..."
-                         : speechService.transcribedText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .padding(.top, 4)
-            }
-
             HStack(spacing: 8) {
                 TextField("Message Devin...", text: $viewModel.messageDraft, axis: .vertical)
                     .textFieldStyle(.plain)
@@ -227,35 +213,42 @@ struct SessionDetailView: View {
     }
 
     private var canSend: Bool {
-        viewModel.canSendMessage && (
-            !viewModel.messageDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-            (speechService.isTranscribing && !speechService.transcribedText.isEmpty)
-        )
+        viewModel.canSendMessage && !viewModel.messageDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func toggleTranscription() async {
         if speechService.isTranscribing {
-            let text = speechService.stopTranscription()
-            if !text.isEmpty {
-                if viewModel.messageDraft.isEmpty {
-                    viewModel.messageDraft = text
-                } else {
-                    viewModel.messageDraft += " " + text
-                }
-            }
+            _ = speechService.stopTranscription()
+            messageDraftBeforeTranscription = viewModel.messageDraft
         } else {
+            messageDraftBeforeTranscription = viewModel.messageDraft
             await speechService.startTranscription()
         }
     }
 
     private func sendMessageWithSpeech() async {
         if speechService.isTranscribing {
-            let text = speechService.stopTranscription()
-            if !text.isEmpty {
-                viewModel.messageDraft += (viewModel.messageDraft.isEmpty ? "" : " ") + text
-            }
+            _ = speechService.stopTranscription()
+            messageDraftBeforeTranscription = viewModel.messageDraft
         }
         await viewModel.sendMessage()
+    }
+
+    private func applyLiveTranscription(_ transcript: String) {
+        guard speechService.isTranscribing else { return }
+        viewModel.messageDraft = Self.composedText(
+            base: messageDraftBeforeTranscription,
+            transcript: transcript
+        )
+    }
+
+    private static func composedText(base: String, transcript: String) -> String {
+        let cleanedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanedTranscript.isEmpty else { return base }
+        guard !base.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return cleanedTranscript
+        }
+        return "\(base) \(cleanedTranscript)"
     }
 }
 

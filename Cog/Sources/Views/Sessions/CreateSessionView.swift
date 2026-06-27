@@ -15,6 +15,7 @@ struct CreateSessionView: View {
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var showAdvanced = false
     @State private var showAttachmentMenu = false
+    @State private var promptBeforeTranscription = ""
     @FocusState private var isPromptFocused: Bool
     var onSessionCreated: ((Session) -> Void)?
 
@@ -54,6 +55,9 @@ struct CreateSessionView: View {
             }
             .onChange(of: viewModel.selectedPlatform) { _, newValue in
                 UserDefaults.standard.set(newValue, forKey: "create_session_selected_platform")
+            }
+            .onChange(of: speechService.transcribedText) { _, newValue in
+                applyLiveTranscription(newValue)
             }
             .interactiveDismissDisabled(viewModel.isCreating)
             .onDisappear {
@@ -98,10 +102,8 @@ struct CreateSessionView: View {
     }
 
     private var canCreate: Bool {
-        let hasPrompt = viewModel.isFormValid ||
-            (speechService.isTranscribing && !speechService.transcribedText.isEmpty)
         let hasUploading = viewModel.attachments.contains { $0.isUploading }
-        return hasPrompt && !viewModel.isCreating && !hasUploading
+        return viewModel.isFormValid && !viewModel.isCreating && !hasUploading
     }
 
     // MARK: - Context Area
@@ -227,19 +229,6 @@ struct CreateSessionView: View {
                     .lineLimit(1...8)
                     .font(.body)
                     .padding(.horizontal, 4)
-
-                if speechService.isTranscribing {
-                    HStack {
-                        Text(speechService.transcribedText.isEmpty
-                             ? "Listening..."
-                             : speechService.transcribedText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 4)
-                }
 
                 composerToolbar
             }
@@ -465,31 +454,41 @@ struct CreateSessionView: View {
 
     private func toggleTranscription() async {
         if speechService.isTranscribing {
-            let text = speechService.stopTranscription()
-            if !text.isEmpty {
-                if viewModel.prompt.isEmpty {
-                    viewModel.prompt = text
-                } else {
-                    viewModel.prompt += " " + text
-                }
-            }
+            _ = speechService.stopTranscription()
+            promptBeforeTranscription = viewModel.prompt
         } else {
+            promptBeforeTranscription = viewModel.prompt
             await speechService.startTranscription()
         }
     }
 
     private func createSession() async {
         if speechService.isTranscribing {
-            let text = speechService.stopTranscription()
-            if !text.isEmpty {
-                viewModel.prompt += (viewModel.prompt.isEmpty ? "" : " ") + text
-            }
+            _ = speechService.stopTranscription()
+            promptBeforeTranscription = viewModel.prompt
         }
 
         if let session = await viewModel.createSession() {
             onSessionCreated?(session)
             dismiss()
         }
+    }
+
+    private func applyLiveTranscription(_ transcript: String) {
+        guard speechService.isTranscribing else { return }
+        viewModel.prompt = Self.composedText(
+            base: promptBeforeTranscription,
+            transcript: transcript
+        )
+    }
+
+    private static func composedText(base: String, transcript: String) -> String {
+        let cleanedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanedTranscript.isEmpty else { return base }
+        guard !base.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return cleanedTranscript
+        }
+        return "\(base) \(cleanedTranscript)"
     }
 
     private func handlePhotoSelection(_ items: [PhotosPickerItem]) async {

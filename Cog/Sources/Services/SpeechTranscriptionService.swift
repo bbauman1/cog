@@ -15,6 +15,7 @@ final class SpeechTranscriptionService {
     private var inputContinuation: AsyncStream<AnalyzerInput>.Continuation?
     private var resultsTask: Task<Void, Never>?
     private var isInputTapInstalled = false
+    private var transcriptionSegments: [TranscriptionSegment] = []
 
     private static let log = Logger(subsystem: "com.cogfordevin.ios", category: "Speech")
 
@@ -26,6 +27,7 @@ final class SpeechTranscriptionService {
         guard !isTranscribing else { return }
         errorMessage = nil
         transcribedText = ""
+        transcriptionSegments = []
 
         Self.log.info("[mic] startTranscription called")
 
@@ -148,10 +150,12 @@ final class SpeechTranscriptionService {
         let converter = AudioBufferConverter()
 
         Self.log.info("[mic] installing tap on inputNode")
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { buffer, _ in
-            guard let convertedBuffer = try? converter.convert(buffer, to: analyzerFormat) else { return }
-            continuation.yield(AnalyzerInput(buffer: convertedBuffer))
-        }
+        let tapBlock = makeAnalyzerInputTap(
+            converter: converter,
+            analyzerFormat: analyzerFormat,
+            continuation: continuation
+        )
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: format, block: tapBlock)
         isInputTapInstalled = true
 
         engine.prepare()
@@ -172,7 +176,7 @@ final class SpeechTranscriptionService {
             do {
                 for try await result in module.results {
                     guard let self, !Task.isCancelled else { break }
-                    self.transcribedText = result.text.description
+                    self.applyTranscriptionResult(result)
                 }
                 Self.log.info("[mic] results stream ended normally")
             } catch {
@@ -256,6 +260,7 @@ final class SpeechTranscriptionService {
 
         isTranscribing = false
         transcribedText = ""
+        transcriptionSegments = []
 
         deactivateAudioSession()
     }
@@ -264,6 +269,48 @@ final class SpeechTranscriptionService {
         let session = AVAudioSession.sharedInstance()
         try? session.setActive(false, options: .notifyOthersOnDeactivation)
     }
+
+    private func applyTranscriptionResult(_ result: SpeechTranscriber.Result) {
+        let text = Self.plainText(from: result.text).trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if text.isEmpty {
+            transcriptionSegments.removeAll { Self.rangesOverlap($0.range, result.range) }
+            transcribedText = Self.joinedTranscript(transcriptionSegments.map(\.text))
+            return
+        }
+
+        let segment = TranscriptionSegment(range: result.range, text: text)
+        transcriptionSegments.removeAll { Self.rangesOverlap($0.range, result.range) }
+        transcriptionSegments.append(segment)
+
+        transcriptionSegments.sort { lhs, rhs in
+            CMTimeCompare(lhs.range.start, rhs.range.start) < 0
+        }
+        transcribedText = Self.joinedTranscript(transcriptionSegments.map(\.text))
+    }
+
+    private static func plainText(from attributedText: AttributedString) -> String {
+        String(attributedText.characters)
+    }
+
+    private static func rangesOverlap(_ lhs: CMTimeRange, _ rhs: CMTimeRange) -> Bool {
+        let lhsEnd = CMTimeRangeGetEnd(lhs)
+        let rhsEnd = CMTimeRangeGetEnd(rhs)
+        return CMTimeCompare(lhs.start, rhsEnd) < 0 &&
+            CMTimeCompare(rhs.start, lhsEnd) < 0
+    }
+
+    private static func joinedTranscript(_ segments: [String]) -> String {
+        segments
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
+}
+
+private struct TranscriptionSegment {
+    let range: CMTimeRange
+    var text: String
 }
 
 private enum SpeechAssetError: LocalizedError {
@@ -274,7 +321,18 @@ private enum SpeechAssetError: LocalizedError {
     }
 }
 
-private final class AudioBufferConverter {
+private func makeAnalyzerInputTap(
+    converter: AudioBufferConverter,
+    analyzerFormat: AVAudioFormat,
+    continuation: AsyncStream<AnalyzerInput>.Continuation
+) -> AVAudioNodeTapBlock {
+    { buffer, _ in
+        guard let convertedBuffer = try? converter.convert(buffer, to: analyzerFormat) else { return }
+        continuation.yield(AnalyzerInput(buffer: convertedBuffer))
+    }
+}
+
+private final class AudioBufferConverter: @unchecked Sendable {
     private var converter: AVAudioConverter?
     private var sourceFormat: AVAudioFormat?
     private var targetFormat: AVAudioFormat?
