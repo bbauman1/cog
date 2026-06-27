@@ -400,6 +400,10 @@ private struct ParsedMessageContent {
 }
 
 private func parseAttachments(from text: String) -> ParsedMessageContent {
+    guard text.contains("ATTACHMENT") else {
+        return ParsedMessageContent(displayText: text, attachments: [])
+    }
+
     // Match both ATTACHMENT:{"url":"...","fileSize":...} and ATTACHMENT:"url"
     let jsonPattern = #"ATTACHMENT:\{[^\}]+\}"#
     let simplePattern = #"ATTACHMENT:"([^"]+)""#
