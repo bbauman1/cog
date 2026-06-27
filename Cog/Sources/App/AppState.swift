@@ -108,8 +108,6 @@ final class AppState {
         try? credentialStore.deleteAll()
         apiClient = nil
         authState = .unauthenticated
-        SessionStatusTracker.shared.clearAll()
-        Task { await NotificationService.shared.clearAllNotifications() }
     }
 
     func scheduleBackgroundRefresh() {

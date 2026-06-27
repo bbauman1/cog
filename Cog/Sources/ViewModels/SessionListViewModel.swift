@@ -37,7 +37,6 @@ final class SessionListViewModel {
             sessions = response.items
             endCursor = response.endCursor
             hasNextPage = response.hasNextPage
-            SessionStatusTracker.shared.updateFromSessions(response.items)
             updateWidgetData(from: response.items)
         } catch let error as APIError {
             errorMessage = error.errorDescription
@@ -107,7 +106,6 @@ final class SessionListViewModel {
         guard let apiClient else { return }
         do {
             let response = try await apiClient.listSessions(first: 20)
-            SessionStatusTracker.shared.updateFromSessions(response.items)
             sessions = response.items
             endCursor = response.endCursor
             hasNextPage = response.hasNextPage

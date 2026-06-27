@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		00C710ACEC6316E5B02784CB /* SessionInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6306D70272482C4D656BF916 /* SessionInsights.swift */; };
 		094B946D5E09ADE0CB987468 /* SessionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F03F86F60ABDC386FF09C20 /* SessionListView.swift */; };
-		09C1106FAEF2D66C251476F4 /* SessionStatusTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F0A4722D6633EFA3CD06A3 /* SessionStatusTracker.swift */; };
 		12AE40B8D9C9F39A89EF081A /* Playbook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CEECF2E6CB6ACB4B4A32C90 /* Playbook.swift */; };
 		18090935E48CF15AC94321FD /* CogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8BFB06980149F6034CDBF6 /* CogApp.swift */; };
 		2115E5C8C6396FF7EF1B68B9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E1C2DECA0C7C6CAF9BA36356 /* Assets.xcassets */; };
@@ -53,7 +52,6 @@
 		C7EEB9DABB0333129FBFA648 /* ActiveSessionsWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA5E4C9109C5C1531A5DC24C /* ActiveSessionsWidget.swift */; };
 		CC29A4F7F0E08511FADA9CDF /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3475A644A2815498167C33BD /* LoginView.swift */; };
 		CD4F66B99EF4F4447F119ADC /* Color+Devin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A850A6A8084F9CF85012C507 /* Color+Devin.swift */; };
-		D2782C68987A2B12ECD29F77 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CCE4B0EC081D3AB14EA28D0 /* NotificationService.swift */; };
 		D39A1FFA7C4C18FC4D42F980 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2C65761F312739961E262C /* AppDelegate.swift */; };
 		D64352828D13744EC103A657 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 49700E001A0108AEAD69A469 /* PrivacyInfo.xcprivacy */; };
 		E55F74DC4C53ED3947D900F7 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1514C5275BA2AE55FDEE1E /* AppState.swift */; };
@@ -106,7 +104,6 @@
 		0829742B104663F8AD537582 /* DevinAPIClientCRUDTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevinAPIClientCRUDTests.swift; sourceTree = "<group>"; };
 		0CEECF2E6CB6ACB4B4A32C90 /* Playbook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playbook.swift; sourceTree = "<group>"; };
 		10C393769E317B0E758CE180 /* LibraryResourceStateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryResourceStateViews.swift; sourceTree = "<group>"; };
-		14F0A4722D6633EFA3CD06A3 /* SessionStatusTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStatusTracker.swift; sourceTree = "<group>"; };
 		17A881F4778FF06B15243896 /* SelfResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfResponse.swift; sourceTree = "<group>"; };
 		1BD6CC071C2DC51618768478 /* ScheduleListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleListViewModel.swift; sourceTree = "<group>"; };
 		1E5875852553C03065F52E0B /* PlaybookListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybookListView.swift; sourceTree = "<group>"; };
@@ -124,7 +121,6 @@
 		49700E001A0108AEAD69A469 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		49893B7AEBF809BB915108C3 /* SessionInsightsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionInsightsViewModel.swift; sourceTree = "<group>"; };
 		4A8BFB06980149F6034CDBF6 /* CogApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CogApp.swift; sourceTree = "<group>"; };
-		4CCE4B0EC081D3AB14EA28D0 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		53B71B9A7F264DD5BF138C55 /* SecretsListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretsListViewModel.swift; sourceTree = "<group>"; };
 		551B6BB42D069C8801461416 /* SessionListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListViewModel.swift; sourceTree = "<group>"; };
 		5C1514C5275BA2AE55FDEE1E /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
@@ -200,8 +196,6 @@
 				9B1D19D4B5470EEE9468EC5D /* DeepLinkManager.swift */,
 				A9EF6D2196879FA517CE3419 /* DevinAPIClient.swift */,
 				980A5544E7076CE6F5045C42 /* KeychainService.swift */,
-				4CCE4B0EC081D3AB14EA28D0 /* NotificationService.swift */,
-				14F0A4722D6633EFA3CD06A3 /* SessionStatusTracker.swift */,
 				3C483F78C7A7C6147A8682DC /* SpeechTranscriptionService.swift */,
 			);
 			path = Services;
@@ -530,7 +524,6 @@
 				6BF9281D5F9FE0189236DDC4 /* LibraryResourceStateViews.swift in Sources */,
 				CC29A4F7F0E08511FADA9CDF /* LoginView.swift in Sources */,
 				33220753286971C5C4DBEFBF /* Message.swift in Sources */,
-				D2782C68987A2B12ECD29F77 /* NotificationService.swift in Sources */,
 				B975AB6A66DB09E247011A75 /* PaginatedResponse.swift in Sources */,
 				12AE40B8D9C9F39A89EF081A /* Playbook.swift in Sources */,
 				47E15DAAEEC30531B72E480A /* PlaybookListView.swift in Sources */,
@@ -553,7 +546,6 @@
 				ADB9F34CDCAD4AE68B815B4C /* SessionListViewModel.swift in Sources */,
 				7811C4E3FAC1823F296151C2 /* SessionMetrics.swift in Sources */,
 				A689EA755C19FE1FBC427AAE /* SessionRowView.swift in Sources */,
-				09C1106FAEF2D66C251476F4 /* SessionStatusTracker.swift in Sources */,
 				5795B61C471162959AA8C2A2 /* SettingsView.swift in Sources */,
 				80AC2079C6E1B7D38DF0354A /* SpeechTranscriptionService.swift in Sources */,
 				24483DED459A399409779C96 /* WidgetSessionData.swift in Sources */,

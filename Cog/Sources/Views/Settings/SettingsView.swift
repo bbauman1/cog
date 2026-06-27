@@ -4,7 +4,6 @@ struct SettingsView: View {
     @Environment(AppState.self) private var appState
     @State private var selfInfo: SelfResponse?
     @State private var showLogoutConfirmation = false
-    @State private var notificationsEnabled = false
 
     var body: some View {
         List {
@@ -25,27 +24,6 @@ struct SettingsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                }
-            }
-
-            Section("Notifications") {
-                Toggle("Session Alerts", isOn: $notificationsEnabled)
-                    .onChange(of: notificationsEnabled) {
-                        Task {
-                            await NotificationService.shared.setAlertsEnabled(notificationsEnabled)
-                            if notificationsEnabled {
-                                let granted = await NotificationService.shared.requestAuthorization()
-                                if !granted {
-                                    notificationsEnabled = false
-                                    await NotificationService.shared.setAlertsEnabled(false)
-                                }
-                            }
-                        }
-                    }
-                if notificationsEnabled {
-                    Text("Get notified when sessions need input, complete, or fail.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -86,9 +64,6 @@ struct SettingsView: View {
         }
         .task {
             await loadSelfInfo()
-            let osAuthorized = await NotificationService.shared.isAuthorized()
-            let appEnabled = await NotificationService.shared.alertsEnabled
-            notificationsEnabled = osAuthorized && appEnabled
         }
     }
 

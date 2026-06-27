@@ -51,28 +51,10 @@ final class BackgroundRefreshManager: Sendable {
         }
 
         let client = DevinAPIClient(apiKey: apiKey, orgId: orgId)
-        let tracker = SessionStatusTracker.shared
 
         let backgroundTask = Task {
             do {
                 let response = try await client.listSessions(first: 20)
-                for session in response.items {
-                    let oldStatus = tracker.lastKnownStatus(for: session.sessionId)
-                    let newStatus = session.statusDetail
-
-                    // Only notify for actual status *changes*, not first-seen sessions.
-                    // When oldStatus is nil the session was never tracked — seed it silently.
-                    if let oldStatus, oldStatus != newStatus {
-                        await NotificationService.shared.notifyStatusChange(
-                            sessionId: session.sessionId,
-                            sessionTitle: session.title,
-                            oldStatus: oldStatus,
-                            newStatus: newStatus
-                        )
-                    }
-                    tracker.updateStatus(for: session.sessionId, status: newStatus)
-                }
-
                 let activeSessions = response.items.filter {
                     $0.status == .running || $0.status == .claimed || $0.status == .resuming
                 }

@@ -1,5 +1,4 @@
 import SwiftUI
-import UserNotifications
 
 @main
 struct CogApp: App {
@@ -18,10 +17,6 @@ struct CogApp: App {
         WindowGroup {
             RootView()
                 .environment(appState)
-                .task {
-                    UNUserNotificationCenter.current().delegate = appDelegate
-                    _ = await NotificationService.shared.requestAuthorization()
-                }
                 .onOpenURL { url in
                     handleDeepLink(url)
                 }

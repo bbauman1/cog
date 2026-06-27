@@ -44,7 +44,6 @@ The original plan was organized around iOS-native features (Live Activities, Sir
 | Settings (account info, logout) | Built | Basic |
 | Home Screen Widget | Built | Active sessions widget |
 | Background Refresh | Built | BGAppRefreshTask polling |
-| Notifications (local) | Built | Status transition alerts |
 | Speech-to-Text | Built | Dictation for message input |
 
 **Not yet built:** Apple-style onboarding, Knowledge CRUD, Playbook CRUD, Schedules, Secrets, Analytics/Metrics, Session Insights, Tab-based navigation, Face ID lock.
@@ -210,7 +209,7 @@ These make the app feel like a real Devin command center, not just a session vie
    - Enable/disable toggle (PATCH with `enabled` field)
 2. Add `CreateScheduleView`:
    - Name, prompt, frequency picker (hourly/daily/weekly), schedule_type (recurring vs one-time)
-   - Optional: playbook picker, tags, agent type (devin/data_analyst), notification preference
+   - Optional: playbook picker, tags, agent type (devin/data_analyst), `notify_on`
 3. Add schedule detail view with edit capability
 4. Add swipe-to-delete with confirmation
 5. Model: `Schedule` struct matching API response
