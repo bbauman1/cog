@@ -29,6 +29,8 @@ struct AnalyticsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
             }
 
             if viewModel.isLoading && viewModel.dashboard == nil {
