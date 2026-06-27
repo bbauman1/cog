@@ -237,14 +237,9 @@ struct CreateSessionView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(.secondarySystemBackground))
-                    .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
+            .glassEffect(
+                .regular.interactive(),
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
