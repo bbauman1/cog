@@ -6,6 +6,7 @@ final class ScheduleListViewModel {
     var isLoading = false
     var isLoadingMore = false
     var errorMessage: String?
+    private(set) var hasLoadedOnce = false
 
     private var endCursor: String?
     private var hasNextPage = false
@@ -17,7 +18,9 @@ final class ScheduleListViewModel {
 
     func loadSchedules() async {
         guard let apiClient else { return }
-        isLoading = true
+        if !hasLoadedOnce {
+            isLoading = true
+        }
         errorMessage = nil
 
         do {
@@ -30,6 +33,7 @@ final class ScheduleListViewModel {
         }
 
         isLoading = false
+        hasLoadedOnce = true
     }
 
     func loadMore() async {
