@@ -35,15 +35,9 @@ struct SessionRowView: View {
     }
 
     private var metadataSection: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            Text(timeAgo(from: session.createdDate))
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-
-            Text(String(format: "%.1f ACU", session.acusConsumed))
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
+        Text(timeAgo(from: session.createdDate))
+            .font(.caption2)
+            .foregroundStyle(.tertiary)
     }
 
     private var statusSymbol: String {
