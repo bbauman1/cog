@@ -116,8 +116,8 @@ struct CreateSessionView: View {
             }
 
             contextMenuRow(icon: "desktopcomputer", label: platformLabel) {
-                Button { viewModel.selectedPlatform = "ubuntu" } label: {
-                    Label("Ubuntu", systemImage: viewModel.selectedPlatform == "ubuntu" ? "checkmark" : "")
+                Button { viewModel.selectedPlatform = "linux" } label: {
+                    Label("Ubuntu", systemImage: viewModel.selectedPlatform == "linux" ? "checkmark" : "")
                 }
                 Button { viewModel.selectedPlatform = "windows" } label: {
                     Label("Windows", systemImage: viewModel.selectedPlatform == "windows" ? "checkmark" : "")
@@ -588,7 +588,7 @@ struct AdvancedOptionsSheet: View {
                     .pickerStyle(.segmented)
 
                     Picker("Machine", selection: Bindable(viewModel).selectedPlatform) {
-                        Text("Ubuntu").tag("ubuntu")
+                        Text("Ubuntu").tag("linux")
                         Text("Windows").tag("windows")
                     }
 

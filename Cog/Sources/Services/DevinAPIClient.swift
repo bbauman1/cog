@@ -112,6 +112,10 @@ actor DevinAPIClient {
         self.orgId = orgId
     }
 
+    private static func apiPlatformValue(from platform: String?) -> String? {
+        platform == "ubuntu" ? "linux" : platform
+    }
+
     // MARK: - Generic Request
 
     private func validateResponse(_ response: URLResponse, data: Data) throws -> HTTPURLResponse {
@@ -288,7 +292,7 @@ actor DevinAPIClient {
                 tags: tags,
                 repos: repos,
                 devinMode: devinMode?.rawValue,
-                platform: platform,
+                platform: Self.apiPlatformValue(from: platform),
                 attachmentUrls: attachmentURLs,
                 title: title,
                 maxAcuLimit: maxAcuLimit

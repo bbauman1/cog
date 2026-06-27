@@ -99,6 +99,26 @@ final class DevinAPIClientCRUDTests: XCTestCase {
         XCTAssertEqual(note.noteId, "note-1")
     }
 
+    func testCreateSessionNormalizesUbuntuPlatformToLinux() async throws {
+        let client = makeClient { request in
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.url?.path, "/v3/organizations/org-test/sessions")
+
+            let body = try requestJSONBody(request)
+            XCTAssertEqual(body["prompt"] as? String, "Fix platform")
+            XCTAssertEqual(body["platform"] as? String, "linux")
+
+            return jsonResponse(for: request, body: sessionJSON)
+        }
+
+        let session = try await client.createSession(
+            prompt: "Fix platform",
+            platform: "ubuntu"
+        )
+
+        XCTAssertEqual(session.sessionId, "devin-test")
+    }
+
     func testUpdateKnowledgeSendsContractBody() async throws {
         let client = makeClient { request in
             XCTAssertEqual(request.httpMethod, "PUT")
@@ -302,6 +322,17 @@ private let playbookJSON = """
   "title": "Review PR",
   "body": "Review the current pull request.",
   "created_at": 1782572400
+}
+"""
+
+private let sessionJSON = """
+{
+  "session_id": "devin-test",
+  "status": "new",
+  "acus_consumed": 0,
+  "created_at": 1782572400,
+  "org_id": "org-test",
+  "is_archived": false
 }
 """
 

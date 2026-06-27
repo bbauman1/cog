@@ -26,7 +26,10 @@ final class CreateSessionViewModel {
 
     var selectedMode: DevinMode = .normal
     var selectedRepos: [String] = RepoPickerStorage.shared.savedSelectedRepos
-    var selectedPlatform: String = UserDefaults.standard.string(forKey: "create_session_selected_platform") ?? "ubuntu"
+    var selectedPlatform: String = {
+        let storedPlatform = UserDefaults.standard.string(forKey: "create_session_selected_platform")
+        return storedPlatform == "windows" ? "windows" : "linux"
+    }()
     var customTitle = ""
     var maxAcuLimit: Int?
     var attachments: [AttachmentItem] = []
