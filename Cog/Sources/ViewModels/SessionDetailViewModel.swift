@@ -120,6 +120,32 @@ final class SessionDetailViewModel {
         isSendingMessage = false
     }
 
+    // MARK: - Offer Test Response
+
+    func sendOfferTestResponse() async {
+        guard let apiClient else { return }
+
+        let text = "Yes, test this"
+        isSendingMessage = true
+
+        let optimisticMessage = Message(
+            eventId: UUID().uuidString,
+            source: .user,
+            message: text,
+            createdAt: Int(Date().timeIntervalSince1970)
+        )
+        messages.append(optimisticMessage)
+
+        do {
+            session = try await apiClient.sendMessage(devinId: sessionId, message: text)
+            await refreshMessages()
+        } catch {
+            messages.removeAll { $0.eventId == optimisticMessage.eventId }
+        }
+
+        isSendingMessage = false
+    }
+
     // MARK: - Terminate
 
     func terminateSession() async -> Bool {
