@@ -38,6 +38,7 @@ struct CreateSessionView: View {
                     Button {
                         if speechService.isTranscribing {
                             _ = speechService.stopTranscription()
+                            UIApplication.shared.isIdleTimerDisabled = false
                         }
                         dismiss()
                     } label: {
@@ -64,6 +65,7 @@ struct CreateSessionView: View {
             .onDisappear {
                 if speechService.isTranscribing {
                     _ = speechService.stopTranscription()
+                    UIApplication.shared.isIdleTimerDisabled = false
                 }
             }
             .sheet(isPresented: $showRepositoryPicker) {
@@ -470,8 +472,10 @@ struct CreateSessionView: View {
         if speechService.isTranscribing {
             _ = speechService.stopTranscription()
             promptBeforeTranscription = viewModel.prompt
+            UIApplication.shared.isIdleTimerDisabled = false
         } else {
             promptBeforeTranscription = viewModel.prompt
+            UIApplication.shared.isIdleTimerDisabled = true
             await speechService.startTranscription()
         }
     }
@@ -480,6 +484,7 @@ struct CreateSessionView: View {
         if speechService.isTranscribing {
             _ = speechService.stopTranscription()
             promptBeforeTranscription = viewModel.prompt
+            UIApplication.shared.isIdleTimerDisabled = false
         }
 
         if let session = await viewModel.createSession() {

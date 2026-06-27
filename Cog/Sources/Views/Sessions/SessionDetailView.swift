@@ -85,6 +85,7 @@ struct SessionDetailView: View {
             Text("This will stop Devin from working on this session. This action cannot be undone.")
         }
         .toolbar(.hidden, for: .tabBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .onChange(of: speechService.transcribedText) { _, newValue in
             applyLiveTranscription(newValue)
         }
@@ -100,6 +101,7 @@ struct SessionDetailView: View {
             viewModel.stopPolling()
             if speechService.isTranscribing {
                 _ = speechService.stopTranscription()
+                UIApplication.shared.isIdleTimerDisabled = false
             }
         }
         .fileImporter(
@@ -425,8 +427,10 @@ struct SessionDetailView: View {
         if speechService.isTranscribing {
             _ = speechService.stopTranscription()
             messageDraftBeforeTranscription = viewModel.messageDraft
+            UIApplication.shared.isIdleTimerDisabled = false
         } else {
             messageDraftBeforeTranscription = viewModel.messageDraft
+            UIApplication.shared.isIdleTimerDisabled = true
             await speechService.startTranscription()
         }
     }
@@ -435,6 +439,7 @@ struct SessionDetailView: View {
         if speechService.isTranscribing {
             _ = speechService.stopTranscription()
             messageDraftBeforeTranscription = viewModel.messageDraft
+            UIApplication.shared.isIdleTimerDisabled = false
         }
         await viewModel.sendMessage()
     }
@@ -926,25 +931,20 @@ private struct PullRequestLinksBar: View {
 
     var body: some View {
         if !validPullRequests.isEmpty {
-            VStack(spacing: 0) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(validPullRequests) { pullRequest in
-                            if let url = pullRequest.linkURL {
-                                Link(destination: url) {
-                                    PullRequestLinkLabel(pullRequest: pullRequest)
-                                }
-                                .buttonStyle(.plain)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(validPullRequests) { pullRequest in
+                        if let url = pullRequest.linkURL {
+                            Link(destination: url) {
+                                PullRequestLinkLabel(pullRequest: pullRequest)
                             }
+                            .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
                 }
-
-                Divider()
+                .padding(.horizontal)
+                .padding(.vertical, 8)
             }
-            .background(.bar)
         }
     }
 }
@@ -980,7 +980,7 @@ private struct PullRequestLinkLabel: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .frame(maxWidth: 280, alignment: .leading)
-        .background(Color.blue.opacity(0.10), in: Capsule())
+        .glassEffect(.regular.interactive(), in: Capsule())
         .accessibilityLabel(accessibilityLabel)
     }
 
