@@ -31,50 +31,59 @@ struct MainTabView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("selectedMainTab") private var selectedTabRawValue = MainTab.sessions.rawValue
+    @State private var showCreateSession = false
+    @State private var sessionRefreshToken = 0
 
     var body: some View {
         TabView(selection: selectedTab) {
-            SessionListView()
-                .tabItem {
-                    Label("Sessions", systemImage: "rectangle.stack")
+            Tab("Sessions", systemImage: "rectangle.stack", value: MainTab.sessions) {
+                SessionListView(refreshToken: sessionRefreshToken)
+            }
+
+            Tab("Library", systemImage: "books.vertical", value: MainTab.library) {
+                NavigationStack {
+                    LibraryHubView()
                 }
-                .tag(MainTab.sessions)
+            }
 
-            NavigationStack {
-                LibraryHubView()
+            Tab("Schedules", systemImage: "calendar", value: MainTab.schedules) {
+                NavigationStack {
+                    ScheduleListView()
+                }
             }
-            .tabItem {
-                Label("Library", systemImage: "books.vertical")
-            }
-            .tag(MainTab.library)
 
-            NavigationStack {
-                ScheduleListView()
+            Tab("Settings", systemImage: "gearshape", value: MainTab.settings) {
+                NavigationStack {
+                    SettingsView()
+                }
             }
-            .tabItem {
-                Label("Schedules", systemImage: "calendar")
-            }
-            .tag(MainTab.schedules)
 
-            NavigationStack {
-                SettingsView()
+            Tab("New session", systemImage: "plus", value: MainTab.newSession, role: .search) {
+                Color.clear
             }
-            .tabItem {
-                Label("Settings", systemImage: "gearshape")
-            }
-            .tag(MainTab.settings)
         }
-            .onChange(of: scenePhase) {
-                if scenePhase == .background {
-                    appState.scheduleBackgroundRefresh()
-                }
+        .sheet(isPresented: $showCreateSession) {
+            CreateSessionView { _ in
+                selectedTabRawValue = MainTab.sessions.rawValue
+                sessionRefreshToken += 1
             }
+        }
+        .onChange(of: scenePhase) {
+            if scenePhase == .background {
+                appState.scheduleBackgroundRefresh()
+            }
+        }
     }
 
     private var selectedTab: Binding<MainTab> {
         Binding {
             MainTab(rawValue: selectedTabRawValue) ?? .sessions
         } set: { newValue in
+            if newValue == .newSession {
+                showCreateSession = true
+                return
+            }
+
             selectedTabRawValue = newValue.rawValue
         }
     }
@@ -85,4 +94,5 @@ private enum MainTab: String {
     case library
     case schedules
     case settings
+    case newSession
 }

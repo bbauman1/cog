@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct SessionListView: View {
+    let refreshToken: Int
+
     @Environment(AppState.self) private var appState
     @Namespace private var sessionTransition
     @State private var viewModel = SessionListViewModel()
@@ -8,6 +10,10 @@ struct SessionListView: View {
     @State private var showCreateSession = false
     @State private var terminateSessionId: String?
     @State private var showTerminateConfirmation = false
+
+    init(refreshToken: Int = 0) {
+        self.refreshToken = refreshToken
+    }
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -23,20 +29,6 @@ struct SessionListView: View {
                 CreateSessionView { _ in
                     Task { await viewModel.refresh() }
                 }
-            }
-            .overlay(alignment: .bottomTrailing) {
-                Button {
-                    showCreateSession = true
-                } label: {
-                    Label("New session", systemImage: "plus")
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
-                        .background(.blue, in: Circle())
-                        .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
-                        .labelStyle(.iconOnly)
-                }
-                .padding(20)
             }
             .alert("Terminate Session?", isPresented: $showTerminateConfirmation) {
                 Button("Cancel", role: .cancel) {
@@ -60,6 +52,13 @@ struct SessionListView: View {
         }
         .onDisappear {
             viewModel.stopPolling()
+        }
+        .onChange(of: refreshToken) {
+            if let client = appState.apiClient {
+                viewModel.configure(with: client)
+            }
+
+            Task { await viewModel.refresh() }
         }
         .onChange(of: DeepLinkManager.shared.pendingSessionId) {
             if let sessionId = DeepLinkManager.shared.consumePendingSession() {
