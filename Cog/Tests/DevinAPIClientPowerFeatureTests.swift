@@ -27,6 +27,38 @@ final class DevinAPIClientPowerFeatureTests: XCTestCase {
         XCTAssertEqual(metrics.avgAcus, 3.4)
         XCTAssertEqual(metrics.byOrigin.first { $0.label == "api" }?.count, 4)
         XCTAssertEqual(metrics.bySize.first { $0.label == "m" }?.count, 6)
+        XCTAssertEqual(metrics.sessionsWithMergedPrsCount, 5)
+        XCTAssertEqual(metrics.sessionsCreatedWithPlaybookCount, 0)
+    }
+
+    func testCurrentMetricsFixtureDecodes() throws {
+        let metrics = try JSONDecoder().decode(SessionMetrics.self, from: Data(currentMetricsJSON.utf8))
+
+        XCTAssertEqual(metrics.sessionsCreatedCount, 14)
+        XCTAssertEqual(metrics.mergedPrsCount, 6)
+        XCTAssertEqual(metrics.sessionsWithMergedPrsCount, 6)
+        XCTAssertEqual(metrics.sessionsCreatedWithPlaybookCount, 9)
+        XCTAssertEqual(metrics.sessionsCreatedWithSearchCount, 5)
+        XCTAssertEqual(metrics.avgAcus, 2.8)
+        XCTAssertEqual(metrics.byOrigin.first { $0.label == "automation" }?.count, 3)
+        XCTAssertEqual(metrics.bySize.map(\.label), ["xs", "s", "m", "xl"])
+        XCTAssertEqual(metrics.sessionsWithMergedPrsBySize.first { $0.label == "m" }?.count, 4)
+    }
+
+    func testAdditionalAnalyticsFixturesDecode() throws {
+        let pullRequests = try JSONDecoder().decode(PullRequestMetrics.self, from: Data(prMetricsJSON.utf8))
+        let searches = try JSONDecoder().decode(SearchMetrics.self, from: Data(searchMetricsJSON.utf8))
+        let consumption = try JSONDecoder().decode(ConsumptionMetrics.self, from: Data(consumptionJSON.utf8))
+        let activeUsers = try JSONDecoder().decode([ActiveUserMetric].self, from: Data(activeUsersJSON.utf8))
+
+        XCTAssertEqual(pullRequests.createdCount, 10)
+        XCTAssertEqual(pullRequests.mergedCount, 6)
+        XCTAssertEqual(pullRequests.takenOverCount, 2)
+        XCTAssertEqual(searches.searchesCreatedCount, 11)
+        XCTAssertEqual(consumption.totalAcus, 7.5)
+        XCTAssertEqual(consumption.consumptionByDate.first?.acusByProduct.devin, 2.0)
+        XCTAssertEqual(consumption.consumptionByDate.first?.acusByProduct.review, 0.25)
+        XCTAssertEqual(activeUsers.first?.activeUsers, 3)
     }
 
     func testScheduleListFixtureDecodes() throws {
@@ -91,6 +123,52 @@ final class DevinAPIClientPowerFeatureTests: XCTestCase {
             timeAfter: Date(timeIntervalSince1970: 1780000000),
             timeBefore: Date(timeIntervalSince1970: 1782572400)
         )
+    }
+
+    func testAdditionalAnalyticsRequests() async throws {
+        var requestIndex = 0
+        let client = p1MakeClient { request in
+            requestIndex += 1
+            XCTAssertEqual(request.httpMethod, "GET")
+
+            let components = try XCTUnwrap(URLComponents(url: request.url!, resolvingAgainstBaseURL: false))
+            let queryNames = Set((components.queryItems ?? []).map(\.name))
+
+            switch requestIndex {
+            case 1:
+                XCTAssertEqual(request.url?.path, "/v3/organizations/org-test/metrics/prs")
+                XCTAssertTrue(queryNames.contains("time_after"))
+                XCTAssertTrue(queryNames.contains("time_before"))
+                return p1JSONResponse(for: request, body: prMetricsJSON)
+            case 2:
+                XCTAssertEqual(request.url?.path, "/v3/organizations/org-test/metrics/searches")
+                XCTAssertTrue(queryNames.contains("time_after"))
+                XCTAssertTrue(queryNames.contains("time_before"))
+                return p1JSONResponse(for: request, body: searchMetricsJSON)
+            case 3:
+                XCTAssertEqual(request.url?.path, "/v3/organizations/org-test/metrics/wau")
+                XCTAssertTrue(queryNames.contains("time_after"))
+                XCTAssertTrue(queryNames.contains("time_before"))
+                XCTAssertTrue(queryNames.contains("min_sessions"))
+                XCTAssertTrue(queryNames.contains("min_searches"))
+                return p1JSONResponse(for: request, body: activeUsersJSON)
+            default:
+                XCTAssertEqual(request.url?.path, "/v3/organizations/org-test/consumption/daily")
+                XCTAssertTrue(queryNames.contains("time_after"))
+                XCTAssertTrue(queryNames.contains("time_before"))
+                return p1JSONResponse(for: request, body: consumptionJSON)
+            }
+        }
+
+        let start = Date(timeIntervalSince1970: 1780000000)
+        let end = Date(timeIntervalSince1970: 1782572400)
+
+        _ = try await client.getPullRequestMetrics(timeAfter: start, timeBefore: end)
+        _ = try await client.getSearchMetrics(timeAfter: start, timeBefore: end)
+        _ = try await client.getActiveUserMetrics(granularity: .weekly, timeAfter: start, timeBefore: end)
+        _ = try await client.getDailyConsumption(timeAfter: start, timeBefore: end)
+
+        XCTAssertEqual(requestIndex, 4)
     }
 
     func testScheduleCRUDRequests() async throws {
@@ -226,6 +304,92 @@ private let metricsJSON = """
     "m": 6
   }
 }
+"""
+
+private let currentMetricsJSON = """
+{
+  "sessions_created_count": 14,
+  "sessions_created_by_origin": {
+    "api": 4,
+    "automation": 3,
+    "webapp": 7
+  },
+  "sessions_created_by_size": {
+    "xl": 1,
+    "m": 7,
+    "s": 4,
+    "xs": 2
+  },
+  "sessions_created_with_playbook_count": 9,
+  "sessions_created_with_search_count": 5,
+  "sessions_with_merged_prs_count": 6,
+  "sessions_with_merged_prs_by_size": {
+    "m": 4,
+    "s": 2
+  },
+  "avg_acus_per_session": 2.8
+}
+"""
+
+private let prMetricsJSON = """
+{
+  "prs_created_count": 10,
+  "prs_opened_count": 3,
+  "prs_merged_count": 6,
+  "prs_closed_count": 1,
+  "prs_taken_over_count": 2,
+  "prs_taken_over_opened_count": 1,
+  "prs_taken_over_merged_count": 1,
+  "prs_taken_over_closed_count": 0
+}
+"""
+
+private let searchMetricsJSON = """
+{
+  "searches_created_count": 11
+}
+"""
+
+private let consumptionJSON = """
+{
+  "total_acus": 7.5,
+  "consumption_by_date": [
+    {
+      "date": 1782518400,
+      "acus": 3.0,
+      "acus_by_product": {
+        "devin": 2.0,
+        "cascade": 0.5,
+        "terminal": 0.25,
+        "review": 0.25
+      }
+    },
+    {
+      "date": 1782604800,
+      "acus": 4.5,
+      "acus_by_product": {
+        "devin": 3.5,
+        "cascade": 0.5,
+        "terminal": 0.5
+      }
+    }
+  ]
+}
+"""
+
+private let activeUsersJSON = """
+[
+  {
+    "start_time": 1782518400,
+    "end_time": 1782604800,
+    "active_users": 3
+  },
+  {
+    "start_time": 1782604800,
+    "end_time": 1782691200,
+    "active_users": 5
+  }
+]
 """
 
 private let scheduleJSON = """

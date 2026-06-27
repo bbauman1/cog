@@ -480,15 +480,63 @@ actor DevinAPIClient {
     // MARK: - Metrics
 
     func getSessionMetrics(timeAfter: Date, timeBefore: Date) async throws -> SessionMetrics {
-        let queryItems = [
+        return try await request(
+            path: "/organizations/\(orgId)/metrics/sessions",
+            queryItems: dateRangeQueryItems(timeAfter: timeAfter, timeBefore: timeBefore)
+        )
+    }
+
+    func getPullRequestMetrics(timeAfter: Date, timeBefore: Date) async throws -> PullRequestMetrics {
+        try await request(
+            path: "/organizations/\(orgId)/metrics/prs",
+            queryItems: dateRangeQueryItems(timeAfter: timeAfter, timeBefore: timeBefore)
+        )
+    }
+
+    func getSearchMetrics(timeAfter: Date, timeBefore: Date) async throws -> SearchMetrics {
+        try await request(
+            path: "/organizations/\(orgId)/metrics/searches",
+            queryItems: dateRangeQueryItems(timeAfter: timeAfter, timeBefore: timeBefore)
+        )
+    }
+
+    func getActiveUserMetrics(
+        granularity: ActiveUserGranularity,
+        timeAfter: Date,
+        timeBefore: Date,
+        minSessions: Int = 1,
+        minSearches: Int = 1
+    ) async throws -> [ActiveUserMetric] {
+        var queryItems = dateRangeQueryItems(timeAfter: timeAfter, timeBefore: timeBefore)
+        queryItems.append(URLQueryItem(name: "min_sessions", value: "\(minSessions)"))
+        queryItems.append(URLQueryItem(name: "min_searches", value: "\(minSearches)"))
+
+        return try await request(
+            path: "/organizations/\(orgId)/metrics/\(granularity.rawValue)",
+            queryItems: queryItems
+        )
+    }
+
+    func getDailyConsumption(timeAfter: Date? = nil, timeBefore: Date? = nil) async throws -> ConsumptionMetrics {
+        var queryItems: [URLQueryItem] = []
+        if let timeAfter {
+            queryItems.append(URLQueryItem(name: "time_after", value: "\(Int(timeAfter.timeIntervalSince1970))"))
+        }
+        if let timeBefore {
+            queryItems.append(URLQueryItem(name: "time_before", value: "\(Int(timeBefore.timeIntervalSince1970))"))
+        }
+
+        return try await request(
+            path: "/organizations/\(orgId)/consumption/daily",
+            queryItems: queryItems
+        )
+    }
+
+    private func dateRangeQueryItems(timeAfter: Date, timeBefore: Date) -> [URLQueryItem] {
+        [
             URLQueryItem(name: "time_after", value: "\(Int(timeAfter.timeIntervalSince1970))"),
             URLQueryItem(name: "time_before", value: "\(Int(timeBefore.timeIntervalSince1970))")
         ]
-
-        return try await request(
-            path: "/organizations/\(orgId)/metrics/sessions",
-            queryItems: queryItems
-        )
     }
 
     // MARK: - Schedules
