@@ -93,3 +93,27 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
+  CogTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: Cog
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cogfordevin.ios.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Cog.app/Cog"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  Cog:
+    build:
+      targets:
+        Cog: all
+        CogTests: [test]
+    test:
+      targets:
+        - name: CogTests

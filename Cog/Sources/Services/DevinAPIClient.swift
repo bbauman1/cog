@@ -8,7 +8,7 @@ enum APIError: Error, LocalizedError, Sendable {
     case rateLimited(retryAfter: Int?)
     case serverError(statusCode: Int)
     case networkError(Error)
-    case decodingError(Error)
+    case decodingError(Error, data: Data?)
     case unknown(statusCode: Int, data: Data?)
 
     var errorDescription: String? {
@@ -30,11 +30,51 @@ enum APIError: Error, LocalizedError, Sendable {
             return "Server error (\(code))"
         case .networkError(let error):
             return "Network error: \(error.localizedDescription)"
-        case .decodingError(let error):
+        case .decodingError(let error, let data):
+            if let message = Self.responseMessage(from: data) {
+                return "Failed to parse response: \(error.localizedDescription) Body: \(message)"
+            }
             return "Failed to parse response: \(error.localizedDescription)"
-        case .unknown(let code, _):
+        case .unknown(let code, let data):
+            if let message = Self.responseMessage(from: data) {
+                return "Unexpected error (\(code)): \(message)"
+            }
             return "Unexpected error (\(code))"
         }
+    }
+
+    private static func responseMessage(from data: Data?) -> String? {
+        guard let data, !data.isEmpty else { return nil }
+        if
+            let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let message = object["detail"] ?? object["message"] ?? object["error"]
+        {
+            return Self.displayString(from: message)
+        }
+        return nil
+    }
+
+    private static func displayString(from value: Any) -> String {
+        if let array = value as? [[String: Any]] {
+            return array
+                .compactMap { item in
+                    let location = item["loc"].map { displayString(from: $0) }
+                    let message = item["msg"].map { displayString(from: $0) }
+                    switch (location, message) {
+                    case let (location?, message?):
+                        return "\(location): \(message)"
+                    case let (_, message?):
+                        return message
+                    default:
+                        return nil
+                    }
+                }
+                .joined(separator: "; ")
+        }
+        if let array = value as? [Any] {
+            return array.map { displayString(from: $0) }.joined(separator: ", ")
+        }
+        return String(describing: value)
     }
 }
 
@@ -149,7 +189,7 @@ actor DevinAPIClient {
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
-            throw APIError.decodingError(error)
+            throw APIError.decodingError(error, data: data)
         }
     }
 
@@ -309,6 +349,43 @@ actor DevinAPIClient {
         )
     }
 
+    func getPlaybook(playbookId: String) async throws -> Playbook {
+        try await request(path: "/organizations/\(orgId)/playbooks/\(playbookId)")
+    }
+
+    func createPlaybook(title: String, body: String?) async throws -> Playbook {
+        struct PlaybookBody: Encodable {
+            let title: String
+            let body: String?
+        }
+
+        return try await request(
+            method: "POST",
+            path: "/organizations/\(orgId)/playbooks",
+            body: PlaybookBody(title: title, body: body)
+        )
+    }
+
+    func updatePlaybook(playbookId: String, title: String, body: String?) async throws -> Playbook {
+        struct PlaybookBody: Encodable {
+            let title: String
+            let body: String?
+        }
+
+        return try await request(
+            method: "PUT",
+            path: "/organizations/\(orgId)/playbooks/\(playbookId)",
+            body: PlaybookBody(title: title, body: body)
+        )
+    }
+
+    func deletePlaybook(playbookId: String) async throws {
+        try await requestVoid(
+            method: "DELETE",
+            path: "/organizations/\(orgId)/playbooks/\(playbookId)"
+        )
+    }
+
     // MARK: - Knowledge
 
     func listKnowledge(first: Int = 50, after: String? = nil) async throws -> PaginatedResponse<KnowledgeNote> {
@@ -318,6 +395,183 @@ actor DevinAPIClient {
         return try await request(
             path: "/organizations/\(orgId)/knowledge/notes",
             queryItems: queryItems
+        )
+    }
+
+    func createKnowledge(
+        name: String,
+        body: String?,
+        trigger: String?,
+        folderId: String? = nil,
+        isEnabled: Bool? = nil,
+        pinnedRepo: String? = nil
+    ) async throws -> KnowledgeNote {
+        struct KnowledgeBody: Encodable {
+            let name: String
+            let body: String?
+            let trigger: String?
+            let folderId: String?
+            let isEnabled: Bool?
+            let pinnedRepo: String?
+
+            enum CodingKeys: String, CodingKey {
+                case name
+                case body
+                case trigger
+                case folderId = "folder_id"
+                case isEnabled = "is_enabled"
+                case pinnedRepo = "pinned_repo"
+            }
+        }
+
+        return try await request(
+            method: "POST",
+            path: "/organizations/\(orgId)/knowledge/notes",
+            body: KnowledgeBody(
+                name: name,
+                body: body,
+                trigger: trigger,
+                folderId: folderId,
+                isEnabled: isEnabled,
+                pinnedRepo: pinnedRepo
+            )
+        )
+    }
+
+    func updateKnowledge(
+        noteId: String,
+        name: String,
+        body: String?,
+        trigger: String?
+    ) async throws -> KnowledgeNote {
+        struct KnowledgeBody: Encodable {
+            let name: String
+            let body: String?
+            let trigger: String?
+        }
+
+        return try await request(
+            method: "PUT",
+            path: "/organizations/\(orgId)/knowledge/notes/\(noteId)",
+            body: KnowledgeBody(name: name, body: body, trigger: trigger)
+        )
+    }
+
+    func deleteKnowledge(noteId: String) async throws {
+        try await requestVoid(
+            method: "DELETE",
+            path: "/organizations/\(orgId)/knowledge/notes/\(noteId)"
+        )
+    }
+
+    // MARK: - Session Insights
+
+    func getSessionInsights(devinId: String) async throws -> SessionInsights {
+        try await request(path: "/organizations/\(orgId)/sessions/\(devinId)/insights")
+    }
+
+    func generateSessionInsights(devinId: String) async throws {
+        try await requestVoid(
+            method: "POST",
+            path: "/organizations/\(orgId)/sessions/\(devinId)/insights/generate"
+        )
+    }
+
+    // MARK: - Metrics
+
+    func getSessionMetrics(timeAfter: Date, timeBefore: Date) async throws -> SessionMetrics {
+        let queryItems = [
+            URLQueryItem(name: "time_after", value: "\(Int(timeAfter.timeIntervalSince1970))"),
+            URLQueryItem(name: "time_before", value: "\(Int(timeBefore.timeIntervalSince1970))")
+        ]
+
+        return try await request(
+            path: "/organizations/\(orgId)/metrics/sessions",
+            queryItems: queryItems
+        )
+    }
+
+    // MARK: - Schedules
+
+    func listSchedules(first: Int = 50, after: String? = nil) async throws -> ScheduleListResponse {
+        var queryItems = [URLQueryItem(name: "first", value: "\(first)")]
+        if let after { queryItems.append(URLQueryItem(name: "after", value: after)) }
+
+        return try await request(
+            path: "/organizations/\(orgId)/schedules",
+            queryItems: queryItems
+        )
+    }
+
+    func createSchedule(_ mutation: ScheduleMutation) async throws -> Schedule {
+        try await request(
+            method: "POST",
+            path: "/organizations/\(orgId)/schedules",
+            body: mutation
+        )
+    }
+
+    func updateSchedule(scheduleId: String, mutation: ScheduleMutation) async throws -> Schedule {
+        try await request(
+            method: "PATCH",
+            path: "/organizations/\(orgId)/schedules/\(scheduleId)",
+            body: mutation
+        )
+    }
+
+    func deleteSchedule(scheduleId: String) async throws {
+        try await requestVoid(
+            method: "DELETE",
+            path: "/organizations/\(orgId)/schedules/\(scheduleId)"
+        )
+    }
+
+    // MARK: - Secrets
+
+    func listSecrets(first: Int = 50, after: String? = nil) async throws -> PaginatedResponse<Secret> {
+        var queryItems = [URLQueryItem(name: "first", value: "\(first)")]
+        if let after { queryItems.append(URLQueryItem(name: "after", value: after)) }
+
+        return try await request(
+            path: "/organizations/\(orgId)/secrets",
+            queryItems: queryItems
+        )
+    }
+
+    func createSecret(
+        key: String,
+        value: String,
+        type: SecretType,
+        isSensitive: Bool,
+        note: String?
+    ) async throws -> Secret {
+        struct SecretBody: Encodable {
+            let key: String
+            let value: String
+            let type: SecretType
+            let isSensitive: Bool
+            let note: String?
+
+            enum CodingKeys: String, CodingKey {
+                case key
+                case value
+                case type
+                case isSensitive = "is_sensitive"
+                case note
+            }
+        }
+
+        return try await request(
+            method: "POST",
+            path: "/organizations/\(orgId)/secrets",
+            body: SecretBody(key: key, value: value, type: type, isSensitive: isSensitive, note: note)
+        )
+    }
+
+    func deleteSecret(secretId: String) async throws {
+        try await requestVoid(
+            method: "DELETE",
+            path: "/organizations/\(orgId)/secrets/\(secretId)"
         )
     }
 
@@ -381,7 +635,7 @@ actor DevinAPIClient {
         do {
             return try decoder.decode(AttachmentUploadResponse.self, from: data)
         } catch {
-            throw APIError.decodingError(error)
+            throw APIError.decodingError(error, data: data)
         }
     }
 }

@@ -4,6 +4,7 @@ struct SessionDetailView: View {
     @Environment(AppState.self) private var appState
     @Namespace private var fallbackNamespace
     @State private var viewModel: SessionDetailViewModel
+    @State private var selectedDetailTab: SessionDetailTab = .chat
     @State private var showTerminateConfirmation = false
     @State private var showSessionInfo = false
     @State private var speechService = SpeechTranscriptionService()
@@ -20,8 +21,23 @@ struct SessionDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            chatMessages
-            if viewModel.isSessionActive {
+            Picker("Session View", selection: $selectedDetailTab) {
+                ForEach(SessionDetailTab.allCases, id: \.self) { tab in
+                    Text(tab.title).tag(tab)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+
+            switch selectedDetailTab {
+            case .chat:
+                chatMessages
+            case .insights:
+                SessionInsightsView(sessionId: viewModel.sessionId)
+            }
+
+            if viewModel.isSessionActive && selectedDetailTab == .chat {
                 messageInputBar
             }
         }
@@ -59,7 +75,8 @@ struct SessionDetailView: View {
                         }
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Label("Session Actions", systemImage: "ellipsis.circle")
+                        .labelStyle(.iconOnly)
                 }
             }
         }
@@ -259,6 +276,18 @@ struct SessionDetailView: View {
             }
         }
         await viewModel.sendMessage()
+    }
+}
+
+private enum SessionDetailTab: CaseIterable {
+    case chat
+    case insights
+
+    var title: String {
+        switch self {
+        case .chat: return "Chat"
+        case .insights: return "Insights"
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1600"
+   LastUpgradeVersion = "2600"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -15,9 +15,23 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E0000001"
+               BlueprintIdentifier = "805E20FAF54EE77699543A49"
                BuildableName = "Cog.app"
                BlueprintName = "Cog"
+               ReferencedContainer = "container:Cog.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "C8A3C68A16CC1516267BC545"
+               BuildableName = "CogTests.xctest"
+               BlueprintName = "CogTests"
                ReferencedContainer = "container:Cog.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -28,7 +42,31 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
-      shouldAutocreateTestPlan = "YES">
+      onlyGenerateCoverageForSpecifiedTargets = "NO">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "805E20FAF54EE77699543A49"
+            BuildableName = "Cog.app"
+            BlueprintName = "Cog"
+            ReferencedContainer = "container:Cog.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
+      <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "C8A3C68A16CC1516267BC545"
+               BuildableName = "CogTests.xctest"
+               BlueprintName = "CogTests"
+               ReferencedContainer = "container:Cog.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -44,7 +82,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E0000001"
+            BlueprintIdentifier = "805E20FAF54EE77699543A49"
             BuildableName = "Cog.app"
             BlueprintName = "Cog"
             ReferencedContainer = "container:Cog.xcodeproj">
@@ -61,7 +99,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E0000001"
+            BlueprintIdentifier = "805E20FAF54EE77699543A49"
             BuildableName = "Cog.app"
             BlueprintName = "Cog"
             ReferencedContainer = "container:Cog.xcodeproj">

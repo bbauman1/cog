@@ -49,6 +49,20 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Organization") {
+                NavigationLink {
+                    AnalyticsView()
+                } label: {
+                    Label("Analytics", systemImage: "chart.bar")
+                }
+
+                NavigationLink {
+                    SecretsListView()
+                } label: {
+                    Label("Secrets", systemImage: "key")
+                }
+            }
+
             Section {
                 Button("Log Out", role: .destructive) {
                     showLogoutConfirmation = true

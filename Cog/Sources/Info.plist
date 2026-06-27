@@ -2,18 +2,60 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleName</key>
-	<string>Cog</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.cogfordevin.ios.sessionRefresh</string>
+	</array>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Cog</string>
-	<key>CFBundleShortVersionString</key>
-	<string>$(MARKETING_VERSION)</string>
-	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Cog</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.cogfordevin.ios</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>cog</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Cog uses the camera to capture photos for session attachments.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Cog uses the microphone to transcribe your voice into text for session prompts and messages.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cog accesses your photo library to attach images to sessions.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Cog uses on-device speech recognition to convert your voice to text.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>
@@ -26,38 +68,6 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UIApplicationSceneManifest</key>
-	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<true/>
-	</dict>
-	<key>NSCameraUsageDescription</key>
-	<string>Cog uses the camera to capture photos for session attachments.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Cog accesses your photo library to attach images to sessions.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Cog uses the microphone to transcribe your voice into text for session prompts and messages.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Cog uses on-device speech recognition to convert your voice to text.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-	</array>
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
-	<array>
-		<string>com.cogfordevin.ios.sessionRefresh</string>
-	</array>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>cog</string>
-			</array>
-			<key>CFBundleURLName</key>
-			<string>com.cogfordevin.ios</string>
-		</dict>
 	</array>
 </dict>
 </plist>
