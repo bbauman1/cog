@@ -196,6 +196,92 @@ final class DevinAPIClientCRUDTests: XCTestCase {
     }
 }
 
+final class OnboardingAuthTests: XCTestCase {
+    override func tearDown() {
+        MockURLProtocol.requestHandler = nil
+        super.tearDown()
+    }
+
+    func testAPIKeyValidationUsesOrgIdFromSelfResponse() async throws {
+        let validator = OnboardingCredentialValidator { apiKey in
+            XCTAssertEqual(apiKey, "cog_test_key")
+            return SelfResponse(
+                principalId: "bot-test",
+                principalType: "service_user",
+                orgId: " org-test "
+            )
+        }
+
+        let result = try await validator.resolve(apiKey: " cog_test_key\n")
+
+        XCTAssertEqual(
+            result,
+            .ready(OnboardingCredentials(apiKey: "cog_test_key", orgId: "org-test"))
+        )
+    }
+
+    func testAPIKeyValidationFallsBackToManualOrgIdWhenSelfResponseHasNoOrgId() async throws {
+        let validator = OnboardingCredentialValidator { _ in
+            SelfResponse(
+                principalId: "bot-test",
+                principalType: "service_user",
+                orgId: nil
+            )
+        }
+
+        let result = try await validator.resolve(apiKey: "cog_test_key")
+
+        XCTAssertEqual(result, .needsOrganizationId(apiKey: "cog_test_key"))
+    }
+
+    func testManualOrgIdCompletionTrimsAndValidatesCredentials() throws {
+        let validator = OnboardingCredentialValidator { _ in
+            SelfResponse(principalId: nil, principalType: nil, orgId: nil)
+        }
+
+        let credentials = try validator.completeManualOrganizationId(
+            apiKey: " cog_test_key ",
+            orgId: " org-test "
+        )
+
+        XCTAssertEqual(credentials, OnboardingCredentials(apiKey: "cog_test_key", orgId: "org-test"))
+    }
+
+    @MainActor
+    func testLoginSavesCredentialsAndInitializesAPIClient() async throws {
+        let store = CapturingCredentialStore()
+
+        MockURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(request.url?.path, "/v3/self")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer cog_test_key")
+            return jsonResponse(for: request, body: selfResponseJSON(orgId: "org-test"))
+        }
+
+        let appState = AppState(
+            credentialStore: store.credentialStore,
+            makeAPIClient: { apiKey, orgId in
+                let configuration = URLSessionConfiguration.ephemeral
+                configuration.protocolClasses = [MockURLProtocol.self]
+                return DevinAPIClient(
+                    apiKey: apiKey,
+                    orgId: orgId,
+                    session: URLSession(configuration: configuration)
+                )
+            }
+        )
+
+        try await appState.login(apiKey: "cog_test_key", orgId: "org-test")
+
+        XCTAssertEqual(store.values[.apiKey], "cog_test_key")
+        XCTAssertEqual(store.values[.orgId], "org-test")
+        XCTAssertNotNil(appState.apiClient)
+        guard case .authenticated = appState.authState else {
+            return XCTFail("Expected authenticated state after login")
+        }
+    }
+}
+
 private let knowledgeJSON = """
 {
   "note_id": "note-1",
@@ -218,6 +304,38 @@ private let playbookJSON = """
   "created_at": 1782572400
 }
 """
+
+private final class CapturingCredentialStore: @unchecked Sendable {
+    var values: [KeychainService.Key: String] = [:]
+
+    var credentialStore: CredentialStore {
+        CredentialStore(
+            read: { self.values[$0] },
+            save: { value, key in self.values[key] = value },
+            deleteAll: { self.values.removeAll() }
+        )
+    }
+}
+
+private func selfResponseJSON(orgId: String?) -> String {
+    if let orgId {
+        return """
+        {
+          "principal_id": "bot-test",
+          "principal_type": "service_user",
+          "org_id": "\(orgId)"
+        }
+        """
+    }
+
+    return """
+    {
+      "principal_id": "bot-test",
+      "principal_type": "service_user",
+      "org_id": null
+    }
+    """
+}
 
 private func makeClient(
     handler: @escaping (URLRequest) throws -> (HTTPURLResponse, Data)
@@ -280,4 +398,3 @@ private func requestBodyData(_ request: URLRequest) throws -> Data {
 
     return data
 }
-

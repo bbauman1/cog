@@ -10,12 +10,20 @@ struct RootView: View {
                 ProgressView()
                     .task { appState.checkStoredCredentials() }
             case .unauthenticated:
-                LoginView()
+                OnboardingFlowView(validator: onboardingValidator)
             case .authenticated:
                 MainTabView()
             }
         }
         .animation(.easeInOut, value: appState.authState == .authenticated)
+    }
+
+    private var onboardingValidator: OnboardingCredentialValidator {
+        #if DEBUG
+        DebugOnboardingSupport.onboardingValidator ?? .live
+        #else
+        .live
+        #endif
     }
 }
 
