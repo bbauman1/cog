@@ -40,13 +40,13 @@ struct MainTabView: View {
                 SessionListView(refreshToken: sessionRefreshToken)
             }
 
-            Tab("Library", systemImage: "books.vertical", value: MainTab.library) {
+            Tab("Wiki", systemImage: "books.vertical", value: MainTab.library) {
                 NavigationStack {
                     LibraryHubView()
                 }
             }
 
-            Tab("Schedules", systemImage: "calendar", value: MainTab.schedules) {
+            Tab("Automations", systemImage: "calendar", value: MainTab.schedules) {
                 NavigationStack {
                     ScheduleListView()
                 }
