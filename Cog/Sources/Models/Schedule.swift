@@ -283,7 +283,7 @@ struct Schedule: Codable, Identifiable, Sendable {
         scheduleId = try container.decodeIfPresent(String.self, forKey: .scheduleId)
             ?? container.decodeIfPresent(String.self, forKey: .scheduledSessionId)
             ?? container.decode(String.self, forKey: .id)
-        name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Untitled Schedule"
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Untitled Automation"
         prompt = try container.decodeIfPresent(String.self, forKey: .prompt)
         frequency = try container.decodeIfPresent(ScheduleFrequency.self, forKey: .frequency)
         scheduleType = try container.decodeIfPresent(ScheduleType.self, forKey: .scheduleType)

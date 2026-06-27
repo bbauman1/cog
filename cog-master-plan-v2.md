@@ -18,7 +18,7 @@ The original plan was organized around iOS-native features (Live Activities, Sir
 | **Insights Generate** | `.../insights/generate` | Trigger on-demand analysis | Working |
 | **Knowledge Notes** | `/v3/organizations/{org_id}/knowledge/notes` | Full CRUD (list, create, update, delete) + folders, enable/disable, pinned_repo | Working |
 | **Playbooks** | `/v3/organizations/{org_id}/playbooks` | Full CRUD (list, create, get, update, delete) | Working |
-| **Schedules** | `/v3/organizations/{org_id}/schedules` | Full CRUD (list, create, update, delete) with frequency, playbook, tags, enabled toggle | Working |
+| **Automations (Schedules API)** | `/v3/organizations/{org_id}/schedules` | Full CRUD (list, create, update, delete) with frequency, playbook, tags, enabled toggle | Working |
 | **Secrets** | `/v3/organizations/{org_id}/secrets` | List metadata, create, delete (values never returned) | Working |
 | **Metrics** | `/v3/organizations/{org_id}/metrics/sessions` | Aggregated session metrics (ACUs, counts by origin/size, PR merge counts). Max 100-day window. | Working |
 | **Repositories** | `/v3beta1/organizations/{org_id}/repositories` | List repos with indexing status | Working |
@@ -46,7 +46,7 @@ The original plan was organized around iOS-native features (Live Activities, Sir
 | Background Refresh | Built | BGAppRefreshTask polling |
 | Speech-to-Text | Built | Dictation for message input |
 
-**Not yet built:** Apple-style onboarding, Knowledge CRUD, Playbook CRUD, Schedules, Secrets, Analytics/Metrics, Session Insights, Tab-based navigation, Face ID lock.
+**Not yet built:** Apple-style onboarding, Knowledge CRUD, Playbook CRUD, Automations, Secrets, Analytics/Metrics, Session Insights, Tab-based navigation, Face ID lock.
 
 ---
 
@@ -65,8 +65,8 @@ These make the app feel like a real Devin command center, not just a session vie
 2. Confirm or create an XCTest target with a reusable mock `URLProtocol`
 3. Validate Knowledge and Playbook API shapes against real responses or captured fixtures
 4. Align model and request naming before UI work begins
-5. Define a shared CRUD UI pattern for Library resources: loading, empty, error, saving, delete confirmation, refresh after mutation
-6. Lock the Library information architecture for Phase 1: Library → Knowledge Notes, Library → Playbooks
+5. Define a shared CRUD UI pattern for Wiki resources: loading, empty, error, saving, delete confirmation, refresh after mutation
+6. Lock the Wiki information architecture for Phase 1: Wiki → Knowledge Notes, Wiki → Playbooks
 
 **Verification:**
 - Preflight build result is recorded before implementation changes
@@ -80,18 +80,18 @@ These make the app feel like a real Devin command center, not just a session vie
 
 #### P0.1: Tab Bar Navigation
 
-**Why:** The app currently renders `SessionListView()` as the only screen. Adding tabs is the prerequisite for the primary app areas, but Knowledge and Playbooks do not need dedicated tabs. They are reusable Devin resources, so they should live together behind a single Library hub rather than competing with Sessions and Schedules in the tab bar.
+**Why:** The app currently renders `SessionListView()` as the only screen. Adding tabs is the prerequisite for the primary app areas, but Knowledge and Playbooks do not need dedicated tabs. They are reusable Devin resources, so they should live together behind a single Wiki hub rather than competing with Sessions and Automations in the tab bar.
 
 **Tasks:**
-1. Add `TabView` in `MainTabView` with tabs: Sessions, Library, Schedules, Settings
+1. Add `TabView` in `MainTabView` with tabs: Sessions, Wiki, Automations, Settings
 2. Create placeholder views for each tab
-3. Add `LibraryHubView` with navigation rows for Knowledge Notes and Playbooks
+3. Add `WikiHubView` with navigation rows for Knowledge Notes and Playbooks
 4. Add SF Symbol icons and tab labels
 5. Persist selected tab across app launches
 
 **Verification:**
 - Limrun build → screenshot each tab
-- Verify Library hub can navigate to Knowledge Notes and Playbooks
+- Verify Wiki hub can navigate to Knowledge Notes and Playbooks
 - Verify tab selection persists after backgrounding
 
 **Estimate:** 1 task (small)
@@ -109,7 +109,7 @@ These make the app feel like a real Devin command center, not just a session vie
 - `DELETE .../knowledge/notes/{note_id}` — delete
 
 **Tasks:**
-1. Add `KnowledgeListView` reachable from `LibraryHubView`
+1. Add `KnowledgeListView` reachable from `WikiHubView`
 2. Add "New Note" button → `CreateKnowledgeView` (name, trigger, body fields; optional pinned_repo picker, enabled toggle)
 3. Add note detail view with edit capability → `EditKnowledgeView`
 4. Add swipe-to-delete with confirmation
@@ -137,7 +137,7 @@ These make the app feel like a real Devin command center, not just a session vie
 - `DELETE .../playbooks/{playbook_id}` — delete
 
 **Tasks:**
-1. Add `PlaybookListView` reachable from `LibraryHubView`
+1. Add `PlaybookListView` reachable from `WikiHubView`
 2. Add "New Playbook" button → `CreatePlaybookView` (title, body/instructions editor)
 3. Add playbook detail view showing full instructions, with edit button
 4. Add swipe-to-delete with confirmation
@@ -193,7 +193,7 @@ These make the app feel like a real Devin command center, not just a session vie
 
 ---
 
-#### P1.2: Schedules Management
+#### P1.2: Automations Management
 
 **Why:** Schedules are the API-accessible part of automations. Users can manage recurring Devin sessions (e.g., daily code reviews, weekly dependency updates) from their phone. Full CRUD is available.
 
@@ -204,7 +204,7 @@ These make the app feel like a real Devin command center, not just a session vie
 - `DELETE .../schedules/{schedule_id}` — delete
 
 **Tasks:**
-1. Add `ScheduleListView` tab showing all schedules with:
+1. Add `ScheduleListView` tab showing all automations with:
    - Name, frequency, enabled/disabled badge, last executed, error status
    - Enable/disable toggle (PATCH with `enabled` field)
 2. Add `CreateScheduleView`:
@@ -395,11 +395,11 @@ Each task is sized and includes its verification method.
 | # | Task | Size | Verification |
 |---|---|---|---|
 | 0 | Execution prep: preflight build, test harness, API contract fixtures, shared CRUD pattern | S | Baseline build result + XCTest/mock API smoke test + fixture decoding |
-| 1 | Tab bar navigation (Sessions, Library, Schedules, Settings) + Library hub for Knowledge/Playbooks | S | Limrun build + screenshots of all tabs + Library routes |
+| 1 | Tab bar navigation (Sessions, Wiki, Automations, Settings) + Wiki hub for Knowledge/Playbooks | S | Limrun build + screenshots of all tabs + Wiki routes |
 | 2 | Knowledge: API client methods (create, update, delete) | S | Unit tests with mock URLProtocol |
-| 3 | Knowledge: Library-routed list view, detail view, create/edit forms, delete | M | Limrun build + screenshots + e2e create/verify |
+| 3 | Knowledge: Wiki-routed list view, detail view, create/edit forms, delete | M | Limrun build + screenshots + e2e create/verify |
 | 4 | Playbook: API client methods (get single, create, update, delete) | S | Unit tests with mock URLProtocol |
-| 5 | Playbook: Library-routed list view, detail view, create/edit forms, delete | M | Limrun build + screenshots + e2e create/verify |
+| 5 | Playbook: Wiki-routed list view, detail view, create/edit forms, delete | M | Limrun build + screenshots + e2e create/verify |
 
 ### Phase 2: Power Features (P1)
 
@@ -409,8 +409,8 @@ Each task is sized and includes its verification method.
 | 7 | Session Insights: UI in session detail (timeline, issues, action items, suggested prompt) | M | Limrun build + screenshots with real session data |
 | 8 | Analytics: metrics models + API client | S | Unit tests with mock data |
 | 9 | Analytics: dashboard view with Swift Charts (summary cards, origin bar chart, size bar chart) | M | Limrun build + screenshots |
-| 10 | Schedules: models + API client (CRUD) | S | Unit tests |
-| 11 | Schedules: list view, create, edit, delete, enable/disable toggle | M | Limrun build + screenshots + e2e |
+| 10 | Automations: Schedule API models + client (CRUD) | S | Unit tests |
+| 11 | Automations: list view, create, edit, delete, enable/disable toggle | M | Limrun build + screenshots + e2e |
 | 12 | Secrets: models + API client (list, create, delete) | S | Unit tests |
 | 13 | Secrets: list view + create form + delete (in Settings) | S | Limrun build + screenshots |
 
@@ -444,7 +444,7 @@ Each task is sized and includes its verification method.
 
 ## Phase 1 Done Criteria
 
-Phase 1 is complete when the app builds, tab selection persists, Library routes to Knowledge Notes and Playbooks, Knowledge CRUD works, Playbook CRUD works, the create-session playbook picker still works, and at least one CRUD path is verified through the mock API harness and/or an end-to-end API check.
+Phase 1 is complete when the app builds, tab selection persists, Wiki routes to Knowledge Notes and Playbooks, Knowledge CRUD works, Playbook CRUD works, the create-session playbook picker still works, and at least one CRUD path is verified through the mock API harness and/or an end-to-end API check.
 
 ---
 
@@ -490,24 +490,24 @@ The onboarding auth model:
 ```
 TabView {
     SessionsTab          // Existing SessionListView → SessionDetailView (+ Insights)
-    LibraryTab           // LibraryHubView → KnowledgeListView / PlaybookListView
-    SchedulesTab         // ScheduleListView → ScheduleDetailView / CreateScheduleView
+    WikiTab              // WikiHubView → KnowledgeListView / PlaybookListView
+    AutomationsTab       // ScheduleListView → ScheduleDetailView / CreateScheduleView
     SettingsTab           // SettingsView (+ Secrets, Account Switcher, Biometrics toggle)
 }
 ```
 
-### Library Information Architecture
+### Wiki Information Architecture
 
 ```
-LibraryTab
-    LibraryHubView
+WikiTab
+    WikiHubView
         Knowledge Notes
             KnowledgeListView → KnowledgeDetailView → Create/EditKnowledgeView
         Playbooks
             PlaybookListView → PlaybookDetailView → Create/EditPlaybookView
 ```
 
-Secrets remain in Settings for Phase 1/2 unless the app later needs Library to become a broader resource center.
+Secrets remain in Settings for Phase 1/2 unless the app later needs Wiki to become a broader resource center.
 
 ### Shared Resource CRUD Pattern
 
@@ -522,7 +522,7 @@ Knowledge Notes and Playbooks should share the same interaction model:
 ### New Models Needed
 
 ```swift
-// Schedules
+// Automations (Schedules API)
 struct Schedule: Codable, Identifiable, Sendable { ... }
 
 // Secrets  
@@ -556,7 +556,7 @@ func createPlaybook(title:body:) async throws -> Playbook
 func updatePlaybook(playbookId:title:body:) async throws -> Playbook
 func deletePlaybook(playbookId:) async throws
 
-// Schedules CRUD
+// Automations CRUD (Schedules API)
 func listSchedules() async throws -> ScheduleListResponse
 func createSchedule(...) async throws -> Schedule
 func updateSchedule(scheduleId:...) async throws -> Schedule

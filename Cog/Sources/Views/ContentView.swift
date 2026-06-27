@@ -40,13 +40,13 @@ struct MainTabView: View {
                 SessionListView(refreshToken: sessionRefreshToken)
             }
 
-            Tab("Wiki", systemImage: "books.vertical", value: MainTab.library) {
+            Tab("Wiki", systemImage: "books.vertical", value: MainTab.wiki) {
                 NavigationStack {
-                    LibraryHubView()
+                    WikiHubView()
                 }
             }
 
-            Tab("Automations", systemImage: "calendar", value: MainTab.schedules) {
+            Tab("Automations", systemImage: "calendar", value: MainTab.automations) {
                 NavigationStack {
                     ScheduleListView()
                 }
@@ -77,7 +77,7 @@ struct MainTabView: View {
 
     private var selectedTab: Binding<MainTab> {
         Binding {
-            MainTab(rawValue: selectedTabRawValue) ?? .sessions
+            MainTab(storedValue: selectedTabRawValue)
         } set: { newValue in
             if newValue == .newSession {
                 showCreateSession = true
@@ -91,8 +91,19 @@ struct MainTabView: View {
 
 private enum MainTab: String {
     case sessions
-    case library
-    case schedules
+    case wiki
+    case automations
     case settings
     case newSession
+
+    init(storedValue: String) {
+        switch storedValue {
+        case "library":
+            self = .wiki
+        case "schedules":
+            self = .automations
+        default:
+            self = MainTab(rawValue: storedValue) ?? .sessions
+        }
+    }
 }

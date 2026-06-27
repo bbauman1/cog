@@ -7,7 +7,7 @@
 - Result: Succeeded under unsandboxed local Xcode execution.
 - Existing warnings: the app icon asset catalog reports unassigned children.
 
-## Library CRUD Pattern
+## Wiki CRUD Pattern
 
 Knowledge Notes and Playbooks share the same resource flow:
 
@@ -21,11 +21,11 @@ Knowledge Notes and Playbooks share the same resource flow:
 The tab bar is:
 
 - Sessions
-- Library
-- Schedules
+- Wiki
+- Automations
 - Settings
 
-Library routes to:
+Wiki routes to:
 
 - Knowledge Notes
 - Playbooks

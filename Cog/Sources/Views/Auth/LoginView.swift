@@ -164,7 +164,7 @@ struct OnboardingFlowView: View {
                     .font(.largeTitle.bold())
                     .multilineTextAlignment(.center)
 
-                Text("A direct Devin mobile command center for sessions, schedules, knowledge, playbooks, analytics, and secrets.")
+                Text("A direct Devin mobile command center for sessions, automations, knowledge, playbooks, analytics, and secrets.")
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

@@ -1,13 +1,13 @@
 import SwiftUI
 
-struct LibraryHubView: View {
+struct WikiHubView: View {
     var body: some View {
         List {
             Section("Resources") {
                 NavigationLink {
                     KnowledgeListView()
                 } label: {
-                    LibraryResourceRow(
+                    WikiResourceRow(
                         title: "Knowledge Notes",
                         subtitle: "Reusable guidance Devin can apply across sessions",
                         systemImage: "note.text"
@@ -17,7 +17,7 @@ struct LibraryHubView: View {
                 NavigationLink {
                     PlaybookListView()
                 } label: {
-                    LibraryResourceRow(
+                    WikiResourceRow(
                         title: "Playbooks",
                         subtitle: "Instruction sets for repeatable Devin workflows",
                         systemImage: "book.pages"
@@ -25,11 +25,11 @@ struct LibraryHubView: View {
                 }
             }
         }
-        .navigationTitle("Library")
+        .navigationTitle("Wiki")
     }
 }
 
-private struct LibraryResourceRow: View {
+private struct WikiResourceRow: View {
     let title: String
     let subtitle: String
     let systemImage: String
@@ -53,4 +53,3 @@ private struct LibraryResourceRow: View {
         .padding(.vertical, 4)
     }
 }
-

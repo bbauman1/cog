@@ -9,13 +9,13 @@ struct ScheduleListView: View {
 
     var body: some View {
         content
-            .navigationTitle("Schedules")
+            .navigationTitle("Automations")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         editorMode = .create
                     } label: {
-                        Label("New Schedule", systemImage: "plus")
+                        Label("New Automation", systemImage: "plus")
                             .labelStyle(.iconOnly)
                     }
                 }
@@ -27,7 +27,7 @@ struct ScheduleListView: View {
                     }
                 }
             }
-            .alert("Delete Schedule?", isPresented: deleteConfirmationBinding, presenting: schedulePendingDeletion) { schedule in
+            .alert("Delete Automation?", isPresented: deleteConfirmationBinding, presenting: schedulePendingDeletion) { schedule in
                 Button("Cancel", role: .cancel) {
                     schedulePendingDeletion = nil
                 }
@@ -37,7 +37,7 @@ struct ScheduleListView: View {
             } message: { schedule in
                 Text("This will permanently delete \"\(schedule.name)\".")
             }
-            .alert("Schedule Error", isPresented: errorBinding) {
+            .alert("Automation Error", isPresented: errorBinding) {
                 Button("OK", role: .cancel) {
                     errorMessage = nil
                 }
@@ -62,10 +62,10 @@ struct ScheduleListView: View {
             }
         } else if viewModel.schedules.isEmpty {
             ResourceEmptyView(
-                title: "No Schedules",
+                title: "No Automations",
                 systemImage: "calendar.badge.clock",
                 message: "Create a recurring Devin workflow for reviews, audits, or maintenance.",
-                actionTitle: "New Schedule"
+                actionTitle: "New Automation"
             ) {
                 editorMode = .create
             }
@@ -254,7 +254,7 @@ struct ScheduleDetailView: View {
             }
 
             Section("Identifiers") {
-                MetadataLine(title: "Schedule ID", value: schedule.scheduleId)
+                MetadataLine(title: "Automation ID", value: schedule.scheduleId)
                 if let playbookId = schedule.playbookId, !playbookId.isEmpty {
                     MetadataLine(title: "Playbook", value: playbookId)
                 }
@@ -273,14 +273,14 @@ struct ScheduleDetailView: View {
                 Button {
                     showEditor = true
                 } label: {
-                    Label("Edit Schedule", systemImage: "square.and.pencil")
+                    Label("Edit Automation", systemImage: "square.and.pencil")
                         .labelStyle(.iconOnly)
                 }
 
                 Button(role: .destructive) {
                     showDeleteConfirmation = true
                 } label: {
-                    Label("Delete Schedule", systemImage: "trash")
+                    Label("Delete Automation", systemImage: "trash")
                         .labelStyle(.iconOnly)
                 }
             }
@@ -293,7 +293,7 @@ struct ScheduleDetailView: View {
                 }
             }
         }
-        .alert("Delete Schedule?", isPresented: $showDeleteConfirmation) {
+        .alert("Delete Automation?", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 Task { await deleteSchedule() }
@@ -301,7 +301,7 @@ struct ScheduleDetailView: View {
         } message: {
             Text("This will permanently delete \"\(schedule.name)\".")
         }
-        .alert("Schedule Error", isPresented: errorBinding) {
+        .alert("Automation Error", isPresented: errorBinding) {
             Button("OK", role: .cancel) {
                 errorMessage = nil
             }
@@ -373,7 +373,7 @@ struct ScheduleEditorView: View {
 
     var body: some View {
         Form {
-            Section("Schedule") {
+            Section("Automation") {
                 TextField("Name", text: $name)
                     .textInputAutocapitalization(.sentences)
                 TextField("Prompt", text: $prompt, axis: .vertical)
@@ -441,7 +441,7 @@ struct ScheduleEditorView: View {
                 }
             }
         }
-        .navigationTitle(schedule == nil ? "New Schedule" : "Edit Schedule")
+        .navigationTitle(schedule == nil ? "New Automation" : "Edit Automation")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
