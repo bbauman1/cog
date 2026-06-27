@@ -1,4 +1,6 @@
+import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SessionDetailView: View {
     @Environment(AppState.self) private var appState
@@ -7,16 +9,24 @@ struct SessionDetailView: View {
     @State private var showSessionInfo = false
     @State private var speechService = SpeechTranscriptionService()
     @State private var messageDraftBeforeTranscription = ""
+    @State private var showFilePicker = false
+    @State private var showPhotoPicker = false
+    @State private var showCamera = false
+    @State private var showCameraUnavailableAlert = false
+    @State private var selectedPhotoItems: [PhotosPickerItem] = []
+    @FocusState private var isInputFocused: Bool
 
     init(sessionId: String) {
         _viewModel = State(initialValue: SessionDetailViewModel(sessionId: sessionId))
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            PullRequestLinksBar(pullRequests: viewModel.session?.pullRequests ?? [])
+        ZStack(alignment: .bottom) {
+            VStack(spacing: 0) {
+                PullRequestLinksBar(pullRequests: viewModel.session?.pullRequests ?? [])
 
-            chatMessages
+                chatMessages
+            }
 
             if viewModel.isSessionActive {
                 messageInputBar
@@ -92,6 +102,33 @@ struct SessionDetailView: View {
                 _ = speechService.stopTranscription()
             }
         }
+        .fileImporter(
+            isPresented: $showFilePicker,
+            allowedContentTypes: [.item],
+            allowsMultipleSelection: true
+        ) { result in
+            Task { await handleFileImport(result) }
+        }
+        .photosPicker(
+            isPresented: $showPhotoPicker,
+            selection: $selectedPhotoItems,
+            maxSelectionCount: 10,
+            matching: .any(of: [.images, .screenshots, .videos])
+        )
+        .onChange(of: selectedPhotoItems) { _, items in
+            Task { await handlePhotoSelection(items) }
+        }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraImagePicker { image in
+                Task { await handleCameraCapture(image) }
+            }
+            .ignoresSafeArea()
+        }
+        .alert("Camera Unavailable", isPresented: $showCameraUnavailableAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("This device does not have a camera.")
+        }
     }
 
     // MARK: - Chat Messages
@@ -124,6 +161,7 @@ struct SessionDetailView: View {
                         }
                     }
                     .padding()
+                    .padding(.bottom, viewModel.isSessionActive ? 60 : 0)
                 }
                 .onChange(of: viewModel.messages.count) {
                     if let lastId = viewModel.messages.last?.id {
@@ -175,53 +213,212 @@ struct SessionDetailView: View {
     // MARK: - Message Input
 
     private var messageInputBar: some View {
-        VStack(spacing: 4) {
-            HStack(spacing: 8) {
-                messageDraftField
+        VStack(spacing: 0) {
+            VStack(spacing: 8) {
+                if !viewModel.attachments.isEmpty {
+                    messageAttachmentStrip
+                }
 
-                if speechService.isAvailable {
-                    Button {
-                        Task { await toggleTranscription() }
-                    } label: {
-                        Label(speechService.isTranscribing ? "Stop dictation" : "Start dictation",
-                              systemImage: speechService.isTranscribing ? "mic.fill" : "mic")
-                            .font(.title2)
-                            .foregroundStyle(speechService.isTranscribing ? .red : .blue)
-                            .symbolEffect(.pulse, isActive: speechService.isTranscribing)
-                            .labelStyle(.iconOnly)
+                TextField("Message Devin...", text: $viewModel.messageDraft, axis: .vertical)
+                    .focused($isInputFocused)
+                    .lineLimit(1...8)
+                    .font(.body)
+                    .padding(.horizontal, 4)
+
+                messageComposerToolbar
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .glassEffect(
+                .regular.interactive(),
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+        }
+    }
+
+    private var messageAttachmentStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(viewModel.attachments) { attachment in
+                    if attachment.isImage {
+                        messageAttachmentThumbnail(attachment)
+                    } else {
+                        messageAttachmentChip(attachment)
                     }
+                }
+            }
+            .padding(.horizontal, 4)
+        }
+    }
+
+    private func messageAttachmentThumbnail(_ attachment: AttachmentItem) -> some View {
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if let data = attachment.thumbnailData, let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Color(.systemGray5)
+                        .overlay {
+                            Image(systemName: "photo")
+                                .foregroundStyle(.secondary)
+                        }
+                }
+            }
+            .frame(width: 64, height: 64)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay {
+                if attachment.isUploading {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                        .overlay { ProgressView().controlSize(.small) }
+                } else if attachment.error != nil {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                        .overlay {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.red)
+                        }
+                }
+            }
+
+            Button {
+                viewModel.removeAttachment(attachment)
+            } label: {
+                Label("Remove \(attachment.fileName)", systemImage: "xmark.circle.fill")
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 18))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, Color(.darkGray))
+            }
+            .buttonStyle(.plain)
+            .offset(x: 6, y: -6)
+        }
+        .padding(.top, 6)
+        .padding(.trailing, 6)
+    }
+
+    private func messageAttachmentChip(_ attachment: AttachmentItem) -> some View {
+        HStack(spacing: 6) {
+            if attachment.isUploading {
+                ProgressView()
+                    .controlSize(.mini)
+            } else if attachment.error != nil {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            } else {
+                Image(systemName: "doc.fill")
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+            }
+
+            Text(attachment.fileName)
+                .font(.caption)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(maxWidth: 120)
+
+            Button {
+                viewModel.removeAttachment(attachment)
+            } label: {
+                Label("Remove \(attachment.fileName)", systemImage: "xmark.circle.fill")
+                    .labelStyle(.iconOnly)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Color(.tertiarySystemBackground))
+        )
+    }
+
+    private var messageComposerToolbar: some View {
+        HStack(spacing: 16) {
+            Menu {
+                Button {
+                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        showCamera = true
+                    } else {
+                        showCameraUnavailableAlert = true
+                    }
+                } label: {
+                    Label("Camera", systemImage: "camera")
                 }
 
                 Button {
-                    Task { await sendMessageWithSpeech() }
+                    showPhotoPicker = true
                 } label: {
-                    Label("Send message", systemImage: "arrow.up.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(canSend ? .blue : .gray)
-                        .labelStyle(.iconOnly)
+                    Label("Photos", systemImage: "photo.on.rectangle")
                 }
-                .disabled(!canSend)
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-        }
-        .background(.bar)
-    }
 
-    private var messageDraftField: some View {
-        TextField("Message Devin...", text: $viewModel.messageDraft, axis: .vertical)
-            .textFieldStyle(.plain)
-            .lineLimit(1...5)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .glassEffect(
-                .regular.interactive(),
-                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
-            )
+                Button {
+                    showFilePicker = true
+                } label: {
+                    Label("Files", systemImage: "folder")
+                }
+            } label: {
+                Label("Attachments", systemImage: "plus")
+                    .labelStyle(.iconOnly)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Color.primary)
+            }
+            .tint(Color.primary)
+
+            Spacer()
+
+            if speechService.isAvailable {
+                Button {
+                    Task { await toggleTranscription() }
+                } label: {
+                    Label(speechService.isTranscribing ? "Stop dictation" : "Start dictation",
+                          systemImage: speechService.isTranscribing ? "mic.fill" : "mic")
+                        .labelStyle(.iconOnly)
+                        .font(.body)
+                        .foregroundStyle(speechService.isTranscribing ? .red : .secondary)
+                        .symbolEffect(.pulse, isActive: speechService.isTranscribing)
+                }
+                .buttonStyle(.plain)
+            }
+
+            Button {
+                Task { await sendMessageWithSpeech() }
+            } label: {
+                Group {
+                    if viewModel.isSendingMessage {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(.white)
+                    } else {
+                        Label("Send message", systemImage: "arrow.up")
+                            .labelStyle(.iconOnly)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.white)
+                    }
+                }
+                .frame(width: 30, height: 30)
+                .background(
+                    Circle()
+                        .fill(canSend ? Color.primary : Color(.systemGray4))
+                )
+            }
+            .disabled(!canSend)
+            .buttonStyle(.plain)
+        }
     }
 
     private var canSend: Bool {
-        viewModel.canSendMessage && !viewModel.messageDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasText = !viewModel.messageDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasAttachments = !viewModel.attachments.isEmpty
+        let hasUploading = viewModel.attachments.contains { $0.isUploading }
+        return viewModel.canSendMessage && (hasText || hasAttachments) && !hasUploading
     }
 
     private func toggleTranscription() async {
@@ -257,6 +454,80 @@ struct SessionDetailView: View {
             return cleanedTranscript
         }
         return "\(base) \(cleanedTranscript)"
+    }
+
+    // MARK: - Attachment Handling
+
+    private func handlePhotoSelection(_ items: [PhotosPickerItem]) async {
+        for item in items {
+            if let data = try? await item.loadTransferable(type: Data.self) {
+                let mimeType: String
+                let ext: String
+                if let contentType = item.supportedContentTypes.first,
+                   let mime = contentType.preferredMIMEType {
+                    mimeType = mime
+                    ext = contentType.preferredFilenameExtension ?? "jpg"
+                } else {
+                    mimeType = "image/jpeg"
+                    ext = "jpg"
+                }
+                let fileName = "photo_\(UUID().uuidString.prefix(8)).\(ext)"
+                let thumbnail = Self.generateThumbnail(from: data)
+                await viewModel.uploadAttachment(
+                    data: data,
+                    fileName: fileName,
+                    mimeType: mimeType,
+                    thumbnailData: thumbnail
+                )
+            }
+        }
+        selectedPhotoItems = []
+    }
+
+    private func handleCameraCapture(_ image: UIImage) async {
+        guard let data = image.jpegData(compressionQuality: 0.85) else { return }
+        let fileName = "camera_\(UUID().uuidString.prefix(8)).jpg"
+        let thumbnail = Self.generateThumbnail(from: data)
+        await viewModel.uploadAttachment(
+            data: data,
+            fileName: fileName,
+            mimeType: "image/jpeg",
+            thumbnailData: thumbnail
+        )
+    }
+
+    private func handleFileImport(_ result: Result<[URL], Error>) async {
+        switch result {
+        case .success(let urls):
+            for url in urls {
+                guard url.startAccessingSecurityScopedResource() else { continue }
+                defer { url.stopAccessingSecurityScopedResource() }
+
+                guard let data = try? Data(contentsOf: url) else { continue }
+                let fileName = url.lastPathComponent
+                let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType
+                    ?? "application/octet-stream"
+
+                await viewModel.uploadAttachment(
+                    data: data,
+                    fileName: fileName,
+                    mimeType: mimeType
+                )
+            }
+        case .failure:
+            break
+        }
+    }
+
+    private static func generateThumbnail(from data: Data, maxSize: CGFloat = 120) -> Data? {
+        guard let image = UIImage(data: data) else { return nil }
+        let scale = min(maxSize / image.size.width, maxSize / image.size.height, 1.0)
+        let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        let resized = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+        return resized.jpegData(compressionQuality: 0.6)
     }
 }
 

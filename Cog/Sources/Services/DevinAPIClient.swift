@@ -330,14 +330,15 @@ actor DevinAPIClient {
         )
     }
 
-    func sendMessage(devinId: String, message: String) async throws -> Session {
+    func sendMessage(devinId: String, message: String, attachments: [String]? = nil) async throws -> Session {
         struct MessageBody: Encodable {
             let message: String
+            let attachments: [String]?
         }
         return try await request(
             method: "POST",
             path: "/organizations/\(orgId)/sessions/\(devinId)/messages",
-            body: MessageBody(message: message)
+            body: MessageBody(message: message, attachments: attachments)
         )
     }
 
