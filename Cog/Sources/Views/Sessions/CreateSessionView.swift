@@ -325,6 +325,8 @@ struct CreateSessionView: View {
             .buttonStyle(.plain)
             .offset(x: 6, y: -6)
         }
+        .padding(.top, 6)
+        .padding(.trailing, 6)
     }
 
     private func attachmentChip(_ attachment: AttachmentItem) -> some View {
