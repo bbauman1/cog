@@ -20,8 +20,6 @@ targets:
     sources:
       - path: Sources
       - path: Resources
-    dependencies:
-      - target: SessionsWidgetExtension
     settings:
       base:
         INFOPLIST_FILE: Sources/Info.plist
@@ -57,42 +55,10 @@ targets:
         NSPhotoLibraryUsageDescription: "Cog accesses your photo library to attach images to sessions."
         NSMicrophoneUsageDescription: "Cog uses the microphone to transcribe your voice into text for session prompts and messages."
         NSSpeechRecognitionUsageDescription: "Cog uses on-device speech recognition to convert your voice to text."
-        UIBackgroundModes:
-          - fetch
-        BGTaskSchedulerPermittedIdentifiers:
-          - com.cogfordevin.ios.sessionRefresh
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - cog
             CFBundleURLName: com.cogfordevin.ios
-
-  SessionsWidgetExtension:
-    type: app-extension
-    platform: iOS
-    sources:
-      - path: SessionsWidget
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.cogfordevin.ios.sessions-widget
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "3"
-        INFOPLIST_FILE: SessionsWidget/Info.plist
-        SKIP_INSTALL: YES
-        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-        ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME: WidgetBackground
-      configs:
-        Release:
-          CODE_SIGN_STYLE: Manual
-          CODE_SIGN_IDENTITY: "Apple Distribution"
-          PROVISIONING_PROFILE_SPECIFIER: "$(COG_WIDGET_PROFILE_NAME)"
-    info:
-      path: SessionsWidget/Info.plist
-      properties:
-        CFBundleDisplayName: "Sessions Widget"
-        CFBundleShortVersionString: "$(MARKETING_VERSION)"
-        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.widgetkit-extension
 
   CogTests:
     type: bundle.unit-test

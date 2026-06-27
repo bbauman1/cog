@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import WidgetKit
 
 @MainActor @Observable
 final class SessionListViewModel {
@@ -37,7 +36,6 @@ final class SessionListViewModel {
             sessions = response.items
             endCursor = response.endCursor
             hasNextPage = response.hasNextPage
-            updateWidgetData(from: response.items)
         } catch let error as APIError {
             errorMessage = error.errorDescription
         } catch {
@@ -109,32 +107,8 @@ final class SessionListViewModel {
             sessions = response.items
             endCursor = response.endCursor
             hasNextPage = response.hasNextPage
-            updateWidgetData(from: response.items)
         } catch {
             // Silent polling failure
         }
-    }
-
-    private func updateWidgetData(from sessions: [Session]) {
-        let activeSessions = sessions.filter {
-            $0.status == .running || $0.status == .claimed || $0.status == .resuming
-        }
-        let entries = sessions.prefix(5).map { session in
-            WidgetSessionEntry(
-                sessionId: session.sessionId,
-                title: session.title ?? session.sessionId,
-                statusRaw: session.status.rawValue,
-                statusDetailRaw: session.statusDetail?.rawValue,
-                acusConsumed: session.acusConsumed,
-                createdAt: session.createdAt
-            )
-        }
-        let snapshot = WidgetSessionSnapshot(
-            sessions: Array(entries),
-            totalActive: activeSessions.count,
-            updatedAt: Date()
-        )
-        WidgetDataStore.save(snapshot)
-        WidgetCenter.shared.reloadTimelines(ofKind: "ActiveSessionsWidget")
     }
 }

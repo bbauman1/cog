@@ -3,9 +3,8 @@
 
 Requires env vars:
 ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY, APPLE_TEAM_ID,
-APPLE_DIST_P12_PASSWORD, COG_MAIN_BUNDLE_ID, COG_WIDGET_BUNDLE_ID,
-COG_MAIN_BUNDLE_ID_RESOURCE, COG_WIDGET_BUNDLE_ID_RESOURCE,
-COG_MAIN_PROFILE_NAME, COG_WIDGET_PROFILE_NAME.
+APPLE_DIST_P12_PASSWORD, COG_MAIN_BUNDLE_ID,
+COG_MAIN_BUNDLE_ID_RESOURCE, COG_MAIN_PROFILE_NAME.
 
 Creates all files in ~/.asc/ needed for the TestFlight build pipeline.
 """
@@ -24,37 +23,12 @@ def require_env(name):
 
 TEAM_ID = require_env("APPLE_TEAM_ID")
 MAIN_BUNDLE_ID = require_env("COG_MAIN_BUNDLE_ID")
-WIDGET_BUNDLE_ID = require_env("COG_WIDGET_BUNDLE_ID")
 MAIN_BUNDLE_ID_RESOURCE = require_env("COG_MAIN_BUNDLE_ID_RESOURCE")
-WIDGET_BUNDLE_ID_RESOURCE = require_env("COG_WIDGET_BUNDLE_ID_RESOURCE")
 MAIN_PROFILE_NAME = require_env("COG_MAIN_PROFILE_NAME")
-WIDGET_PROFILE_NAME = require_env("COG_WIDGET_PROFILE_NAME")
 P12_PASSWORD = require_env("APPLE_DIST_P12_PASSWORD")
 BEGIN_PRIVATE_KEY = "-----BEGIN PRIVATE" " KEY-----"
 END_PRIVATE_KEY = "-----END PRIVATE" " KEY-----"
 WWDR_URL = "https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer"
-RCODESIGN_VERSION = "0.29.0"
-RCODESIGN_URL = f"https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F{RCODESIGN_VERSION}/apple-codesign-{RCODESIGN_VERSION}-x86_64-unknown-linux-musl.tar.gz"
-
-WIDGET_ENTITLEMENTS = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-\t<key>beta-reports-active</key>
-\t<true/>
-\t<key>application-identifier</key>
-\t<string>{team_id}.{widget_bundle_id}</string>
-\t<key>keychain-access-groups</key>
-\t<array>
-\t\t<string>{team_id}.*</string>
-\t\t<string>com.apple.token</string>
-\t</array>
-\t<key>get-task-allow</key>
-\t<false/>
-\t<key>com.apple.developer.team-identifier</key>
-\t<string>{team_id}</string>
-</dict>
-</plist>"""
 
 
 def run(cmd, check=True, **kwargs):
@@ -240,10 +214,9 @@ def setup_profiles(cert_id, cert_is_new=False):
 
     # If cert was recreated, delete old profiles so they get recreated with new cert
     if cert_is_new:
-        for name in [MAIN_PROFILE_NAME, WIDGET_PROFILE_NAME]:
-            if name in profiles:
-                print(f"  Deleting old profile {profiles[name]['id']} (cert changed)...")
-                api('DELETE', f"/v1/profiles/{profiles[name]['id']}")
+        if MAIN_PROFILE_NAME in profiles:
+            print(f"  Deleting old profile {profiles[MAIN_PROFILE_NAME]['id']} (cert changed)...")
+            api('DELETE', f"/v1/profiles/{profiles[MAIN_PROFILE_NAME]['id']}")
         profiles = {}
 
     # Main app profile
@@ -268,71 +241,24 @@ def setup_profiles(cert_id, cert_is_new=False):
         from asc_api import create_profile
         create_profile(MAIN_PROFILE_NAME, MAIN_BUNDLE_ID_RESOURCE, cert_id, "IOS_APP_STORE")
 
-    # Widget profile
-    widget_profile_path = os.path.join(ASC_DIR, f"{WIDGET_PROFILE_NAME}.mobileprovision")
-    if WIDGET_PROFILE_NAME in profiles:
-        p = profiles[WIDGET_PROFILE_NAME]
-        content = p['attributes'].get('profileContent', '')
-        if content:
-            with open(widget_profile_path, 'wb') as f:
-                f.write(base64.b64decode(content))
-            print(f"Downloaded widget profile: {p['id']}")
-        else:
-            detail = api('GET', f"/v1/profiles/{p['id']}")
-            content = detail['data']['attributes'].get('profileContent', '')
-            if content:
-                with open(widget_profile_path, 'wb') as f:
-                    f.write(base64.b64decode(content))
-                print(f"Downloaded widget profile: {p['id']}")
-    else:
-        print("Creating widget profile...")
-        from asc_api import create_profile
-        create_profile(WIDGET_PROFILE_NAME, WIDGET_BUNDLE_ID_RESOURCE, cert_id, "IOS_APP_STORE")
-
-
-def install_rcodesign():
-    rcodesign_dir = f"/tmp/apple-codesign-{RCODESIGN_VERSION}-x86_64-unknown-linux-musl"
-    rcodesign_bin = os.path.join(rcodesign_dir, "rcodesign")
-    if os.path.exists(rcodesign_bin):
-        print(f"rcodesign already installed: {rcodesign_bin}")
-        return rcodesign_bin
-    print("Installing rcodesign...")
-    run(f"curl -sL '{RCODESIGN_URL}' -o /tmp/rcodesign.tar.gz")
-    run(f"tar xzf /tmp/rcodesign.tar.gz -C /tmp/")
-    run(f"chmod +x '{rcodesign_bin}'")
-    print(f"Installed rcodesign: {rcodesign_bin}")
-    return rcodesign_bin
-
-
-def write_widget_entitlements():
-    path = os.path.join(ASC_DIR, "widget_entitlements.plist")
-    with open(path, 'w') as f:
-        f.write(WIDGET_ENTITLEMENTS.format(team_id=TEAM_ID, widget_bundle_id=WIDGET_BUNDLE_ID))
-    print(f"Wrote widget entitlements: {path}")
-    return path
-
 
 def main():
     print("=== Cog iOS Signing Setup ===\n")
 
-    print("[1/6] Setting up ASC directory...")
+    print("[1/5] Setting up ASC directory...")
     setup_asc_dir()
 
-    print("\n[2/6] Downloading WWDR intermediate cert...")
+    print("\n[2/5] Downloading WWDR intermediate cert...")
     wwdr_pem = download_wwdr()
 
-    print("\n[3/6] Finding or creating distribution certificate...")
+    print("\n[3/5] Finding or creating distribution certificate...")
     cert_id, cert_pem, key_pem, cert_is_new = find_or_create_cert()
 
-    print("\n[4/6] Creating P12 keystore...")
+    print("\n[4/5] Creating P12 keystore...")
     create_p12(cert_pem, key_pem, wwdr_pem)
 
-    print("\n[5/6] Setting up provisioning profiles...")
+    print("\n[5/5] Setting up provisioning profiles...")
     setup_profiles(cert_id, cert_is_new)
-
-    print("\n[6/6] Installing rcodesign + writing entitlements...")
-    install_rcodesign()
-    write_widget_entitlements()
 
     print("\n=== Setup complete! ===")
     print(f"Signing files in: {ASC_DIR}")

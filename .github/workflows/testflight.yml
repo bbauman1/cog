@@ -21,11 +21,8 @@ jobs:
       APP_ID: ${{ vars.COG_ASC_APP_ID }}
       APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
       COG_MAIN_BUNDLE_ID: ${{ vars.COG_MAIN_BUNDLE_ID }}
-      COG_WIDGET_BUNDLE_ID: ${{ vars.COG_WIDGET_BUNDLE_ID }}
       COG_MAIN_BUNDLE_ID_RESOURCE: ${{ vars.COG_MAIN_BUNDLE_ID_RESOURCE }}
-      COG_WIDGET_BUNDLE_ID_RESOURCE: ${{ vars.COG_WIDGET_BUNDLE_ID_RESOURCE }}
       COG_MAIN_PROFILE_NAME: ${{ vars.COG_MAIN_PROFILE_NAME }}
-      COG_WIDGET_PROFILE_NAME: ${{ vars.COG_WIDGET_PROFILE_NAME }}
       TESTFLIGHT_GROUP: ${{ vars.TESTFLIGHT_GROUP || 'Internal' }}
     steps:
       - uses: actions/checkout@v4
@@ -40,9 +37,8 @@ jobs:
         run: |
           missing=0
           for name in \
-            APP_ID APPLE_TEAM_ID COG_MAIN_BUNDLE_ID COG_WIDGET_BUNDLE_ID \
-            COG_MAIN_BUNDLE_ID_RESOURCE COG_WIDGET_BUNDLE_ID_RESOURCE \
-            COG_MAIN_PROFILE_NAME COG_WIDGET_PROFILE_NAME \
+            APP_ID APPLE_TEAM_ID COG_MAIN_BUNDLE_ID \
+            COG_MAIN_BUNDLE_ID_RESOURCE COG_MAIN_PROFILE_NAME \
             ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY APPLE_DIST_KEY_PEM APPLE_DIST_P12_PASSWORD
           do
             if [ -z "${!name}" ]; then
@@ -144,8 +140,6 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp "$HOME/.asc/${COG_MAIN_PROFILE_NAME}.mobileprovision" \
             ~/Library/MobileDevice/Provisioning\ Profiles/
-          cp "$HOME/.asc/${COG_WIDGET_PROFILE_NAME}.mobileprovision" \
-            ~/Library/MobileDevice/Provisioning\ Profiles/
 
           echo "Installed profiles: $(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision 2>/dev/null | wc -l)"
 
@@ -182,7 +176,6 @@ jobs:
             --xcodebuild-flag="generic/platform=iOS" \
             --xcodebuild-flag="APPLE_TEAM_ID=$APPLE_TEAM_ID" \
             --xcodebuild-flag="COG_MAIN_PROFILE_NAME=$COG_MAIN_PROFILE_NAME" \
-            --xcodebuild-flag="COG_WIDGET_PROFILE_NAME=$COG_WIDGET_PROFILE_NAME" \
             --xcodebuild-flag="CURRENT_PROJECT_VERSION=${{ steps.build-number.outputs.BUILD_NUMBER }}"
 
       - name: Generate export options
@@ -198,7 +191,6 @@ jobs:
               "uploadSymbols": True,
               "provisioningProfiles": {
                   os.environ["COG_MAIN_BUNDLE_ID"]: os.environ["COG_MAIN_PROFILE_NAME"],
-                  os.environ["COG_WIDGET_BUNDLE_ID"]: os.environ["COG_WIDGET_PROFILE_NAME"],
               },
           }
 

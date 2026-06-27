@@ -48,7 +48,7 @@ For local simulator development, signing is not required. For device builds or T
 
 The release workflow expects this configuration to live in GitHub repository variables/secrets, not in source:
 
-- Variables: `COG_ASC_APP_ID`, `APPLE_TEAM_ID`, `COG_MAIN_BUNDLE_ID`, `COG_WIDGET_BUNDLE_ID`, `COG_MAIN_BUNDLE_ID_RESOURCE`, `COG_WIDGET_BUNDLE_ID_RESOURCE`, `COG_MAIN_PROFILE_NAME`, `COG_WIDGET_PROFILE_NAME`
+- Variables: `COG_ASC_APP_ID`, `APPLE_TEAM_ID`, `COG_MAIN_BUNDLE_ID`, `COG_MAIN_BUNDLE_ID_RESOURCE`, `COG_MAIN_PROFILE_NAME`
 - Secrets: `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY`, `APPLE_DIST_KEY_PEM`, `APPLE_DIST_P12_PASSWORD`
 
 Forks should change the bundle IDs and signing settings in `Cog/project.yml`, then run `xcodegen generate`.

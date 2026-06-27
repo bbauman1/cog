@@ -109,8 +109,4 @@ final class AppState {
         apiClient = nil
         authState = .unauthenticated
     }
-
-    func scheduleBackgroundRefresh() {
-        BackgroundRefreshManager().scheduleBackgroundRefresh()
-    }
 }

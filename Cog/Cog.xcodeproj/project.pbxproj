@@ -12,17 +12,14 @@
 		12AE40B8D9C9F39A89EF081A /* Playbook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CEECF2E6CB6ACB4B4A32C90 /* Playbook.swift */; };
 		18090935E48CF15AC94321FD /* CogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8BFB06980149F6034CDBF6 /* CogApp.swift */; };
 		2115E5C8C6396FF7EF1B68B9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E1C2DECA0C7C6CAF9BA36356 /* Assets.xcassets */; };
-		24483DED459A399409779C96 /* WidgetSessionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E8C3147A780A48564EC9D15 /* WidgetSessionData.swift */; };
 		24A4D855E2025EB1D13656FF /* KnowledgeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 001B9807B56BA5DED27AD0BA /* KnowledgeListView.swift */; };
 		2CA5B94540C03752C697C123 /* ScheduleListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BD6CC071C2DC51618768478 /* ScheduleListViewModel.swift */; };
 		30DC0F0C2E150969D5F00F0E /* PlaybookListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D71D30FF092C47F640352EE1 /* PlaybookListViewModel.swift */; };
 		33220753286971C5C4DBEFBF /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = E31F2ED7B82B8008F88CC418 /* Message.swift */; };
-		33F9B1C8E7CA98B0CD6E4B09 /* SessionsWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8922C5D7BC4D9ADCE0876F87 /* SessionsWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		366EAE87BC7CCF1EAEDCEC0A /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980A5544E7076CE6F5045C42 /* KeychainService.swift */; };
 		36AE81C118A1F1FD4B42C15A /* Knowledge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B647053874ACE601CB2817 /* Knowledge.swift */; };
 		37B15A71E3FC9C0A18D5D5A5 /* ScheduleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FFBD5F87829A4FF04F29274 /* ScheduleListView.swift */; };
 		397604618A4B9D424B61196E /* KnowledgeListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DD6186C82DA167D776F342 /* KnowledgeListViewModel.swift */; };
-		3F4957290E3D7E96653CD851 /* SessionsWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D77F401A78960629CE022F6 /* SessionsWidgetBundle.swift */; };
 		3FC172ABD567D3E9EB1B064C /* SchedulesPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3450FF987CF75B6E7B423A65 /* SchedulesPlaceholderView.swift */; };
 		44B1A27DC2BBEBB82C3D2D43 /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E823A4240260362684DC1CD /* SessionDetailView.swift */; };
 		47E15DAAEEC30531B72E480A /* PlaybookListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5875852553C03065F52E0B /* PlaybookListView.swift */; };
@@ -38,7 +35,6 @@
 		807AE163512227639F1AFD8B /* AnalyticsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF751D2CE00339EEBE9360A2 /* AnalyticsViewModel.swift */; };
 		80AC2079C6E1B7D38DF0354A /* SpeechTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C483F78C7A7C6147A8682DC /* SpeechTranscriptionService.swift */; };
 		835A643586FDF38651E43F17 /* DevinAPIClientPowerFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9971751D0ACFA315ECF12080 /* DevinAPIClientPowerFeatureTests.swift */; };
-		862A78F7B67347FB8F305260 /* WidgetSessionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33C18DCE285A4BB4D7F55F86 /* WidgetSessionData.swift */; };
 		8AF94D98FBF5D7749C1DDB0E /* SecretsListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53B71B9A7F264DD5BF138C55 /* SecretsListViewModel.swift */; };
 		957AD3C2ED6CCB976DAA98AB /* Secret.swift in Sources */ = {isa = PBXBuildFile; fileRef = F567A27BA8C5DF06C50266CA /* Secret.swift */; };
 		A689EA755C19FE1FBC427AAE /* SessionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 017FC44BC5BB4DA4EFB98AF6 /* SessionRowView.swift */; };
@@ -47,12 +43,9 @@
 		ADB9F34CDCAD4AE68B815B4C /* SessionListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 551B6BB42D069C8801461416 /* SessionListViewModel.swift */; };
 		B528A2C9A0FEB7C6848470A6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 466B242B2BF561160E2F9FF3 /* ContentView.swift */; };
 		B975AB6A66DB09E247011A75 /* PaginatedResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA358DB08CE7A44F76DD1545 /* PaginatedResponse.swift */; };
-		BEE6FD273745259793BDE2FF /* BackgroundRefreshManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A480078F05F06CABA0D203 /* BackgroundRefreshManager.swift */; };
 		C43AD987830C787B3C5AA0DC /* DevinAPIClientCRUDTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0829742B104663F8AD537582 /* DevinAPIClientCRUDTests.swift */; };
-		C7EEB9DABB0333129FBFA648 /* ActiveSessionsWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA5E4C9109C5C1531A5DC24C /* ActiveSessionsWidget.swift */; };
 		CC29A4F7F0E08511FADA9CDF /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3475A644A2815498167C33BD /* LoginView.swift */; };
 		CD4F66B99EF4F4447F119ADC /* Color+Devin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A850A6A8084F9CF85012C507 /* Color+Devin.swift */; };
-		D39A1FFA7C4C18FC4D42F980 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E2C65761F312739961E262C /* AppDelegate.swift */; };
 		D64352828D13744EC103A657 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 49700E001A0108AEAD69A469 /* PrivacyInfo.xcprivacy */; };
 		E55F74DC4C53ED3947D900F7 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1514C5275BA2AE55FDEE1E /* AppState.swift */; };
 		EBBA2E5636B6540C0BD25F84 /* DeepLinkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B1D19D4B5470EEE9468EC5D /* DeepLinkManager.swift */; };
@@ -72,28 +65,7 @@
 			remoteGlobalIDString = 805E20FAF54EE77699543A49;
 			remoteInfo = Cog;
 		};
-		9C685FACAA24288854B3C4C6 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1A6B4FBE7675F8CD6A95BAF6 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = C97E4050CFFF9B31AB70E1DC;
-			remoteInfo = SessionsWidgetExtension;
-		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		1A2B0F890159D465BED354AA /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				33F9B1C8E7CA98B0CD6E4B09 /* SessionsWidgetExtension.appex in Embed Foundation Extensions */,
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		001B9807B56BA5DED27AD0BA /* KnowledgeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeListView.swift; sourceTree = "<group>"; };
@@ -108,15 +80,12 @@
 		1BD6CC071C2DC51618768478 /* ScheduleListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleListViewModel.swift; sourceTree = "<group>"; };
 		1E5875852553C03065F52E0B /* PlaybookListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybookListView.swift; sourceTree = "<group>"; };
 		1F03F86F60ABDC386FF09C20 /* SessionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListView.swift; sourceTree = "<group>"; };
-		2D77F401A78960629CE022F6 /* SessionsWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsWidgetBundle.swift; sourceTree = "<group>"; };
 		2E823A4240260362684DC1CD /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
-		33C18DCE285A4BB4D7F55F86 /* WidgetSessionData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSessionData.swift; sourceTree = "<group>"; };
 		3450FF987CF75B6E7B423A65 /* SchedulesPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulesPlaceholderView.swift; sourceTree = "<group>"; };
 		3475A644A2815498167C33BD /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		369C4BDE90BF7CCCD8AA65AB /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
 		370FEDDC1EED6253BE411E4B /* Schedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schedule.swift; sourceTree = "<group>"; };
 		3C483F78C7A7C6147A8682DC /* SpeechTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTranscriptionService.swift; sourceTree = "<group>"; };
-		439CAFE4CD5B277D9D585B10 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		466B242B2BF561160E2F9FF3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		49700E001A0108AEAD69A469 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		49893B7AEBF809BB915108C3 /* SessionInsightsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionInsightsViewModel.swift; sourceTree = "<group>"; };
@@ -124,16 +93,12 @@
 		53B71B9A7F264DD5BF138C55 /* SecretsListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretsListViewModel.swift; sourceTree = "<group>"; };
 		551B6BB42D069C8801461416 /* SessionListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListViewModel.swift; sourceTree = "<group>"; };
 		5C1514C5275BA2AE55FDEE1E /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
-		61A480078F05F06CABA0D203 /* BackgroundRefreshManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefreshManager.swift; sourceTree = "<group>"; };
 		6306D70272482C4D656BF916 /* SessionInsights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionInsights.swift; sourceTree = "<group>"; };
 		748F3D8AB66FA0159782FEE5 /* CogTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CogTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		7E2C65761F312739961E262C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7FFBD5F87829A4FF04F29274 /* ScheduleListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleListView.swift; sourceTree = "<group>"; };
 		83C4FD332FE1F8F2E100D986 /* Cog.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Cog.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		8922C5D7BC4D9ADCE0876F87 /* SessionsWidgetExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = SessionsWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		8AC0C0119D996751CEC05A4A /* CreateSessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSessionViewModel.swift; sourceTree = "<group>"; };
 		8E590A64230A82509D36AA05 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		8E8C3147A780A48564EC9D15 /* WidgetSessionData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSessionData.swift; sourceTree = "<group>"; };
 		980A5544E7076CE6F5045C42 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		9971751D0ACFA315ECF12080 /* DevinAPIClientPowerFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevinAPIClientPowerFeatureTests.swift; sourceTree = "<group>"; };
 		9B1D19D4B5470EEE9468EC5D /* DeepLinkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkManager.swift; sourceTree = "<group>"; };
@@ -154,7 +119,6 @@
 		EA358DB08CE7A44F76DD1545 /* PaginatedResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginatedResponse.swift; sourceTree = "<group>"; };
 		F1DD6186C82DA167D776F342 /* KnowledgeListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeListViewModel.swift; sourceTree = "<group>"; };
 		F567A27BA8C5DF06C50266CA /* Secret.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secret.swift; sourceTree = "<group>"; };
-		FA5E4C9109C5C1531A5DC24C /* ActiveSessionsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSessionsWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -162,7 +126,6 @@
 			isa = PBXGroup;
 			children = (
 				2B494C1069463E03791A1673 /* Resources */,
-				BBBE9E25733541E4BA1751E0 /* SessionsWidget */,
 				CD2B29DEE01AA7439A63DFF8 /* Sources */,
 				A0809FF09D7EA688C418CB03 /* Tests */,
 				7837CD0D8F6C7800EFB949F5 /* Products */,
@@ -192,7 +155,6 @@
 		3D38A1E26DDF2E01059549E9 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				61A480078F05F06CABA0D203 /* BackgroundRefreshManager.swift */,
 				9B1D19D4B5470EEE9468EC5D /* DeepLinkManager.swift */,
 				A9EF6D2196879FA517CE3419 /* DevinAPIClient.swift */,
 				980A5544E7076CE6F5045C42 /* KeychainService.swift */,
@@ -242,7 +204,6 @@
 			children = (
 				83C4FD332FE1F8F2E100D986 /* Cog.app */,
 				748F3D8AB66FA0159782FEE5 /* CogTests.xctest */,
-				8922C5D7BC4D9ADCE0876F87 /* SessionsWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -304,20 +265,8 @@
 				0091FDAB8F11B908DABE89F4 /* Session.swift */,
 				6306D70272482C4D656BF916 /* SessionInsights.swift */,
 				B4A53B64ABA57A6EFE9987C9 /* SessionMetrics.swift */,
-				8E8C3147A780A48564EC9D15 /* WidgetSessionData.swift */,
 			);
 			path = Models;
-			sourceTree = "<group>";
-		};
-		BBBE9E25733541E4BA1751E0 /* SessionsWidget */ = {
-			isa = PBXGroup;
-			children = (
-				FA5E4C9109C5C1531A5DC24C /* ActiveSessionsWidget.swift */,
-				439CAFE4CD5B277D9D585B10 /* Info.plist */,
-				2D77F401A78960629CE022F6 /* SessionsWidgetBundle.swift */,
-				33C18DCE285A4BB4D7F55F86 /* WidgetSessionData.swift */,
-			);
-			path = SessionsWidget;
 			sourceTree = "<group>";
 		};
 		CD2B29DEE01AA7439A63DFF8 /* Sources */ = {
@@ -360,7 +309,6 @@
 		FA6708735EBEE60CF93E6331 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				7E2C65761F312739961E262C /* AppDelegate.swift */,
 				5C1514C5275BA2AE55FDEE1E /* AppState.swift */,
 				4A8BFB06980149F6034CDBF6 /* CogApp.swift */,
 			);
@@ -376,12 +324,10 @@
 			buildPhases = (
 				FB01D305E13E2FE038127E2C /* Sources */,
 				ABEF56115973146628A5D1F1 /* Resources */,
-				1A2B0F890159D465BED354AA /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				3DEE616FC64C427CAE0E3C09 /* PBXTargetDependency */,
 			);
 			name = Cog;
 			packageProductDependencies = (
@@ -408,23 +354,6 @@
 			productReference = 748F3D8AB66FA0159782FEE5 /* CogTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		C97E4050CFFF9B31AB70E1DC /* SessionsWidgetExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 0401546EE74AF080D55A9243 /* Build configuration list for PBXNativeTarget "SessionsWidgetExtension" */;
-			buildPhases = (
-				4E592C58931704F368A9FE64 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = SessionsWidgetExtension;
-			packageProductDependencies = (
-			);
-			productName = SessionsWidgetExtension;
-			productReference = 8922C5D7BC4D9ADCE0876F87 /* SessionsWidgetExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -438,9 +367,6 @@
 						DevelopmentTeam = "$(APPLE_TEAM_ID)";
 					};
 					C8A3C68A16CC1516267BC545 = {
-						DevelopmentTeam = "$(APPLE_TEAM_ID)";
-					};
-					C97E4050CFFF9B31AB70E1DC = {
 						DevelopmentTeam = "$(APPLE_TEAM_ID)";
 					};
 				};
@@ -461,7 +387,6 @@
 			targets = (
 				805E20FAF54EE77699543A49 /* Cog */,
 				C8A3C68A16CC1516267BC545 /* CogTests */,
-				C97E4050CFFF9B31AB70E1DC /* SessionsWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -489,25 +414,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		4E592C58931704F368A9FE64 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				C7EEB9DABB0333129FBFA648 /* ActiveSessionsWidget.swift in Sources */,
-				3F4957290E3D7E96653CD851 /* SessionsWidgetBundle.swift in Sources */,
-				862A78F7B67347FB8F305260 /* WidgetSessionData.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		FB01D305E13E2FE038127E2C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				F2D1A02F86429E4E14BDD265 /* AnalyticsView.swift in Sources */,
 				807AE163512227639F1AFD8B /* AnalyticsViewModel.swift in Sources */,
-				D39A1FFA7C4C18FC4D42F980 /* AppDelegate.swift in Sources */,
 				E55F74DC4C53ED3947D900F7 /* AppState.swift in Sources */,
-				BEE6FD273745259793BDE2FF /* BackgroundRefreshManager.swift in Sources */,
 				18090935E48CF15AC94321FD /* CogApp.swift in Sources */,
 				CD4F66B99EF4F4447F119ADC /* Color+Devin.swift in Sources */,
 				B528A2C9A0FEB7C6848470A6 /* ContentView.swift in Sources */,
@@ -548,18 +461,12 @@
 				A689EA755C19FE1FBC427AAE /* SessionRowView.swift in Sources */,
 				5795B61C471162959AA8C2A2 /* SettingsView.swift in Sources */,
 				80AC2079C6E1B7D38DF0354A /* SpeechTranscriptionService.swift in Sources */,
-				24483DED459A399409779C96 /* WidgetSessionData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		3DEE616FC64C427CAE0E3C09 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = C97E4050CFFF9B31AB70E1DC /* SessionsWidgetExtension */;
-			targetProxy = 9C685FACAA24288854B3C4C6 /* PBXContainerItemProxy */;
-		};
 		BE6F5EA8F8645BABAE8E3344 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 805E20FAF54EE77699543A49 /* Cog */;
@@ -664,29 +571,6 @@
 			};
 			name = Release;
 		};
-		3268DBF7317FF3A9B53C759B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_IDENTITY = "Apple Distribution";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 3;
-				INFOPLIST_FILE = SessionsWidget/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.cogfordevin.ios.sessions-widget";
-				PROVISIONING_PROFILE_SPECIFIER = "$(COG_WIDGET_PROFILE_NAME)";
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 		489D7E94C3C5C3B2D4DE314C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -701,26 +585,6 @@
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cogfordevin.ios;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		8F6E5A6E635656680F949910 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CURRENT_PROJECT_VERSION = 3;
-				INFOPLIST_FILE = SessionsWidget/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.cogfordevin.ios.sessions-widget";
-				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -811,15 +675,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0401546EE74AF080D55A9243 /* Build configuration list for PBXNativeTarget "SessionsWidgetExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				8F6E5A6E635656680F949910 /* Debug */,
-				3268DBF7317FF3A9B53C759B /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
 		465DFD9CF88560430277C361 /* Build configuration list for PBXProject "Cog" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

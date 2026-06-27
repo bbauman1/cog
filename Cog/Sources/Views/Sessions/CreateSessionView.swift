@@ -692,7 +692,7 @@ struct AdvancedOptionsSheet: View {
 final class RepoPickerStorage {
     static let shared = RepoPickerStorage()
 
-    private let defaults = UserDefaults(suiteName: "group.com.cogfordevin.ios") ?? .standard
+    private let defaults = UserDefaults.standard
     private let selectedReposKey = "repo_picker_selected_repos"
     private let recentReposKey = "repo_picker_recent_repos"
     private let maxRecents = 5

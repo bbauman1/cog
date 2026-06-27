@@ -28,8 +28,6 @@ struct RootView: View {
 }
 
 struct MainTabView: View {
-    @Environment(AppState.self) private var appState
-    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("selectedMainTab") private var selectedTabRawValue = MainTab.sessions.rawValue
     @State private var showCreateSession = false
     @State private var sessionRefreshToken = 0
@@ -66,11 +64,6 @@ struct MainTabView: View {
             CreateSessionView { _ in
                 selectedTabRawValue = MainTab.sessions.rawValue
                 sessionRefreshToken += 1
-            }
-        }
-        .onChange(of: scenePhase) {
-            if scenePhase == .background {
-                appState.scheduleBackgroundRefresh()
             }
         }
     }

@@ -2,7 +2,6 @@ import SwiftUI
 
 @main
 struct CogApp: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var appState: AppState
 
     init() {
