@@ -163,11 +163,6 @@ struct OnboardingFlowView: View {
                 Text("Welcome to Cog")
                     .font(.largeTitle.bold())
                     .multilineTextAlignment(.center)
-
-                Text("A direct Devin mobile command center for sessions, automations, knowledge, playbooks, analytics, and secrets.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
             }
 
             VStack(spacing: 14) {
@@ -199,7 +194,7 @@ struct OnboardingFlowView: View {
                     .font(.title.bold())
                     .multilineTextAlignment(.center)
 
-                Text("Create or choose a Devin service user, then paste the API key here. Cog validates the key with /v3/self before continuing.")
+                Text("Create or choose a Devin service user, then paste the API key here.")
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -264,16 +259,7 @@ struct OnboardingFlowView: View {
                 message: "The Organization ID appears near the top of the Devin API page with a copy button beside it."
             )
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Organization ID")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                TextField("org-...", text: $organizationId)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .textFieldStyle(.roundedBorder)
-                    .accessibilityIdentifier("onboardingOrganizationIdField")
-            }
+            organizationIdFieldCard
 
             errorText
         }
@@ -312,11 +298,18 @@ struct OnboardingFlowView: View {
                 )
                 OnboardingInfoRow(
                     systemImage: "curlybraces.square",
-                    title: "Open source intent",
-                    message: "Cog is intended to become open source."
+                    title: "Open source",
+                    message: Self.openSourceMessage
                 )
             }
         }
+    }
+
+    private static var openSourceMessage: AttributedString {
+        let fallback = AttributedString("Cog is open source. View the code at bbauman1/cog.")
+        return (try? AttributedString(
+            markdown: "Cog is open source. View the code at [bbauman1/cog](https://github.com/bbauman1/cog)."
+        )) ?? fallback
     }
 
     private var successPage: some View {
@@ -362,7 +355,8 @@ struct OnboardingFlowView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
+            .buttonBorderShape(.capsule)
             .controlSize(.regular)
             .disabled(isPrimaryButtonDisabled)
             .accessibilityIdentifier("onboardingPrimaryButton")
@@ -370,7 +364,6 @@ struct OnboardingFlowView: View {
         .padding(.horizontal, 24)
         .padding(.top, 10)
         .padding(.bottom, 8)
-        .background(.regularMaterial)
     }
 
     private var apiKeyFieldCard: some View {
@@ -413,6 +406,33 @@ struct OnboardingFlowView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+        }
+    }
+
+    private var organizationIdFieldCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Organization ID")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 10) {
+                Image(systemName: "building.2.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+
+                TextField("org-...", text: $organizationId)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .accessibilityIdentifier("onboardingOrganizationIdField")
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color(.separator).opacity(0.45), lineWidth: 0.5)
+            )
         }
     }
 
@@ -630,7 +650,19 @@ private struct OnboardingHeroIcon: View {
 private struct OnboardingInfoRow: View {
     let systemImage: String
     let title: String
-    let message: String
+    let message: AttributedString
+
+    init(systemImage: String, title: String, message: String) {
+        self.systemImage = systemImage
+        self.title = title
+        self.message = AttributedString(message)
+    }
+
+    init(systemImage: String, title: String, message: AttributedString) {
+        self.systemImage = systemImage
+        self.title = title
+        self.message = message
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
