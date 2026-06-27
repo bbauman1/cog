@@ -650,6 +650,12 @@ actor DevinAPIClient {
 
     // MARK: - Attachments
 
+    func downloadAttachmentData(attachmentId: String, fileName: String) async throws -> Data {
+        let path = "/organizations/\(orgId)/attachments/\(attachmentId)/\(fileName)"
+        let (data, _) = try await performRequest(path: path)
+        return data
+    }
+
     func uploadAttachment(
         fileData: Data,
         fileName: String,
