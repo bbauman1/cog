@@ -12,6 +12,7 @@ final class SessionDetailViewModel {
     var isTerminating = false
     var errorMessage: String?
     var messageDraft = ""
+    var attachments: [AttachmentItem] = []
 
     let sessionId: String
     private var apiClient: DevinAPIClient?
@@ -83,15 +84,48 @@ final class SessionDetailViewModel {
         isLoadingMoreMessages = false
     }
 
+    // MARK: - Attachments
+
+    func uploadAttachment(data: Data, fileName: String, mimeType: String, thumbnailData: Data? = nil) async {
+        guard let apiClient else { return }
+
+        let item = AttachmentItem(fileName: fileName, thumbnailData: thumbnailData)
+        attachments.append(item)
+        let itemId = item.id
+
+        do {
+            let response = try await apiClient.uploadAttachment(
+                fileData: data,
+                fileName: fileName,
+                mimeType: mimeType
+            )
+            if let index = attachments.firstIndex(where: { $0.id == itemId }) {
+                attachments[index].uploadedURL = response.url
+                attachments[index].isUploading = false
+            }
+        } catch {
+            if let index = attachments.firstIndex(where: { $0.id == itemId }) {
+                attachments[index].error = error.localizedDescription
+                attachments[index].isUploading = false
+            }
+        }
+    }
+
+    func removeAttachment(_ attachment: AttachmentItem) {
+        attachments.removeAll { $0.id == attachment.id }
+    }
+
     // MARK: - Send Message
 
     func sendMessage() async {
         guard let apiClient else { return }
         let text = messageDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
+        let attachmentURLs = attachments.compactMap(\.uploadedURL)
+        guard !text.isEmpty || !attachmentURLs.isEmpty else { return }
 
         isSendingMessage = true
         messageDraft = ""
+        attachments = []
 
         // Optimistic: add the message locally
         let optimisticMessage = Message(
@@ -103,7 +137,11 @@ final class SessionDetailViewModel {
         messages.append(optimisticMessage)
 
         do {
-            session = try await apiClient.sendMessage(devinId: sessionId, message: text)
+            session = try await apiClient.sendMessage(
+                devinId: sessionId,
+                message: text,
+                attachments: attachmentURLs.isEmpty ? nil : attachmentURLs
+            )
             // Refresh messages to get the server version
             await refreshMessages()
         } catch let error as APIError {
