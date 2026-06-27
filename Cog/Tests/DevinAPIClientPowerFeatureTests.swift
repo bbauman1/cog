@@ -61,6 +61,17 @@ final class DevinAPIClientPowerFeatureTests: XCTestCase {
         XCTAssertEqual(activeUsers.first?.activeUsers, 3)
     }
 
+    func testSessionPullRequestFormatsGitHubPullRequestLink() {
+        let pullRequest = SessionPullRequest(
+            url: "https://github.com/openai/codex/pull/123",
+            state: "merged"
+        )
+
+        XCTAssertEqual(pullRequest.displayName, "openai/codex#123")
+        XCTAssertEqual(pullRequest.stateDisplayName, "Merged")
+        XCTAssertEqual(pullRequest.linkURL?.absoluteString, "https://github.com/openai/codex/pull/123")
+    }
+
     func testScheduleListFixtureDecodes() throws {
         let response = try JSONDecoder().decode(ScheduleListResponse.self, from: Data(scheduleListJSON.utf8))
 

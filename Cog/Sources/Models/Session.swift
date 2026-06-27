@@ -91,6 +91,38 @@ struct SessionPullRequest: Codable, Identifiable, Sendable {
     let state: String?
 
     var id: String { url }
+    var linkURL: URL? { URL(string: url) }
+
+    var displayName: String {
+        guard let components = URLComponents(string: url),
+              let host = components.host else {
+            return url
+        }
+
+        let pathComponents = components.path
+            .split(separator: "/")
+            .map(String.init)
+
+        if host.contains("github.com"),
+           pathComponents.count >= 4,
+           pathComponents[2] == "pull" {
+            return "\(pathComponents[0])/\(pathComponents[1])#\(pathComponents[3])"
+        }
+
+        if let lastComponent = pathComponents.last, !lastComponent.isEmpty {
+            return lastComponent
+        }
+
+        return host
+    }
+
+    var stateDisplayName: String? {
+        guard let state, !state.isEmpty else { return nil }
+        return state
+            .replacingOccurrences(of: "_", with: " ")
+            .lowercased()
+            .capitalized
+    }
 
     enum CodingKeys: String, CodingKey {
         case url = "pr_url"

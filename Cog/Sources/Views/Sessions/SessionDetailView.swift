@@ -13,6 +13,8 @@ struct SessionDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            PullRequestLinksBar(pullRequests: viewModel.session?.pullRequests ?? [])
+
             chatMessages
 
             if viewModel.isSessionActive {
@@ -449,14 +451,14 @@ struct SessionInfoSheet: View {
                 if !session.pullRequests.isEmpty {
                     Section("Pull Requests") {
                         ForEach(session.pullRequests) { pr in
-                            if let url = URL(string: pr.url) {
+                            if let url = pr.linkURL {
                                 Link(destination: url) {
                                     HStack {
                                         Image(systemName: "arrow.triangle.pull")
-                                        Text(prDisplayName(pr.url))
+                                        Text(pr.displayName)
                                             .lineLimit(1)
                                         Spacer()
-                                        if let state = pr.state {
+                                        if let state = pr.stateDisplayName {
                                             Text(state)
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
@@ -552,16 +554,90 @@ struct SessionInfoSheet: View {
             .replacingOccurrences(of: "_", with: " ")
             .capitalized
     }
+}
 
-    private func prDisplayName(_ urlString: String) -> String {
-        // Extract "owner/repo#123" from GitHub URL
-        let components = urlString.components(separatedBy: "/")
-        if components.count >= 5,
-           let prNumber = components.last {
-            let repo = components[components.count - 3]
-            return "\(repo)#\(prNumber)"
+private struct PullRequestLinksBar: View {
+    let pullRequests: [SessionPullRequest]
+
+    private var validPullRequests: [SessionPullRequest] {
+        pullRequests.filter { $0.linkURL != nil }
+    }
+
+    var body: some View {
+        if !validPullRequests.isEmpty {
+            VStack(spacing: 0) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(validPullRequests) { pullRequest in
+                            if let url = pullRequest.linkURL {
+                                Link(destination: url) {
+                                    PullRequestLinkLabel(pullRequest: pullRequest)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                }
+
+                Divider()
+            }
+            .background(.bar)
         }
-        return urlString
+    }
+}
+
+private struct PullRequestLinkLabel: View {
+    let pullRequest: SessionPullRequest
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Label {
+                Text(pullRequest.displayName)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            } icon: {
+                Image(systemName: "arrow.triangle.pull")
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.blue)
+
+            if let state = pullRequest.stateDisplayName {
+                Text(state)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(stateTint)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(stateTint.opacity(0.12), in: Capsule())
+            }
+
+            Image(systemName: "arrow.up.right")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .frame(maxWidth: 280, alignment: .leading)
+        .background(Color.blue.opacity(0.10), in: Capsule())
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var stateTint: Color {
+        switch pullRequest.state?.lowercased() {
+        case "open": return .green
+        case "merged": return .purple
+        case "closed": return .red
+        default: return .secondary
+        }
+    }
+
+    private var accessibilityLabel: String {
+        if let state = pullRequest.stateDisplayName {
+            return "Open pull request \(pullRequest.displayName), \(state)"
+        }
+
+        return "Open pull request \(pullRequest.displayName)"
     }
 }
 
