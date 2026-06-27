@@ -108,7 +108,9 @@ struct SessionDetailView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(viewModel.messages) { message in
-                            MessageBubbleView(message: message)
+                            MessageBubbleView(message: message) { _ in
+                                Task { await viewModel.sendOfferTestResponse() }
+                            }
                                 .id(message.id)
                                 .onAppear {
                                     if message.id == viewModel.messages.last?.id {
@@ -374,24 +376,79 @@ struct MarkdownMessageView: View {
     }
 }
 
+// MARK: - Offer Test App Parsing
+
+private struct OfferTestAppResult {
+    let displayText: String
+    let buttonLabel: String?
+}
+
+private func parseOfferTestApp(_ text: String) -> OfferTestAppResult {
+    let pattern = #"\[OFFER_TEST_APP\](.+?)\[/OFFER_TEST_APP\]"#
+    guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) else {
+        return OfferTestAppResult(displayText: text, buttonLabel: nil)
+    }
+    let range = NSRange(text.startIndex..., in: text)
+    guard let match = regex.firstMatch(in: text, range: range),
+          let labelRange = Range(match.range(at: 1), in: text) else {
+        return OfferTestAppResult(displayText: text, buttonLabel: nil)
+    }
+    let label = String(text[labelRange])
+    let cleaned = regex.stringByReplacingMatches(in: text, range: range, withTemplate: "")
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    return OfferTestAppResult(displayText: cleaned, buttonLabel: label)
+}
+
+// MARK: - Offer Test App Button State
+
+private enum OfferTestAppStore {
+    private static let key = "offerTestApp_tappedEventIds"
+
+    static func isTapped(_ eventId: String) -> Bool {
+        let set = UserDefaults.standard.stringArray(forKey: key) ?? []
+        return set.contains(eventId)
+    }
+
+    static func markTapped(_ eventId: String) {
+        var set = UserDefaults.standard.stringArray(forKey: key) ?? []
+        if !set.contains(eventId) {
+            set.append(eventId)
+            UserDefaults.standard.set(set, forKey: key)
+        }
+    }
+}
+
 // MARK: - Message Bubble
 
 struct MessageBubbleView: View {
     let message: Message
+    var onOfferTestTapped: ((String) -> Void)?
 
     private var isUser: Bool { message.source == .user }
 
     var body: some View {
+        let parsed = parseOfferTestApp(message.message)
+
         HStack {
             if isUser { Spacer(minLength: 60) }
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
-                MarkdownMessageView(text: message.message, isUser: isUser)
-                    .textSelection(.enabled)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(isUser ? Color.blue : Color(.systemGray5))
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                if !parsed.displayText.isEmpty {
+                    MarkdownMessageView(text: parsed.displayText, isUser: isUser)
+                        .textSelection(.enabled)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(isUser ? Color.blue : Color(.systemGray5))
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                }
+
+                if let label = parsed.buttonLabel {
+                    OfferTestAppButton(
+                        label: label,
+                        eventId: message.eventId,
+                        onTap: onOfferTestTapped
+                    )
+                }
 
                 Text(message.createdDate.relativeString)
                     .font(.caption2)
@@ -400,6 +457,40 @@ struct MessageBubbleView: View {
             }
 
             if !isUser { Spacer(minLength: 60) }
+        }
+    }
+}
+
+private struct OfferTestAppButton: View {
+    let label: String
+    let eventId: String
+    var onTap: ((String) -> Void)?
+
+    @State private var isTapped: Bool = false
+
+    var body: some View {
+        Button {
+            guard !isTapped else { return }
+            isTapped = true
+            OfferTestAppStore.markTapped(eventId)
+            onTap?(label)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: isTapped ? "checkmark.circle.fill" : "play.circle.fill")
+                    .font(.subheadline)
+                Text(isTapped ? "Testing requested" : label)
+                    .font(.subheadline.weight(.medium))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(isTapped ? Color(.systemGray4) : Color.blue)
+            .foregroundStyle(isTapped ? Color.secondary : Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .disabled(isTapped)
+        .onAppear {
+            isTapped = OfferTestAppStore.isTapped(eventId)
         }
     }
 }
