@@ -10,6 +10,8 @@ struct SessionInsightsView: View {
 
     var body: some View {
         content
+            .navigationTitle("Insights")
+            .navigationBarTitleDisplayMode(.inline)
             .task {
                 if let client = appState.apiClient {
                     viewModel.configure(with: client)
@@ -220,4 +222,3 @@ private struct PromptDiffBlock: View {
         }
     }
 }
-

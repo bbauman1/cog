@@ -3,7 +3,6 @@ import SwiftUI
 struct SessionDetailView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel: SessionDetailViewModel
-    @State private var selectedDetailTab: SessionDetailTab = .chat
     @State private var showTerminateConfirmation = false
     @State private var showSessionInfo = false
     @State private var speechService = SpeechTranscriptionService()
@@ -14,23 +13,9 @@ struct SessionDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("Session View", selection: $selectedDetailTab) {
-                ForEach(SessionDetailTab.allCases, id: \.self) { tab in
-                    Text(tab.title).tag(tab)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal)
-            .padding(.vertical, 8)
+            chatMessages
 
-            switch selectedDetailTab {
-            case .chat:
-                chatMessages
-            case .insights:
-                SessionInsightsView(sessionId: viewModel.sessionId)
-            }
-
-            if viewModel.isSessionActive && selectedDetailTab == .chat {
+            if viewModel.isSessionActive {
                 messageInputBar
             }
         }
@@ -272,18 +257,6 @@ struct SessionDetailView: View {
     }
 }
 
-private enum SessionDetailTab: CaseIterable {
-    case chat
-    case insights
-
-    var title: String {
-        switch self {
-        case .chat: return "Chat"
-        case .insights: return "Insights"
-        }
-    }
-}
-
 // MARK: - Markdown Rendering
 
 private enum MarkdownBlock {
@@ -471,6 +444,8 @@ struct SessionInfoSheet: View {
                     }
                 }
 
+                SessionInfoInsightsSection(sessionId: session.sessionId)
+
                 if !session.pullRequests.isEmpty {
                     Section("Pull Requests") {
                         ForEach(session.pullRequests) { pr in
@@ -587,6 +562,134 @@ struct SessionInfoSheet: View {
             return "\(repo)#\(prNumber)"
         }
         return urlString
+    }
+}
+
+private struct SessionInfoInsightsSection: View {
+    @Environment(AppState.self) private var appState
+    @State private var viewModel: SessionInsightsViewModel
+
+    private let sessionId: String
+
+    init(sessionId: String) {
+        self.sessionId = sessionId
+        _viewModel = State(initialValue: SessionInsightsViewModel(sessionId: sessionId))
+    }
+
+    var body: some View {
+        Section("Insights") {
+            content
+        }
+        .task {
+            if let client = appState.apiClient {
+                viewModel.configure(with: client)
+                await viewModel.loadInsights()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if viewModel.isLoading && viewModel.insights == nil {
+            HStack(spacing: 10) {
+                ProgressView()
+                Text("Loading insights...")
+                    .foregroundStyle(.secondary)
+            }
+        } else if let error = viewModel.errorMessage, viewModel.insights == nil {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Unable to Load Insights", systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.orange)
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button("Retry") {
+                    Task { await viewModel.loadInsights() }
+                }
+            }
+        } else if let insights = viewModel.insights, insights.hasAnalysis {
+            insightsSummary(insights)
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("No Insights Yet", systemImage: "sparkles")
+                Button(viewModel.isGenerating ? "Generating..." : "Generate Insights") {
+                    Task { await viewModel.generateInsights() }
+                }
+                .disabled(viewModel.isGenerating)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func insightsSummary(_ insights: SessionInsights) -> some View {
+        if let sessionSize = insights.sessionSize {
+            LabeledContent("Session Size", value: sessionSize.uppercased())
+        }
+
+        if let numMessages = insights.numMessages {
+            LabeledContent("Messages", value: "\(numMessages)")
+        }
+
+        if let summary = insights.analysis?.summary, !summary.isEmpty {
+            Text(summary)
+                .font(.subheadline)
+                .textSelection(.enabled)
+        }
+
+        if let issue = insights.analysis?.issues.first {
+            SessionInfoInsightRow(
+                title: issue.title,
+                subtitle: issue.impact ?? issue.description,
+                systemImage: "exclamationmark.triangle",
+                tint: .orange
+            )
+        }
+
+        if let actionItem = insights.analysis?.actionItems.first {
+            SessionInfoInsightRow(
+                title: actionItem.title,
+                subtitle: actionItem.description ?? actionItem.status,
+                systemImage: "checklist",
+                tint: .blue
+            )
+        }
+
+        NavigationLink {
+            SessionInsightsView(sessionId: sessionId)
+        } label: {
+            Label("View Full Insights", systemImage: "sparkles")
+        }
+
+        Button(viewModel.isGenerating ? "Generating..." : "Regenerate Insights") {
+            Task { await viewModel.generateInsights() }
+        }
+        .disabled(viewModel.isGenerating)
+    }
+}
+
+private struct SessionInfoInsightRow: View {
+    let title: String
+    let subtitle: String?
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 18)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 }
 
