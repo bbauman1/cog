@@ -40,15 +40,15 @@ struct MainTabView: View {
                 SessionListView(refreshToken: sessionRefreshToken)
             }
 
-            Tab("Wiki", systemImage: "books.vertical", value: MainTab.wiki) {
-                NavigationStack {
-                    WikiHubView()
-                }
-            }
-
             Tab("Automations", systemImage: "calendar", value: MainTab.automations) {
                 NavigationStack {
                     ScheduleListView()
+                }
+            }
+
+            Tab("Analytics", systemImage: "chart.bar", value: MainTab.analytics) {
+                NavigationStack {
+                    AnalyticsView()
                 }
             }
 
@@ -91,15 +91,15 @@ struct MainTabView: View {
 
 private enum MainTab: String {
     case sessions
-    case wiki
     case automations
+    case analytics
     case settings
     case newSession
 
     init(storedValue: String) {
         switch storedValue {
-        case "library":
-            self = .wiki
+        case "library", "wiki":
+            self = .settings
         case "schedules":
             self = .automations
         default:

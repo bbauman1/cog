@@ -29,9 +29,9 @@ struct SettingsView: View {
 
             Section("Organization") {
                 NavigationLink {
-                    AnalyticsView()
+                    WikiHubView()
                 } label: {
-                    Label("Analytics", systemImage: "chart.bar")
+                    Label("Wiki", systemImage: "books.vertical")
                 }
 
                 NavigationLink {
