@@ -408,9 +408,14 @@ struct CreateSessionView: View {
                     }
                 }
             } label: {
-                Text(modeDisplayText)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 4) {
+                    Text(modeDisplayText)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
             }
             .buttonStyle(.plain)
 
