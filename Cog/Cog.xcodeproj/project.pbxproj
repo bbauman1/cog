@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		00C710ACEC6316E5B02784CB /* SessionInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6306D70272482C4D656BF916 /* SessionInsights.swift */; };
+		08254E9E3062A0767656A214 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 083BE6AFAFCD3B5F5DC30AC6 /* AppIcon.icon */; };
 		094B946D5E09ADE0CB987468 /* SessionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F03F86F60ABDC386FF09C20 /* SessionListView.swift */; };
 		12AE40B8D9C9F39A89EF081A /* Playbook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CEECF2E6CB6ACB4B4A32C90 /* Playbook.swift */; };
 		18090935E48CF15AC94321FD /* CogApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8BFB06980149F6034CDBF6 /* CogApp.swift */; };
@@ -74,6 +75,7 @@
 		032A24E33F9C754B6C68C36A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		05223957C8616F2EDF1BABF6 /* SessionDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailViewModel.swift; sourceTree = "<group>"; };
 		0829742B104663F8AD537582 /* DevinAPIClientCRUDTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevinAPIClientCRUDTests.swift; sourceTree = "<group>"; };
+		083BE6AFAFCD3B5F5DC30AC6 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		0CEECF2E6CB6ACB4B4A32C90 /* Playbook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Playbook.swift; sourceTree = "<group>"; };
 		10C393769E317B0E758CE180 /* LibraryResourceStateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryResourceStateViews.swift; sourceTree = "<group>"; };
 		17A881F4778FF06B15243896 /* SelfResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfResponse.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 		2B494C1069463E03791A1673 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				083BE6AFAFCD3B5F5DC30AC6 /* AppIcon.icon */,
 				E1C2DECA0C7C6CAF9BA36356 /* Assets.xcassets */,
 				49700E001A0108AEAD69A469 /* PrivacyInfo.xcprivacy */,
 			);
@@ -396,6 +399,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				08254E9E3062A0767656A214 /* AppIcon.icon in Resources */,
 				2115E5C8C6396FF7EF1B68B9 /* Assets.xcassets in Resources */,
 				D64352828D13744EC103A657 /* PrivacyInfo.xcprivacy in Resources */,
 			);
