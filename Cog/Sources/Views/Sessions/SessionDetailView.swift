@@ -93,6 +93,7 @@ struct SessionDetailView: View {
         } message: {
             Text("This will stop Devin from working on this session. This action cannot be undone.")
         }
+        .toolbar(.hidden, for: .tabBar)
         .navigationTransition(.zoom(sourceID: viewModel.sessionId, in: activeNamespace))
         .task {
             if let client = appState.apiClient {
