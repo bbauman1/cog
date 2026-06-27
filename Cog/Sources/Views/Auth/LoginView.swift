@@ -144,12 +144,12 @@ struct OnboardingFlowView: View {
         switch step {
         case .welcome:
             welcomePage
+        case .trust:
+            trustPage
         case .apiKey:
             apiKeyPage
         case .organizationId:
             organizationIdPage
-        case .trust:
-            trustPage
         case .success:
             successPage
         }
@@ -205,13 +205,23 @@ struct OnboardingFlowView: View {
                     .multilineTextAlignment(.center)
             }
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Devin setup")
-                    .font(.headline)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "person.badge.key.fill")
+                        .font(.title3)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.indigo)
+                        .accessibilityHidden(true)
 
-                Text("Open Devin, then go to Settings > Devin API > Provision service user. Copy the API key after provisioning the service user.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Provision a service user")
+                            .font(.headline)
+                        Text("Open Devin, then go to Settings > Devin API > Provision service user. Copy the API key after provisioning.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
 
                 Button {
                     openURL(devinURL)
@@ -220,34 +230,14 @@ struct OnboardingFlowView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .controlSize(.large)
+                .controlSize(.regular)
+
+                Divider()
+
+                apiKeyFieldCard
             }
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("API Key")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                SecureField("cog_...", text: $apiKey)
-                    .textContentType(.password)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .textFieldStyle(.roundedBorder)
-                    .accessibilityIdentifier("onboardingAPIKeyField")
-
-                Button {
-                    pasteAPIKeyFromClipboard()
-                } label: {
-                    Label("Paste API Key", systemImage: "doc.on.clipboard")
-                }
-                .buttonStyle(.borderless)
-                .accessibilityIdentifier("onboardingPasteAPIKeyButton")
-
-                if didPasteFromClipboard {
-                    Label("API key pasted from clipboard", systemImage: "doc.on.clipboard")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            .padding(16)
+            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
 
             errorText
         }
@@ -357,7 +347,7 @@ struct OnboardingFlowView: View {
     }
 
     private var footer: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 0) {
             Button {
                 handlePrimaryAction()
             } label: {
@@ -370,24 +360,60 @@ struct OnboardingFlowView: View {
                         .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, 10)
             }
             .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .controlSize(.regular)
             .disabled(isPrimaryButtonDisabled)
             .accessibilityIdentifier("onboardingPrimaryButton")
-
-            if step == .apiKey {
-                Text("The public link opens Devin. Cog does not hardcode organization-specific settings URLs.")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-            }
         }
         .padding(.horizontal, 24)
-        .padding(.top, 14)
-        .padding(.bottom, 10)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
         .background(.regularMaterial)
+    }
+
+    private var apiKeyFieldCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("API Key")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 10) {
+                Image(systemName: "key.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+
+                SecureField("cog_...", text: $apiKey)
+                    .textContentType(.password)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .accessibilityIdentifier("onboardingAPIKeyField")
+
+                Button {
+                    pasteAPIKeyFromClipboard()
+                } label: {
+                    Label("Paste API Key", systemImage: "doc.on.clipboard")
+                        .labelStyle(.iconOnly)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("onboardingPasteAPIKeyButton")
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color(.separator).opacity(0.45), lineWidth: 0.5)
+            )
+
+            if didPasteFromClipboard {
+                Label("API key pasted from clipboard", systemImage: "doc.on.clipboard")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     private var progressDots: some View {
@@ -417,7 +443,7 @@ struct OnboardingFlowView: View {
         switch step {
         case .welcome:
             return "Get Started"
-        case .apiKey, .organizationId, .trust:
+        case .trust, .apiKey, .organizationId:
             return "Continue"
         case .success:
             return "Enter Cog"
@@ -443,13 +469,13 @@ struct OnboardingFlowView: View {
 
         switch step {
         case .welcome:
+            step = .trust
+        case .trust:
             step = .apiKey
         case .apiKey:
             Task { await validateAPIKey() }
         case .organizationId:
             completeManualOrganizationId()
-        case .trust:
-            step = .success
         case .success:
             Task { await enterApp() }
         }
@@ -466,7 +492,7 @@ struct OnboardingFlowView: View {
                 organizationId = resolvedCredentials.orgId
                 credentials = resolvedCredentials
                 needsManualOrganizationId = false
-                step = .trust
+                step = .success
             case .needsOrganizationId(let resolvedAPIKey):
                 apiKey = resolvedAPIKey
                 credentials = nil
@@ -491,7 +517,7 @@ struct OnboardingFlowView: View {
             apiKey = resolvedCredentials.apiKey
             organizationId = resolvedCredentials.orgId
             credentials = resolvedCredentials
-            step = .trust
+            step = .success
         } catch let error as LocalizedError {
             errorMessage = error.errorDescription
         } catch {
@@ -519,14 +545,14 @@ struct OnboardingFlowView: View {
         switch step {
         case .welcome:
             break
-        case .apiKey:
+        case .trust:
             step = .welcome
+        case .apiKey:
+            step = .trust
         case .organizationId:
             step = .apiKey
-        case .trust:
-            step = needsManualOrganizationId ? .organizationId : .apiKey
         case .success:
-            step = .trust
+            step = needsManualOrganizationId ? .organizationId : .apiKey
         }
     }
 
@@ -552,21 +578,21 @@ struct LoginView: View {
 
 private enum OnboardingStep: Int, CaseIterable, Hashable {
     case welcome
+    case trust
     case apiKey
     case organizationId
-    case trust
     case success
 
     var navigationTitle: String {
         switch self {
         case .welcome:
             return "Cog"
+        case .trust:
+            return "Privacy"
         case .apiKey:
             return "API Key"
         case .organizationId:
             return "Organization"
-        case .trust:
-            return "Privacy"
         case .success:
             return "Ready"
         }
