@@ -64,6 +64,12 @@ final class AppState {
 
     var authState: AuthState = .unknown
     var apiClient: DevinAPIClient?
+    var storedAPIKey: String? {
+        credentialStore.read(.apiKey)
+    }
+    var storedOrganizationId: String? {
+        credentialStore.read(.orgId)
+    }
 
     private let credentialStore: CredentialStore
     private let makeAPIClient: @Sendable (String, String) -> DevinAPIClient
