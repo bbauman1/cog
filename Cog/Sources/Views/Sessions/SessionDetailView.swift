@@ -168,6 +168,7 @@ struct SessionDetailView: View {
                     .padding()
                     .padding(.bottom, viewModel.isSessionActive ? 60 : 0)
                 }
+                .scrollEdgeEffectHidden(true, for: .top)
                 .onChange(of: viewModel.messages.count) {
                     if let lastId = viewModel.messages.last?.id {
                         withAnimation(.easeOut(duration: 0.3)) {
