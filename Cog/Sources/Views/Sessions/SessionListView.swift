@@ -195,11 +195,14 @@ struct SessionListView: View {
 
     private func archiveSession(_ sessionId: String) async {
         guard let client = appState.apiClient else { return }
+
+        let snapshot = viewModel.sessions
+        viewModel.sessions.removeAll { $0.sessionId == sessionId }
+
         do {
             _ = try await client.archiveSession(devinId: sessionId)
-            await viewModel.refresh()
         } catch {
-            // Show error silently on next poll
+            viewModel.sessions = snapshot
         }
     }
 }
