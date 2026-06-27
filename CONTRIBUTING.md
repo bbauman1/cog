@@ -6,6 +6,7 @@ Before opening a pull request:
 
 - Run `cd Cog && xcodegen generate`.
 - Run the simulator test command from `README.md` when your change touches app code.
+- For changes that touch live Devin flows, run the README smoke test with a test service-user key.
 - Keep signing credentials, provisioning profiles, `.asc/`, DerivedData, and local agent files out of commits.
 - Prefer small, focused pull requests with a plain-English description of the behavior change.
 

@@ -42,6 +42,14 @@ xcodebuild test \
   CODE_SIGNING_ALLOWED=NO
 ```
 
+## Devin Smoke Testing
+
+For changes that touch auth, networking, sessions, schedules, secrets, or attachments, also test against a Devin test organization from a local simulator. Use a service-user API key for that test org, not a personal or production key.
+
+Limrun is useful for driving this flow locally: fresh install, complete onboarding with the test API key and organization ID, confirm sessions load, create a small test session, send a message, and sign out. Keep live credentials out of scripts, recordings, logs, commits, and CI.
+
+For UI-only onboarding checks, debug builds include mock launch arguments: `-cogMockOnboardingAutoOrg` and `-cogMockOnboardingManualOrg`.
+
 ## Signing and Releases
 
 For local simulator development, signing is not required. For device builds or TestFlight, use your own Apple Developer team, bundle IDs, App Store Connect app, certificates, and provisioning profiles.
