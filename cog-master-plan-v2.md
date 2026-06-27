@@ -32,7 +32,7 @@ The original plan was organized around iOS-native features (Live Activities, Sir
 
 | Feature | Status | Notes |
 |---|---|---|
-| Login (API key + org ID → Keychain) | Built | Face ID not yet implemented |
+| Login (API key + org ID → Keychain) | Built | Basic single-screen flow; Apple-style onboarding and Face ID not yet implemented |
 | Session List (paginated, pull-to-refresh, status filter) | Built | Has category filter, origin filter |
 | Session Detail + Chat (messages, send) | Built | Has copy-on-tap, input bar on suspended |
 | Create Session (prompt, repo picker, playbook picker, mode, tags, attachments) | Built | Full-featured |
@@ -47,7 +47,7 @@ The original plan was organized around iOS-native features (Live Activities, Sir
 | Notifications (local) | Built | Status transition alerts |
 | Speech-to-Text | Built | Dictation for message input |
 
-**Not yet built:** Knowledge CRUD, Playbook CRUD, Schedules, Secrets, Analytics/Metrics, Session Insights, Tab-based navigation, Face ID lock.
+**Not yet built:** Apple-style onboarding, Knowledge CRUD, Playbook CRUD, Schedules, Secrets, Analytics/Metrics, Session Insights, Tab-based navigation, Face ID lock.
 
 ---
 
@@ -57,18 +57,42 @@ The original plan was organized around iOS-native features (Live Activities, Sir
 
 These make the app feel like a real Devin command center, not just a session viewer.
 
-#### P0.1: Tab Bar Navigation
+#### P0.0: Execution Prep & API Contracts
 
-**Why:** The app currently renders `SessionListView()` as the only screen. Adding tabs is the prerequisite for every new feature area. Without it, there's nowhere to put Knowledge, Playbooks, Schedules, or Analytics.
+**Why:** Before adding CRUD surfaces, confirm the current app builds, the test harness exists, and the API request/response shapes match the models. This prevents Phase 1 from getting derailed by pre-existing build failures or small contract mismatches like `title/body` vs. `name/instructions`.
 
 **Tasks:**
-1. Add `TabView` in `MainTabView` with tabs: Sessions, Knowledge, Playbooks, Schedules, Settings
+1. Run a preflight build on the current app and record whether any failures are pre-existing
+2. Confirm or create an XCTest target with a reusable mock `URLProtocol`
+3. Validate Knowledge and Playbook API shapes against real responses or captured fixtures
+4. Align model and request naming before UI work begins
+5. Define a shared CRUD UI pattern for Library resources: loading, empty, error, saving, delete confirmation, refresh after mutation
+6. Lock the Library information architecture for Phase 1: Library → Knowledge Notes, Library → Playbooks
+
+**Verification:**
+- Preflight build result is recorded before implementation changes
+- XCTest/mock API harness can run at least one smoke test
+- Knowledge and Playbook fixtures decode successfully
+- Shared CRUD states are documented and reused by both resource areas
+
+**Estimate:** 1 task (small)
+
+---
+
+#### P0.1: Tab Bar Navigation
+
+**Why:** The app currently renders `SessionListView()` as the only screen. Adding tabs is the prerequisite for the primary app areas, but Knowledge and Playbooks do not need dedicated tabs. They are reusable Devin resources, so they should live together behind a single Library hub rather than competing with Sessions and Schedules in the tab bar.
+
+**Tasks:**
+1. Add `TabView` in `MainTabView` with tabs: Sessions, Library, Schedules, Settings
 2. Create placeholder views for each tab
-3. Add SF Symbol icons and tab labels
-4. Persist selected tab across app launches
+3. Add `LibraryHubView` with navigation rows for Knowledge Notes and Playbooks
+4. Add SF Symbol icons and tab labels
+5. Persist selected tab across app launches
 
 **Verification:**
 - Limrun build → screenshot each tab
+- Verify Library hub can navigate to Knowledge Notes and Playbooks
 - Verify tab selection persists after backgrounding
 
 **Estimate:** 1 task (small)
@@ -86,7 +110,7 @@ These make the app feel like a real Devin command center, not just a session vie
 - `DELETE .../knowledge/notes/{note_id}` — delete
 
 **Tasks:**
-1. Add `KnowledgeListView` as its own tab (move from wherever it currently is)
+1. Add `KnowledgeListView` reachable from `LibraryHubView`
 2. Add "New Note" button → `CreateKnowledgeView` (name, trigger, body fields; optional pinned_repo picker, enabled toggle)
 3. Add note detail view with edit capability → `EditKnowledgeView`
 4. Add swipe-to-delete with confirmation
@@ -114,12 +138,12 @@ These make the app feel like a real Devin command center, not just a session vie
 - `DELETE .../playbooks/{playbook_id}` — delete
 
 **Tasks:**
-1. Add `PlaybookListView` as its own tab
+1. Add `PlaybookListView` reachable from `LibraryHubView`
 2. Add "New Playbook" button → `CreatePlaybookView` (title, body/instructions editor)
 3. Add playbook detail view showing full instructions, with edit button
 4. Add swipe-to-delete with confirmation
 5. Wire up `DevinAPIClient` methods: `createPlaybook()`, `getPlaybook()`, `updatePlaybook()`, `deletePlaybook()`
-6. Integrate with existing session creation flow (playbook picker already exists)
+6. Integrate with existing session creation flow (playbook picker already exists; add a "Manage Playbooks" path if it fits cleanly)
 
 **Verification:**
 - Unit test: mock API → verify CRUD calls
@@ -229,9 +253,54 @@ These make the app feel like a real Devin command center, not just a session vie
 
 ---
 
-### P2 — Polish & Enhanced UX
+### P2 — Onboarding & Trust
 
-#### P2.1: Session Detail Enrichment
+**Why:** First launch should feel like a polished Apple-style setup experience, not a credential form. Cog needs to help users create or find the right Devin service-user API key, explain when an Organization ID is still needed, and build trust by being explicit that credentials stay on-device and all API traffic goes directly to Devin.
+
+#### P2.1: Apple-Style Onboarding Flow
+
+**Tasks:**
+1. Replace the unauthenticated `LoginView` entry point with `OnboardingFlowView`
+2. Add a welcome screen: "Welcome to Cog" and position Cog as a direct Devin mobile command center
+3. Add an API key screen:
+   - Explain Devin service users and API keys in plain language
+   - Provide a public CTA to open `https://app.devin.ai`
+   - Show steps: Settings → Devin API → Provision service user
+   - Accept pasted or typed API key and validate it with `/v3/self`
+4. Auto-detect Organization ID from `SelfResponse.orgId` after `/v3/self`
+5. Add an Organization ID fallback screen only when `/v3/self` does not return `org_id`:
+   - Ask the user to copy the Organization ID from the Devin API settings page
+   - Explain that the copy button is beside the Organization ID on that page
+6. Add a trust/privacy screen or inline trust panel:
+   - "Your API key is saved in this device's iOS Keychain."
+   - "Cog talks directly to the Devin API."
+   - "Cog does not run a server, proxy your data, collect analytics, or send data anywhere except Devin."
+   - "Cog is intended to become open source."
+7. Add a brief success screen before entering the main app
+8. Preserve clipboard API-key paste support from the existing login flow
+9. Keep storing both API key and Organization ID in Keychain because all current organization-scoped API paths require `org_id`
+
+**Verification:**
+- Unit test: API-key validation succeeds and skips manual org ID when `/v3/self` returns `org_id`
+- Unit test: API-key validation falls back to manual org ID when `/v3/self.org_id` is nil
+- Unit test: final login still saves API key + org ID to Keychain and initializes `DevinAPIClient`
+- Limrun build → screenshots for welcome, API key, org ID fallback, trust/privacy, and success screens
+- Verify the external Devin CTA opens the browser
+- Verify clipboard API-key paste still works
+- Verify successful onboarding enters the main tab UI
+- Privacy check: no analytics SDK, tracking endpoint, or non-Devin network call is introduced
+
+**Notes:**
+- Do not hardcode `https://app.devin.ai/org/bbauman1/settings/devin-api` as the public CTA because that URL is org-specific. It can remain an internal reference/example for development only.
+- OAuth2 remains blocked until Cognition exposes an OAuth2 provider; this phase stays API-key based.
+
+**Estimate:** 2-3 tasks (medium)
+
+---
+
+### P3 — Polish & Enhanced UX
+
+#### P3.1: Session Detail Enrichment
 
 **Why:** The session detail view already works, but the API returns much richer data than we currently display. Enhance it incrementally.
 
@@ -253,7 +322,7 @@ These make the app feel like a real Devin command center, not just a session vie
 
 ---
 
-#### P2.2: Face ID / Biometric Lock
+#### P3.2: Face ID / Biometric Lock
 
 **Why:** Security feature called out in the original plan. The app stores API keys in Keychain — adding Face ID on launch is table stakes for a security-conscious mobile app.
 
@@ -270,7 +339,7 @@ These make the app feel like a real Devin command center, not just a session vie
 
 ---
 
-#### P2.3: Multi-Account Support
+#### P3.3: Multi-Account Support
 
 **Why:** Users may have keys for multiple orgs. Currently the app supports one credential set.
 
@@ -288,7 +357,7 @@ These make the app feel like a real Devin command center, not just a session vie
 
 ---
 
-### P3 — iOS Platform Features (Deprioritized)
+### P4 — iOS Platform Features (Deprioritized)
 
 These are valuable but depend on the core features being solid first.
 
@@ -305,7 +374,7 @@ These are valuable but depend on the core features being solid first.
 
 ---
 
-### P4 — Blocked / Future (Needs API Changes)
+### P5 — Blocked / Future (Needs API Changes)
 
 | Feature | Blocker | What We Need |
 |---|---|---|
@@ -326,11 +395,12 @@ Each task is sized and includes its verification method.
 
 | # | Task | Size | Verification |
 |---|---|---|---|
-| 1 | Tab bar navigation (Sessions, Knowledge, Playbooks, Schedules, Settings) | S | Limrun build + screenshots of all tabs |
+| 0 | Execution prep: preflight build, test harness, API contract fixtures, shared CRUD pattern | S | Baseline build result + XCTest/mock API smoke test + fixture decoding |
+| 1 | Tab bar navigation (Sessions, Library, Schedules, Settings) + Library hub for Knowledge/Playbooks | S | Limrun build + screenshots of all tabs + Library routes |
 | 2 | Knowledge: API client methods (create, update, delete) | S | Unit tests with mock URLProtocol |
-| 3 | Knowledge: List view in tab, detail view, create/edit forms, delete | M | Limrun build + screenshots + e2e create/verify |
+| 3 | Knowledge: Library-routed list view, detail view, create/edit forms, delete | M | Limrun build + screenshots + e2e create/verify |
 | 4 | Playbook: API client methods (get single, create, update, delete) | S | Unit tests with mock URLProtocol |
-| 5 | Playbook: List view in tab, detail view, create/edit forms, delete | M | Limrun build + screenshots + e2e create/verify |
+| 5 | Playbook: Library-routed list view, detail view, create/edit forms, delete | M | Limrun build + screenshots + e2e create/verify |
 
 ### Phase 2: Power Features (P1)
 
@@ -345,24 +415,37 @@ Each task is sized and includes its verification method.
 | 12 | Secrets: models + API client (list, create, delete) | S | Unit tests |
 | 13 | Secrets: list view + create form + delete (in Settings) | S | Limrun build + screenshots |
 
-### Phase 3: Polish (P2)
+### Phase 3: Onboarding & Trust (P2)
 
 | # | Task | Size | Verification |
 |---|---|---|---|
-| 14 | Session detail enrichment (structured_output, child/parent links, attachments list, PR badges) | M | Limrun build + screenshots |
-| 15 | Face ID / biometric lock | S | Limrun build (compile check + settings toggle screenshot) |
-| 16 | Multi-account support | M | Limrun build + screenshots of account switcher |
+| 14 | Onboarding auth flow foundation: validate API key with `/v3/self`, auto-detect `org_id`, preserve Keychain save path | S | Unit tests for `org_id` auto-detect, manual fallback, and final login save |
+| 15 | Apple-style onboarding UI: welcome, API key, optional org ID, trust/privacy, success | M | Limrun build + screenshots + browser CTA + clipboard paste check |
 
-### Phase 4: iOS Platform (P3) — Later
+### Phase 4: Polish (P3)
 
 | # | Task | Size | Verification |
 |---|---|---|---|
-| 17 | Enhanced widgets (per-session widget, analytics widget) | M | Limrun build + widget gallery screenshot |
-| 18 | Siri & Shortcuts (AppIntents for create session, check status) | M | Limrun build + Shortcuts app screenshot |
-| 19 | Share Sheet extension | M | Limrun build + share sheet screenshot |
-| 20 | Live Activities for active sessions | L | Limrun build + lock screen screenshot |
-| 21 | Spotlight Search indexing | S | Limrun build |
-| 22 | iPad adaptive layout | M | Limrun build (iPad sim) |
+| 16 | Session detail enrichment (structured_output, child/parent links, attachments list, PR badges) | M | Limrun build + screenshots |
+| 17 | Face ID / biometric lock | S | Limrun build (compile check + settings toggle screenshot) |
+| 18 | Multi-account support | M | Limrun build + screenshots of account switcher |
+
+### Phase 5: iOS Platform (P4) — Later
+
+| # | Task | Size | Verification |
+|---|---|---|---|
+| 19 | Enhanced widgets (per-session widget, analytics widget) | M | Limrun build + widget gallery screenshot |
+| 20 | Siri & Shortcuts (AppIntents for create session, check status) | M | Limrun build + Shortcuts app screenshot |
+| 21 | Share Sheet extension | M | Limrun build + share sheet screenshot |
+| 22 | Live Activities for active sessions | L | Limrun build + lock screen screenshot |
+| 23 | Spotlight Search indexing | S | Limrun build |
+| 24 | iPad adaptive layout | M | Limrun build (iPad sim) |
+
+---
+
+## Phase 1 Done Criteria
+
+Phase 1 is complete when the app builds, tab selection persists, Library routes to Knowledge Notes and Playbooks, Knowledge CRUD works, Playbook CRUD works, the create-session playbook picker still works, and at least one CRUD path is verified through the mock API harness and/or an end-to-end API check.
 
 ---
 
@@ -370,6 +453,8 @@ Each task is sized and includes its verification method.
 
 | Method | When Used | How |
 |---|---|---|
+| **Preflight Build** | Before Phase 1 changes | Run the current build first and record whether any errors are pre-existing. |
+| **API Contract Fixtures** | Before each CRUD surface | Capture or hand-author representative response/request fixtures and verify model decoding plus encoded payload shape. |
 | **Unit Tests (URLProtocol mocks)** | Every new API client method and model | `XCTestCase` with mock `URLProtocol` returning fixture JSON. Run via `lim xcode build . --scheme Cog --configuration Debug` (tests are part of the build target). |
 | **Limrun Builds** | Every PR / task completion | `cd Cog && lim xcode build . --scheme Cog --configuration Debug` — confirms compilation. |
 | **Limrun Screenshots** | Every UI change | Build → launch in simulator → `lim ios screenshot <path>` to capture each screen state. |
@@ -382,17 +467,58 @@ Each task is sized and includes its verification method.
 
 ## Architecture Notes
 
+### Authentication Entry Point (Post-P2)
+
+```
+ContentView
+    authState == .unknown           → ProgressView
+    authState == .unauthenticated   → OnboardingFlowView
+    authState == .authenticated     → MainTabView
+```
+
+`OnboardingFlowView` replaces `LoginView` for first launch. The existing `LoginView` remains useful as an implementation reference for clipboard paste, validation, Keychain persistence, and `AppState.login(apiKey:orgId:)`, but the user-facing unauthenticated experience should be the new onboarding flow.
+
+The onboarding auth model:
+
+1. User enters or pastes a Devin service-user API key
+2. Cog calls `/v3/self` directly against the Devin API
+3. If `SelfResponse.orgId` exists, Cog skips manual Organization ID entry
+4. If `SelfResponse.orgId` is nil, Cog asks the user to copy the Organization ID from Devin API settings
+5. Cog saves API key + Organization ID only in iOS Keychain and initializes `DevinAPIClient`
+
 ### Navigation Structure (Post-P0.1)
 
 ```
 TabView {
     SessionsTab          // Existing SessionListView → SessionDetailView (+ Insights)
-    KnowledgeTab         // KnowledgeListView → NoteDetailView / CreateNoteView
-    PlaybooksTab         // PlaybookListView → PlaybookDetailView / CreatePlaybookView  
+    LibraryTab           // LibraryHubView → KnowledgeListView / PlaybookListView
     SchedulesTab         // ScheduleListView → ScheduleDetailView / CreateScheduleView
     SettingsTab           // SettingsView (+ Secrets, Account Switcher, Biometrics toggle)
 }
 ```
+
+### Library Information Architecture
+
+```
+LibraryTab
+    LibraryHubView
+        Knowledge Notes
+            KnowledgeListView → KnowledgeDetailView → Create/EditKnowledgeView
+        Playbooks
+            PlaybookListView → PlaybookDetailView → Create/EditPlaybookView
+```
+
+Secrets remain in Settings for Phase 1/2 unless the app later needs Library to become a broader resource center.
+
+### Shared Resource CRUD Pattern
+
+Knowledge Notes and Playbooks should share the same interaction model:
+
+1. List screen with loading, empty, error, pull-to-refresh, pagination, and swipe-to-delete
+2. Detail screen with full content, metadata, edit action, and delete action
+3. Create/edit form with local validation, saving state, API error display, and refresh after mutation
+4. Delete confirmation before destructive requests
+5. Mock API coverage for encoded request bodies, decoded responses, and common failure states
 
 ### New Models Needed
 
