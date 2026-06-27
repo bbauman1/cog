@@ -175,13 +175,7 @@ struct SessionDetailView: View {
     private var messageInputBar: some View {
         VStack(spacing: 4) {
             HStack(spacing: 8) {
-                TextField("Message Devin...", text: $viewModel.messageDraft, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .lineLimit(1...5)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                messageDraftField
 
                 if speechService.isAvailable {
                     Button {
@@ -210,6 +204,18 @@ struct SessionDetailView: View {
             .padding(.vertical, 8)
         }
         .background(.bar)
+    }
+
+    private var messageDraftField: some View {
+        TextField("Message Devin...", text: $viewModel.messageDraft, axis: .vertical)
+            .textFieldStyle(.plain)
+            .lineLimit(1...5)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .glassEffect(
+                .regular.interactive(),
+                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
     }
 
     private var canSend: Bool {
