@@ -21,13 +21,12 @@ struct SessionDetailView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            VStack(spacing: 0) {
-                PullRequestLinksBar(pullRequests: viewModel.session?.pullRequests ?? [])
+        VStack(spacing: 0) {
+            PullRequestLinksBar(pullRequests: viewModel.session?.pullRequests ?? [])
 
-                chatMessages
-            }
-
+            chatMessages
+        }
+        .safeAreaInset(edge: .bottom) {
             if viewModel.isSessionActive {
                 messageInputBar
             }
@@ -163,7 +162,6 @@ struct SessionDetailView: View {
                         }
                     }
                     .padding()
-                    .padding(.bottom, viewModel.isSessionActive ? 60 : 0)
                 }
                 .onChange(of: viewModel.messages.count) {
                     if let lastId = viewModel.messages.last?.id {
@@ -231,8 +229,8 @@ struct SessionDetailView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .glassEffect(
-                .regular.interactive(),
+            .background(
+                .regularMaterial,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
             .padding(.horizontal, 16)
