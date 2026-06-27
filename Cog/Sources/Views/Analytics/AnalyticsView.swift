@@ -8,17 +8,6 @@ struct AnalyticsView: View {
     var body: some View {
         content
             .navigationTitle("Analytics")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { await viewModel.loadMetrics() }
-                    } label: {
-                        Label("Refresh", systemImage: "arrow.clockwise")
-                            .labelStyle(.iconOnly)
-                    }
-                    .disabled(viewModel.isLoading)
-                }
-            }
             .task {
                 if let client = appState.apiClient {
                     viewModel.configure(with: client)
