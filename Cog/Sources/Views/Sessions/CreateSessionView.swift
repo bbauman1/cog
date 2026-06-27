@@ -217,11 +217,11 @@ struct CreateSessionView: View {
                 .padding(.bottom, 8)
             }
 
-            if !viewModel.attachments.isEmpty {
-                attachmentStrip
-            }
-
             VStack(spacing: 8) {
+                if !viewModel.attachments.isEmpty {
+                    attachmentStrip
+                }
+
                 TextField("What should Devin work on?", text: $viewModel.prompt, axis: .vertical)
                     .focused($isPromptFocused)
                     .lineLimit(1...8)
@@ -271,12 +271,60 @@ struct CreateSessionView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(viewModel.attachments) { attachment in
-                    attachmentChip(attachment)
+                    if attachment.isImage {
+                        attachmentThumbnail(attachment)
+                    } else {
+                        attachmentChip(attachment)
+                    }
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 4)
         }
-        .padding(.bottom, 8)
+    }
+
+    private func attachmentThumbnail(_ attachment: AttachmentItem) -> some View {
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if let data = attachment.thumbnailData, let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Color(.systemGray5)
+                        .overlay {
+                            Image(systemName: "photo")
+                                .foregroundStyle(.secondary)
+                        }
+                }
+            }
+            .frame(width: 64, height: 64)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay {
+                if attachment.isUploading {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                        .overlay { ProgressView().controlSize(.small) }
+                } else if attachment.error != nil {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                        .overlay {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.red)
+                        }
+                }
+            }
+
+            Button {
+                viewModel.removeAttachment(attachment)
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 18))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, Color(.darkGray))
+            }
+            .buttonStyle(.plain)
+            .offset(x: 6, y: -6)
+        }
     }
 
     private func attachmentChip(_ attachment: AttachmentItem) -> some View {
@@ -458,10 +506,12 @@ struct CreateSessionView: View {
                     ext = "jpg"
                 }
                 let fileName = "photo_\(UUID().uuidString.prefix(8)).\(ext)"
+                let thumbnail = Self.generateThumbnail(from: data)
                 await viewModel.uploadAttachment(
                     data: data,
                     fileName: fileName,
-                    mimeType: mimeType
+                    mimeType: mimeType,
+                    thumbnailData: thumbnail
                 )
             }
         }
@@ -471,11 +521,24 @@ struct CreateSessionView: View {
     private func handleCameraCapture(_ image: UIImage) async {
         guard let data = image.jpegData(compressionQuality: 0.85) else { return }
         let fileName = "camera_\(UUID().uuidString.prefix(8)).jpg"
+        let thumbnail = Self.generateThumbnail(from: data)
         await viewModel.uploadAttachment(
             data: data,
             fileName: fileName,
-            mimeType: "image/jpeg"
+            mimeType: "image/jpeg",
+            thumbnailData: thumbnail
         )
+    }
+
+    private static func generateThumbnail(from data: Data, maxSize: CGFloat = 120) -> Data? {
+        guard let image = UIImage(data: data) else { return nil }
+        let scale = min(maxSize / image.size.width, maxSize / image.size.height, 1.0)
+        let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        let resized = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+        return resized.jpegData(compressionQuality: 0.6)
     }
 
     private func handleFileImport(_ result: Result<[URL], Error>) async {

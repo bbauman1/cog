@@ -7,6 +7,12 @@ struct AttachmentItem: Identifiable {
     var isUploading: Bool = true
     var uploadedURL: String?
     var error: String?
+    var thumbnailData: Data?
+
+    var isImage: Bool {
+        let ext = (fileName as NSString).pathExtension.lowercased()
+        return ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp", "tiff", "bmp"].contains(ext)
+    }
 }
 
 @MainActor @Observable
@@ -96,10 +102,10 @@ final class CreateSessionViewModel {
 
     // MARK: - Attachments
 
-    func uploadAttachment(data: Data, fileName: String, mimeType: String) async {
+    func uploadAttachment(data: Data, fileName: String, mimeType: String, thumbnailData: Data? = nil) async {
         guard let apiClient else { return }
 
-        let item = AttachmentItem(fileName: fileName)
+        let item = AttachmentItem(fileName: fileName, thumbnailData: thumbnailData)
         attachments.append(item)
         let itemId = item.id
 
