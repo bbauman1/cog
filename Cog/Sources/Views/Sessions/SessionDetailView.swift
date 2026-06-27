@@ -1,4 +1,5 @@
 import PhotosUI
+import QuickLook
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -65,7 +66,7 @@ struct SessionDetailView: View {
                         }
                     }
                 } label: {
-                    Label("Session Actions", systemImage: "ellipsis.circle")
+                    Label("Session Actions", systemImage: "ellipsis")
                         .labelStyle(.iconOnly)
                 }
             }
@@ -792,6 +793,7 @@ private struct AttachmentImageView: View {
     @State private var imageData: Data?
     @State private var isLoading = true
     @State private var loadFailed = false
+    @State private var previewURL: URL?
 
     var body: some View {
         Group {
@@ -801,6 +803,9 @@ private struct AttachmentImageView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(maxWidth: 260, maxHeight: 300)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .onTapGesture {
+                        previewURL = writeTempFile(data: imageData)
+                    }
             } else if isLoading {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(isUser ? Color.white.opacity(0.15) : Color(.systemGray6))
@@ -812,6 +817,7 @@ private struct AttachmentImageView: View {
                 fileAttachmentLabel
             }
         }
+        .quickLookPreview($previewURL)
         .task(id: attachment.attachmentId) {
             await loadImage()
         }
@@ -857,6 +863,13 @@ private struct AttachmentImageView: View {
             loadFailed = true
         }
         isLoading = false
+    }
+
+    private func writeTempFile(data: Data) -> URL? {
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent(attachment.fileName)
+        try? data.write(to: fileURL)
+        return fileURL
     }
 }
 
