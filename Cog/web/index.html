@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7faff" />
+    <title>Cog - Devin, from your phone</title>
+    <meta
+      name="description"
+      content="Cog is a native iOS client for checking Devin sessions, starting work, and replying when Devin needs you."
+    />
+    <meta property="og:title" content="Cog - Devin, from your phone" />
+    <meta
+      property="og:description"
+      content="A native iOS client for checking sessions, starting work, and replying when Devin needs you."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main>
+      <header class="site-header">
+        <a href="/" class="brand" aria-label="Cog home">
+          <svg
+            class="brand-mark"
+            viewBox="0 0 64 64"
+            role="img"
+            aria-label="Cog app icon"
+          >
+            <path
+              d="M50.9 19.2c2.2 3.8 2.2 21.8 0 25.6C48.7 48.7 35.3 56.5 32 56.5S15.3 48.7 13.1 44.8c-2.2-3.8-2.2-21.8 0-25.6C15.3 15.3 28.7 7.5 32 7.5s16.7 7.8 18.9 11.7Z"
+              fill="currentColor"
+            />
+            <circle cx="32" cy="32" r="8.5" fill="white" />
+          </svg>
+          <span>Cog</span>
+        </a>
+        <nav class="header-links" aria-label="Primary navigation">
+          <a href="https://github.com/bbauman1/cog/">
+            View source
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M8 5H5.8A2.8 2.8 0 0 0 3 7.8v6.4A2.8 2.8 0 0 0 5.8 17h6.4a2.8 2.8 0 0 0 2.8-2.8V12" />
+              <path d="M11 3h6v6" />
+              <path d="m9 11 8-8" />
+            </svg>
+          </a>
+          <span class="divider" aria-hidden="true"></span>
+          <a class="header-primary" href="https://testflight.apple.com/join/2ebkJYfV">
+            Download TestFlight
+          </a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>Devin, from your phone.</h1>
+          <p>
+            Cog is a native iOS client for checking sessions, starting work,
+            and replying when Devin needs you.
+          </p>
+          <div class="cta-row">
+            <a class="button button-primary" href="https://testflight.apple.com/join/2ebkJYfV">
+              <span class="store-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9.2 14.2h5.6M6.6 18.2l5.5-10.1m5.3 10.1L11.9 8.1m0 0-.9-1.7a1.6 1.6 0 0 1 2.8-1.5l.8 1.5m-2.7 1.7L9 3.1" />
+                  <path d="M4.7 14.2h14.6" />
+                </svg>
+              </span>
+              Download TestFlight
+            </a>
+            <a class="button button-secondary" href="https://github.com/bbauman1/cog/">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M12 .8a11.2 11.2 0 0 0-3.54 21.82c.56.1.77-.24.77-.54v-1.91c-3.12.68-3.78-1.5-3.78-1.5-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.68.08-.68 1.13.08 1.72 1.16 1.72 1.16 1 .1.82 2.62 2.96 1.86.1-.73.39-1.23.71-1.51-2.49-.28-5.1-1.24-5.1-5.53 0-1.22.43-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .95-.3 3.08 1.15A10.7 10.7 0 0 1 12 7.08c.96 0 1.92.13 2.82.38 2.13-1.45 3.07-1.15 3.07-1.15.62 1.54.23 2.68.12 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.62 5.25-5.12 5.52.4.35.76 1.03.76 2.08v3.1c0 .3.2.65.78.54A11.2 11.2 0 0 0 12 .8Z"
+                />
+              </svg>
+              View source
+            </a>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-label="Cog app preview">
+          <div class="phone">
+            <div class="phone-screen">
+              <div class="status-bar">
+                <span>9:41</span>
+                <span class="status-icons">5G 100%</span>
+              </div>
+              <div class="session-nav">
+                <span class="close-button">&times;</span>
+                <span>New Session</span>
+              </div>
+              <div class="session-fields">
+                <div class="field-row">
+                  <span class="field-icon">repo</span>
+                  <span>No repository</span>
+                </div>
+                <div class="field-row">
+                  <span class="field-icon">os</span>
+                  <span>Ubuntu</span>
+                </div>
+              </div>
+              <div class="composer">
+                <p>Check the app icon polish</p>
+                <div class="composer-tools">
+                  <span>+</span>
+                  <span>settings</span>
+                  <span>Default v</span>
+                  <span class="mic">mic</span>
+                  <span class="send">
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                      <path d="M10 15V5m0 0L5.8 9.2M10 5l4.2 4.2" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+              <div class="home-indicator"></div>
+            </div>
+          </div>
+          <div class="icon-card" aria-hidden="true">
+            <svg viewBox="0 0 64 64">
+              <path
+                d="M50.9 19.2c2.2 3.8 2.2 21.8 0 25.6C48.7 48.7 35.3 56.5 32 56.5S15.3 48.7 13.1 44.8c-2.2-3.8-2.2-21.8 0-25.6C15.3 15.3 28.7 7.5 32 7.5s16.7 7.8 18.9 11.7Z"
+                fill="currentColor"
+              />
+              <circle cx="32" cy="32" r="8.5" fill="white" />
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <section class="feature-panel" aria-label="Cog features">
+        <article class="feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 7.5h10.5a3.5 3.5 0 0 1 3.5 3.5v.5a3.5 3.5 0 0 1-3.5 3.5H12l-4.5 3v-3H5A3.5 3.5 0 0 1 1.5 11v-.5A3.5 3.5 0 0 1 5 7.5Z" />
+              <path d="M7 10.5h8M7 12.8h5" />
+            </svg>
+          </div>
+          <div>
+            <h2>Start sessions</h2>
+            <p>Kick off work for Devin right from your phone.</p>
+          </div>
+        </article>
+        <article class="feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m13 2-8 12h6l-1 8 9-13h-6l0-7Z" />
+            </svg>
+          </div>
+          <div>
+            <h2>Reply fast</h2>
+            <p>Respond when Devin needs a decision.</p>
+          </div>
+        </article>
+        <article class="feature">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m12 3 8 4-8 4-8-4 8-4Z" />
+              <path d="m4 12 8 4 8-4" />
+              <path d="m4 17 8 4 8-4" />
+            </svg>
+          </div>
+          <div>
+            <h2>Keep context</h2>
+            <p>Stay in the loop with full session context.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="workflow">
+        <div>
+          <h2>Built for your workflow.</h2>
+          <p>
+            Cog keeps the mobile surface small: sessions, messages,
+            attachments, and the controls Devin users reach for when they are
+            away from their desk.
+          </p>
+        </div>
+        <div class="workflow-card">
+          <div class="mini-bar">
+            <span>Session</span>
+            <strong>Waiting for you</strong>
+          </div>
+          <div class="mini-message">
+            <span>Devin</span>
+            <p>Can I proceed with the migration plan?</p>
+          </div>
+          <div class="mini-reply">Yes, continue.</div>
+        </div>
+      </section>
+
+      <footer class="site-footer">
+        <a href="/" class="footer-brand" aria-label="Cog home">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <path
+              d="M50.9 19.2c2.2 3.8 2.2 21.8 0 25.6C48.7 48.7 35.3 56.5 32 56.5S15.3 48.7 13.1 44.8c-2.2-3.8-2.2-21.8 0-25.6C15.3 15.3 28.7 7.5 32 7.5s16.7 7.8 18.9 11.7Z"
+              fill="currentColor"
+            />
+            <circle cx="32" cy="32" r="8.5" fill="white" />
+          </svg>
+          <span>Cog</span>
+        </a>
+        <p>Unofficial iOS client for Devin.</p>
+        <nav aria-label="Footer navigation">
+          <a href="https://github.com/bbauman1/cog/">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M12 .8a11.2 11.2 0 0 0-3.54 21.82c.56.1.77-.24.77-.54v-1.91c-3.12.68-3.78-1.5-3.78-1.5-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.68.08-.68 1.13.08 1.72 1.16 1.72 1.16 1 .1.82 2.62 2.96 1.86.1-.73.39-1.23.71-1.51-2.49-.28-5.1-1.24-5.1-5.53 0-1.22.43-2.22 1.15-3-.12-.28-.5-1.42.11-2.96 0 0 .95-.3 3.08 1.15A10.7 10.7 0 0 1 12 7.08c.96 0 1.92.13 2.82.38 2.13-1.45 3.07-1.15 3.07-1.15.62 1.54.23 2.68.12 2.96.72.78 1.15 1.78 1.15 3 0 4.3-2.62 5.25-5.12 5.52.4.35.76 1.03.76 2.08v3.1c0 .3.2.65.78.54A11.2 11.2 0 0 0 12 .8Z"
+              />
+            </svg>
+            GitHub
+          </a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+        </nav>
+      </footer>
+    </main>
+  </body>
+</html>
