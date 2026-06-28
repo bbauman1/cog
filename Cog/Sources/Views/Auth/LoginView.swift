@@ -90,7 +90,7 @@ struct OnboardingFlowView: View {
     @State private var didPasteFromClipboard = false
 
     private let validator: OnboardingCredentialValidator
-    private let devinURL = URL(string: "https://app.devin.ai")!
+    private let devinURL = URL(string: "https://app.devin.ai/auth/signup")!
 
     init(validator: OnboardingCredentialValidator = .live) {
         self.validator = validator
