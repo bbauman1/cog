@@ -449,7 +449,7 @@ struct CreateSessionView: View {
                 .frame(width: 30, height: 30)
                 .background(
                     Circle()
-                        .fill(canCreate ? Color.primary : Color(.systemGray4))
+                        .fill(canCreate ? Color.blue : Color(.systemGray4))
                 )
             }
             .disabled(!canCreate)

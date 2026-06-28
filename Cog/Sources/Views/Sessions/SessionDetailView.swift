@@ -411,7 +411,7 @@ struct SessionDetailView: View {
                 .frame(width: 30, height: 30)
                 .background(
                     Circle()
-                        .fill(canSend ? Color.primary : Color(.systemGray4))
+                        .fill(canSend ? Color.blue : Color(.systemGray4))
                 )
             }
             .disabled(!canSend)
