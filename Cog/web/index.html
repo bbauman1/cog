@@ -22,18 +22,7 @@
     <main>
       <header class="site-header">
         <a href="/" class="brand" aria-label="Cog home">
-          <svg
-            class="brand-mark"
-            viewBox="0 0 64 64"
-            role="img"
-            aria-label="Cog app icon"
-          >
-            <path
-              d="M50.9 19.2c2.2 3.8 2.2 21.8 0 25.6C48.7 48.7 35.3 56.5 32 56.5S15.3 48.7 13.1 44.8c-2.2-3.8-2.2-21.8 0-25.6C15.3 15.3 28.7 7.5 32 7.5s16.7 7.8 18.9 11.7Z"
-              fill="currentColor"
-            />
-            <circle cx="32" cy="32" r="8.5" fill="white" />
-          </svg>
+          <img class="brand-mark" src="./assets/cog-icon.png" alt="" />
           <span>Cog</span>
         </a>
         <nav class="header-links" aria-label="Primary navigation">
@@ -84,10 +73,20 @@
 
         <div class="hero-visual" aria-label="Cog app preview">
           <div class="phone">
+            <div class="phone-button button-left-one"></div>
+            <div class="phone-button button-left-two"></div>
+            <div class="phone-button button-right"></div>
             <div class="phone-screen">
               <div class="status-bar">
                 <span>9:41</span>
-                <span class="status-icons">5G 100%</span>
+                <span class="status-icons" aria-label="Cellular, Wi-Fi, and battery status">
+                  <svg viewBox="0 0 42 14" aria-hidden="true">
+                    <path d="M1 11h3V8H1v3Zm5 0h3V6H6v5Zm5 0h3V4h-3v7Zm5 0h3V2h-3v9Z" />
+                    <path d="M24 6.3a8 8 0 0 1 10 0M26.2 8.7a4.8 4.8 0 0 1 5.6 0M29 11.4h.1" />
+                    <rect x="34.5" y="3.5" width="6.5" height="7" rx="1.3" />
+                    <path d="M41.8 5.7v2.6" />
+                  </svg>
+                </span>
               </div>
               <div class="session-nav">
                 <span class="close-button">&times;</span>
@@ -99,6 +98,7 @@
                     <path d="M3.5 5.5h5.1l1.4 1.8h6.5v7.2a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" />
                   </svg>
                   <span>No repository</span>
+                  <span class="field-chevron">&rsaquo;</span>
                 </div>
                 <div class="field-row">
                   <svg class="field-icon" viewBox="0 0 20 20" aria-hidden="true">
@@ -106,10 +106,11 @@
                     <path d="M10 10 16.5 6M10 10v7.5M10 10 3.5 6" />
                   </svg>
                   <span>Ubuntu</span>
+                  <span class="field-chevron">&rsaquo;</span>
                 </div>
               </div>
               <div class="composer">
-                <p>Check the app icon polish</p>
+                <p>Check the app icon polish<span class="caret"></span></p>
                 <div class="composer-tools">
                   <span class="tool-button">+</span>
                   <span class="tool-button">
@@ -140,54 +141,48 @@
             </div>
           </div>
           <div class="icon-card" aria-hidden="true">
-            <svg viewBox="0 0 64 64">
-              <path
-                d="M50.9 19.2c2.2 3.8 2.2 21.8 0 25.6C48.7 48.7 35.3 56.5 32 56.5S15.3 48.7 13.1 44.8c-2.2-3.8-2.2-21.8 0-25.6C15.3 15.3 28.7 7.5 32 7.5s16.7 7.8 18.9 11.7Z"
-                fill="currentColor"
-              />
-              <circle cx="32" cy="32" r="8.5" fill="white" />
-            </svg>
+            <img src="./assets/cog-icon.png" alt="" />
           </div>
         </div>
-      </section>
 
-      <section class="feature-panel" aria-label="Cog features">
-        <article class="feature">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 7.5h10.5a3.5 3.5 0 0 1 3.5 3.5v.5a3.5 3.5 0 0 1-3.5 3.5H12l-4.5 3v-3H5A3.5 3.5 0 0 1 1.5 11v-.5A3.5 3.5 0 0 1 5 7.5Z" />
-              <path d="M7 10.5h8M7 12.8h5" />
-            </svg>
-          </div>
-          <div>
-            <h2>Start sessions</h2>
-            <p>Kick off work for Devin right from your phone.</p>
-          </div>
-        </article>
-        <article class="feature">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m13 2-8 12h6l-1 8 9-13h-6l0-7Z" />
-            </svg>
-          </div>
-          <div>
-            <h2>Reply fast</h2>
-            <p>Respond when Devin needs a decision.</p>
-          </div>
-        </article>
-        <article class="feature">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m12 3 8 4-8 4-8-4 8-4Z" />
-              <path d="m4 12 8 4 8-4" />
-              <path d="m4 17 8 4 8-4" />
-            </svg>
-          </div>
-          <div>
-            <h2>Keep context</h2>
-            <p>Stay in the loop with full session context.</p>
-          </div>
-        </article>
+        <section class="feature-panel" aria-label="Cog features">
+          <article class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 7.5h10.5a3.5 3.5 0 0 1 3.5 3.5v.5a3.5 3.5 0 0 1-3.5 3.5H12l-4.5 3v-3H5A3.5 3.5 0 0 1 1.5 11v-.5A3.5 3.5 0 0 1 5 7.5Z" />
+                <path d="M7 10.5h8M7 12.8h5" />
+              </svg>
+            </div>
+            <div>
+              <h2>Start sessions</h2>
+              <p>Kick off work for Devin right from your phone.</p>
+            </div>
+          </article>
+          <article class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m13 2-8 12h6l-1 8 9-13h-6l0-7Z" />
+              </svg>
+            </div>
+            <div>
+              <h2>Reply fast</h2>
+              <p>Respond to Devin's questions instantly.</p>
+            </div>
+          </article>
+          <article class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m12 3 8 4-8 4-8-4 8-4Z" />
+                <path d="m4 12 8 4 8-4" />
+                <path d="m4 17 8 4 8-4" />
+              </svg>
+            </div>
+            <div>
+              <h2>Keep context</h2>
+              <p>Stay in the loop with full session context.</p>
+            </div>
+          </article>
+        </section>
       </section>
 
       <section class="workflow">
@@ -214,13 +209,7 @@
 
       <footer class="site-footer">
         <a href="/" class="footer-brand" aria-label="Cog home">
-          <svg viewBox="0 0 64 64" aria-hidden="true">
-            <path
-              d="M50.9 19.2c2.2 3.8 2.2 21.8 0 25.6C48.7 48.7 35.3 56.5 32 56.5S15.3 48.7 13.1 44.8c-2.2-3.8-2.2-21.8 0-25.6C15.3 15.3 28.7 7.5 32 7.5s16.7 7.8 18.9 11.7Z"
-              fill="currentColor"
-            />
-            <circle cx="32" cy="32" r="8.5" fill="white" />
-          </svg>
+          <img src="./assets/cog-icon.png" alt="" />
           <span>Cog</span>
         </a>
         <p>Unofficial iOS client for Devin.</p>
