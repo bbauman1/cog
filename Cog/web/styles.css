@@ -251,15 +251,23 @@ main {
 .hero-visual::before {
   content: "";
   position: absolute;
-  width: 520px;
-  height: 520px;
+  width: 560px;
+  height: 560px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(0, 122, 255, 0.12), transparent 64%);
   filter: blur(14px);
   z-index: -1;
 }
 
+.hero-device {
+  display: block;
+  width: min(560px, 43vw);
+  max-width: none;
+  height: auto;
+}
+
 .phone {
+  display: none;
   position: relative;
   width: min(334px, 31vw);
   aspect-ratio: 0.5;
@@ -526,13 +534,13 @@ main {
 }
 
 .icon-card {
+  display: none;
   position: absolute;
   right: 0;
   bottom: 70px;
   width: 146px;
   height: 146px;
   border-radius: 34px;
-  display: grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.86);
   border: 1px solid rgba(206, 216, 228, 0.95);
@@ -797,6 +805,10 @@ main {
 
   .hero-visual {
     min-height: 540px;
+  }
+
+  .hero-device {
+    width: min(560px, 92vw);
   }
 
   .phone {
