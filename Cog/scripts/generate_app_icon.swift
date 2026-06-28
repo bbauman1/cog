@@ -13,22 +13,41 @@ func color(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat, _ alpha: CGFloat =
     CGColor(colorSpace: colorSpace, components: [red, green, blue, alpha])!
 }
 
-func hexagonPath(size: CGFloat, radius: CGFloat) -> CGPath {
-    let center = CGPoint(x: size / 2, y: size / 2)
-    let path = CGMutablePath()
+func point(from point: CGPoint, toward target: CGPoint, distance: CGFloat) -> CGPoint {
+    let dx = target.x - point.x
+    let dy = target.y - point.y
+    let length = hypot(dx, dy)
 
-    for index in 0..<6 {
+    return CGPoint(
+        x: point.x + (dx / length) * distance,
+        y: point.y + (dy / length) * distance
+    )
+}
+
+func roundedHexagonPath(size: CGFloat, radius: CGFloat, cornerInset: CGFloat) -> CGPath {
+    let center = CGPoint(x: size / 2, y: size / 2)
+    let vertices = (0..<6).map { index in
         let angle = CGFloat(index) * (.pi / 3)
-        let point = CGPoint(
+
+        return CGPoint(
             x: center.x + cos(angle) * radius,
             y: center.y + sin(angle) * radius
         )
+    }
 
-        if index == 0 {
-            path.move(to: point)
-        } else {
-            path.addLine(to: point)
-        }
+    let path = CGMutablePath()
+    let start = point(from: vertices[0], toward: vertices[1], distance: cornerInset)
+    path.move(to: start)
+
+    for index in 0..<6 {
+        let nextIndex = (index + 1) % vertices.count
+        let vertex = vertices[nextIndex]
+        let nextVertex = vertices[(nextIndex + 1) % vertices.count]
+        let lineEnd = point(from: vertex, toward: vertices[index], distance: cornerInset)
+        let curveEnd = point(from: vertex, toward: nextVertex, distance: cornerInset)
+
+        path.addLine(to: lineEnd)
+        path.addQuadCurve(to: curveEnd, control: vertex)
     }
 
     path.closeSubpath()
@@ -53,9 +72,19 @@ func renderHexagonLayer(pixels: Int) throws -> CGImage {
     context.setAllowsAntialiasing(true)
     context.setShouldAntialias(true)
 
-    context.addPath(hexagonPath(size: size, radius: size * 0.337))
+    let center = CGPoint(x: size / 2, y: size / 2)
+    let apertureRadius = size * 0.108
+    let aperture = CGRect(
+        x: center.x - apertureRadius,
+        y: center.y - apertureRadius,
+        width: apertureRadius * 2,
+        height: apertureRadius * 2
+    )
+
+    context.addPath(roundedHexagonPath(size: size, radius: size * 0.36, cornerInset: size * 0.047))
+    context.addEllipse(in: aperture)
     context.setFillColor(color(0, 0, 0))
-    context.fillPath()
+    context.drawPath(using: .eoFill)
 
     guard let image = context.makeImage() else {
         throw NSError(domain: "AppIcon", code: 2, userInfo: [NSLocalizedDescriptionKey: "Could not finalize bitmap"])
