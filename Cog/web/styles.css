@@ -338,7 +338,14 @@ main {
 
 .field-icon {
   width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
   color: rgba(255, 255, 255, 0.74);
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
 }
 
 .composer {
@@ -365,13 +372,36 @@ main {
   margin-top: 17px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 11px;
   color: rgba(255, 255, 255, 0.9);
   font-size: 15px;
 }
 
-.composer-tools span:nth-child(3) {
+.tool-button,
+.composer-select {
+  min-width: 24px;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-button svg,
+.composer-select svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.composer-select {
+  gap: 2px;
   font-size: 13px;
+  font-weight: 560;
+  white-space: nowrap;
 }
 
 .mic {
@@ -382,6 +412,7 @@ main {
 .send {
   width: 32px;
   height: 32px;
+  flex: 0 0 32px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -764,16 +795,7 @@ main {
   }
 
   .icon-card {
-    width: 112px;
-    height: 112px;
-    border-radius: 24px;
-    right: -2px;
-    bottom: 42px;
-  }
-
-  .icon-card svg {
-    width: 66px;
-    height: 66px;
+    display: none;
   }
 
   .feature {

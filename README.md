@@ -29,6 +29,24 @@ open Cog.xcodeproj
 
 Select the `Cog` scheme and run it on an iOS simulator or device. On first launch, paste your Devin API key and organization ID.
 
+## Web Landing Page
+
+The static marketing page lives in `Cog/web`. It is configured for the Vercel project `cog`, with production currently served from `https://cog-gamma.vercel.app`.
+
+Local preview:
+
+```sh
+cd Cog/web
+python3 -m http.server 4173
+```
+
+Vercel preview builds can be verified from the repository root:
+
+```sh
+vercel build --cwd Cog/web --yes
+vercel deploy --cwd Cog/web --prebuilt --target preview --yes
+```
+
 ## Test
 
 ```sh
