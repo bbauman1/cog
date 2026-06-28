@@ -3,17 +3,26 @@ name: limrun-testing
 description: How to build, run, and test the Cog iOS app using Limrun cloud simulators, including taking screenshots and adding them to PRs.
 ---
 
-# Limrun Testing & Screenshots
+# Limrun Testing and Screenshots
+
+Use this skill for every Cog pull request. Limrun is the required cloud-agent path for building Cog, launching it in a hosted iOS simulator, inspecting the simulator in the browser, and attaching visual proof to PRs when UI behavior changes.
+
+Public-repo safety rules:
+
+- `LIM_API_KEY` must come from a trusted environment secret. Never commit it, print it, or paste it into PR text.
+- Do not run secret-bearing Limrun jobs against arbitrary fork PR code unless a maintainer has reviewed the change or copied it into a trusted branch.
+- Use mock/debug credentials for UI-only onboarding checks. Use only a Devin test organization and service-user key for live Devin smoke tests.
 
 ## Prerequisites
 
-- `LIM_API_KEY` must be set (org secret, auto-loaded from `/run/repo_secrets/research/.env.secrets`)
-- `lim` CLI is installed globally
+- `LIM_API_KEY` is set in the environment
+- `lim` CLI is installed in the cloud-agent environment
+- Commands start from the repository root unless noted
 
 ## Build the App
 
 ```bash
-cd /home/ubuntu/repos/research/Cog
+cd Cog
 lim xcode build . --scheme Cog --configuration Debug
 ```
 
@@ -43,7 +52,8 @@ lim ios create
 Once the app is running on the simulator:
 
 ```bash
-lim ios screenshot /home/ubuntu/repos/research/screenshot.png
+mkdir -p ../artifacts/limrun
+lim ios screenshot ../artifacts/limrun/pr-check.png
 ```
 
 ### Interacting with the App Before Screenshotting
@@ -69,7 +79,7 @@ lim ios scroll --direction down
 
 ## Adding Screenshots to PRs (IMPORTANT)
 
-After taking screenshots, they MUST be added to the PR. Use one of these methods:
+After taking screenshots for UI changes, they MUST be added to the PR. Use one of these methods:
 
 ### Method 1: Embed in PR Description (Preferred)
 
@@ -78,7 +88,7 @@ Use local file paths in markdown image syntax in the PR description body passed 
 ```markdown
 ## Screenshots
 
-![App screenshot](/home/ubuntu/repos/research/screenshot.png)
+![App screenshot](/absolute/path/to/research/artifacts/limrun/pr-check.png)
 ```
 
 ### Method 2: Add as PR Comment
@@ -88,7 +98,7 @@ Use `git_comment_on_pr` with the screenshot path in markdown image syntax:
 ```markdown
 ## Limrun Screenshots
 
-![Screenshot of feature](/home/ubuntu/repos/research/screenshot.png)
+![Screenshot of feature](/absolute/path/to/research/artifacts/limrun/pr-check.png)
 ```
 
 Local image paths in PR descriptions and comments are auto-uploaded — no need to manually call `upload_attachment` first.
@@ -99,18 +109,20 @@ If you need the URL before creating the PR (e.g., for use in other contexts):
 
 ```bash
 # Use upload_attachment tool to get a URL
-upload_attachment(file_path="/home/ubuntu/repos/research/screenshot.png")
+upload_attachment(file_path="/absolute/path/to/research/artifacts/limrun/pr-check.png")
 # Then use the returned URL in markdown
 ```
 
-## Checklist for Every PR with UI Changes
+## Checklist for Every PR
 
-1. Build the app: `lim xcode build . --scheme Cog --configuration Debug`
-2. Attach simulator: `lim xcode attach-simulator <ios-instance-ID>`
-3. Navigate to the relevant screen(s)
-4. Take screenshot(s): `lim ios screenshot <path>`
-5. Include screenshot(s) in the PR description or as a comment
-6. Never skip adding screenshots to the PR — the user expects visual proof of UI changes
+1. Build the app: `cd Cog && lim xcode build . --scheme Cog --configuration Debug`
+2. Create or identify an iOS simulator: `lim ios list` or `lim ios create`
+3. Attach the simulator: `lim xcode attach-simulator <ios-instance-ID>`
+4. Confirm the app launches in the browser-hosted simulator.
+5. For UI changes, navigate to the relevant screen(s).
+6. Take screenshot(s): `lim ios screenshot <path>`
+7. Include screenshot(s) in the PR description or as a comment for UI changes.
+8. For non-UI PRs, mention the Limrun build-and-launch result in the PR description or validation notes.
 
 ## Common Issues
 

@@ -42,11 +42,32 @@ xcodebuild test \
   CODE_SIGNING_ALLOWED=NO
 ```
 
+## Limrun PR Validation
+
+Every pull request should get a Limrun cloud-simulator pass before merge. Limrun lets cloud agents build Cog, launch it in a hosted iOS simulator, inspect the UI in the browser, and capture screenshots for review.
+
+Trusted cloud-agent environments need the `lim` CLI and a `LIM_API_KEY` secret in the environment. Do not commit the key, echo it in logs, or expose it to untrusted fork code.
+
+From the repository root:
+
+```sh
+cd Cog
+lim xcode build . --scheme Cog --configuration Debug
+lim ios list
+# If no iOS instance exists:
+lim ios create
+lim xcode attach-simulator <ios-instance-id>
+mkdir -p ../artifacts/limrun
+lim ios screenshot ../artifacts/limrun/pr-check.png
+```
+
+Use `lim ios element-tree`, `lim ios tap-element`, `lim ios tap`, `lim ios type`, and `lim ios scroll` to drive the browser-hosted simulator before capturing screenshots. UI PRs should include relevant Limrun screenshots in the pull request description or a PR comment. Fork PRs cannot receive repository secrets automatically, so a maintainer or trusted cloud agent should run this validation before merge.
+
 ## Devin Smoke Testing
 
 For changes that touch auth, networking, sessions, schedules, secrets, or attachments, also test against a Devin test organization from a local simulator. Use a service-user API key for that test org, not a personal or production key.
 
-Limrun is useful for driving this flow locally: fresh install, complete onboarding with the test API key and organization ID, confirm sessions load, create a small test session, send a message, and sign out. Keep live credentials out of scripts, recordings, logs, commits, and CI.
+Limrun is useful for driving this flow in a cloud simulator: fresh install, complete onboarding with the test API key and organization ID, confirm sessions load, create a small test session, send a message, and sign out. Keep live credentials out of scripts, recordings, logs, commits, and CI.
 
 For UI-only onboarding checks, debug builds include mock launch arguments: `-cogMockOnboardingAutoOrg` and `-cogMockOnboardingManualOrg`.
 

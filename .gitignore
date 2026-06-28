@@ -33,6 +33,7 @@ build/
 Cog/build/
 
 # Build artifacts
+artifacts/
 *.ipa
 *.xcarchive
 *.dSYM
