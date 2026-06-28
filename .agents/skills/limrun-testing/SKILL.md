@@ -19,6 +19,11 @@ Public-repo safety rules:
 - `lim` CLI is installed in the cloud-agent environment
 - Commands start from the repository root unless noted
 
+## Devin Secrets Needed
+
+- `LIM_API_KEY` — Limrun API key for cloud simulator access
+- `DEVIN_API_KEY` — (optional) for live Devin smoke tests against a test org
+
 ## Build the App
 
 ```bash
@@ -67,8 +72,8 @@ lim ios element-tree
 # Tap an element by accessibility label
 lim ios tap-element --ax-label "Label"
 
-# Tap at coordinates
-lim ios tap --x 200 --y 400
+# Tap at coordinates (positional args, NOT --x/--y flags)
+lim ios tap 200 400
 
 # Type text
 lim ios type "hello world"
@@ -76,6 +81,36 @@ lim ios type "hello world"
 # Scroll
 lim ios scroll --direction down
 ```
+
+## Testing Onboarding Flows
+
+The app launches on the onboarding Welcome page on a fresh simulator. Navigation path:
+1. Welcome page → tap "Get Started" (ax-label: "Get Started", ID: `onboardingPrimaryButton`)
+2. Trust/Privacy page → tap "Continue" (same ID: `onboardingPrimaryButton`)
+3. API Key page → has "Open Devin" button, API key field, paste button
+4. Organization ID page (if needed) → org ID field
+5. Success page → tap "Enter Cog"
+
+All primary navigation buttons share accessibility ID `onboardingPrimaryButton`; use `--ax-label` to target them by their current text ("Get Started", "Continue", "Enter Cog").
+
+For UI-only onboarding checks without real credentials, debug builds support mock launch arguments: `-cogMockOnboardingAutoOrg` and `-cogMockOnboardingManualOrg`.
+
+### Safari First-Launch Popup
+
+On a fresh simulator, tapping a link that opens Safari may trigger a first-launch popup ("View Bookmarks, Share Menu, and Open Tabs"). Dismiss it by tapping the "Close" button before inspecting page content:
+
+```bash
+lim ios tap-element --ax-label "Close"
+```
+
+### Verifying URLs Opened by the App
+
+When the app calls `openURL`, Safari opens. To verify the correct URL was opened:
+1. Check the address bar: `lim ios element-tree | grep -A3 'Address'` — the `AXValue` shows the domain (Safari may truncate the path)
+2. Check page content via element tree for distinctive text (e.g., "Welcome to Devin", "Sign in", form fields)
+3. If the page redirects (e.g., to Google OAuth), the address bar will update — check both the initial and final states
+
+Safari's address bar typically shows only the domain, so verify the target page loaded correctly by checking page content rather than relying solely on the displayed URL path.
 
 ## Adding Screenshots to PRs (IMPORTANT)
 
@@ -129,3 +164,5 @@ upload_attachment(file_path="/absolute/path/to/research/artifacts/limrun/pr-chec
 - **"No instance ID provided"**: The `lim ios screenshot` command needs an iOS instance in the current workspace. Run `lim ios list` to check, and if empty, run `lim ios create` or `lim xcode attach-simulator` first.
 - **App not visible in screenshot**: Make sure to run `lim xcode attach-simulator` after building to install and launch the app.
 - **Stale build**: If you made code changes, rebuild with `lim xcode build` and re-attach the simulator before screenshotting.
+- **Safari popup blocking interaction**: On fresh simulators, Safari shows a first-launch popup. Dismiss with `lim ios tap-element --ax-label "Close"` before inspecting page content.
+- **`lim ios tap` syntax error**: Use positional arguments (`lim ios tap 200 400`), not flags (`--x`/`--y`).
