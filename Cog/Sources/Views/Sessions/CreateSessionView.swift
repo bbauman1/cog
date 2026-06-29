@@ -418,17 +418,29 @@ struct CreateSessionView: View {
 
             Spacer()
 
-            Button {
-                Task { await toggleTranscription() }
-            } label: {
-                Label(speechService.isTranscribing ? "Stop dictation" : "Start dictation",
-                      systemImage: speechService.isTranscribing ? "mic.fill" : "mic")
-                    .labelStyle(.iconOnly)
-                    .font(.body)
-                    .foregroundStyle(speechService.isTranscribing ? .red : .secondary)
-                    .symbolEffect(.pulse, isActive: speechService.isTranscribing)
+            if speechService.isTranscribing {
+                Button {
+                    Task { await toggleTranscription() }
+                } label: {
+                    HStack(spacing: 6) {
+                        WaveformView(audioLevel: speechService.audioLevel)
+                        Image(systemName: "mic.fill")
+                            .font(.body)
+                            .foregroundStyle(.red)
+                    }
+                }
+                .buttonStyle(.plain)
+            } else {
+                Button {
+                    Task { await toggleTranscription() }
+                } label: {
+                    Label("Start dictation", systemImage: "mic")
+                        .labelStyle(.iconOnly)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
             Button {
                 Task { await createSession() }

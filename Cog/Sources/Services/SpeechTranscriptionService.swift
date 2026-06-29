@@ -8,6 +8,7 @@ final class SpeechTranscriptionService {
     var transcribedText = ""
     var isTranscribing = false
     var errorMessage: String?
+    var audioLevel: Float = 0
 
     private var analyzer: SpeechAnalyzer?
     private var transcriber: SpeechTranscriber?
@@ -15,6 +16,8 @@ final class SpeechTranscriptionService {
     private var inputContinuation: AsyncStream<AnalyzerInput>.Continuation?
     private var resultsTask: Task<Void, Never>?
     private var isInputTapInstalled = false
+    private var audioLevelMeter: AudioLevelMeter?
+    private var levelUpdateTask: Task<Void, Never>?
     private var transcriptionSegments: [TranscriptionSegment] = []
 
     private static let log = Logger(subsystem: "com.cogfordevin.ios", category: "Speech")
@@ -150,10 +153,13 @@ final class SpeechTranscriptionService {
         let converter = AudioBufferConverter()
 
         Self.log.info("[mic] installing tap on inputNode")
+        let levelMeter = AudioLevelMeter()
+        audioLevelMeter = levelMeter
         let tapBlock = makeAnalyzerInputTap(
             converter: converter,
             analyzerFormat: analyzerFormat,
-            continuation: continuation
+            continuation: continuation,
+            levelMeter: levelMeter
         )
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: format, block: tapBlock)
         isInputTapInstalled = true
@@ -171,6 +177,14 @@ final class SpeechTranscriptionService {
 
         isTranscribing = true
         Self.log.info("[mic] engine running — transcription active")
+
+        levelUpdateTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(50))
+                guard let self, let meter = self.audioLevelMeter else { break }
+                self.audioLevel = meter.currentLevel
+            }
+        }
 
         resultsTask = Task { [weak self] in
             do {
@@ -236,6 +250,11 @@ final class SpeechTranscriptionService {
     }
 
     private func cleanup() {
+        levelUpdateTask?.cancel()
+        levelUpdateTask = nil
+        audioLevelMeter = nil
+        audioLevel = 0
+
         resultsTask?.cancel()
         resultsTask = nil
 
@@ -324,9 +343,11 @@ private enum SpeechAssetError: LocalizedError {
 private func makeAnalyzerInputTap(
     converter: AudioBufferConverter,
     analyzerFormat: AVAudioFormat,
-    continuation: AsyncStream<AnalyzerInput>.Continuation
+    continuation: AsyncStream<AnalyzerInput>.Continuation,
+    levelMeter: AudioLevelMeter
 ) -> AVAudioNodeTapBlock {
     { buffer, _ in
+        levelMeter.process(buffer)
         guard let convertedBuffer = try? converter.convert(buffer, to: analyzerFormat) else { return }
         continuation.yield(AnalyzerInput(buffer: convertedBuffer))
     }
@@ -414,5 +435,35 @@ private final class AudioConverterInputState: @unchecked Sendable {
 
     init(buffer: AVAudioPCMBuffer) {
         self.buffer = buffer
+    }
+}
+
+final class AudioLevelMeter: Sendable {
+    private let state = OSAllocatedUnfairLock(initialState: Float(0))
+    private static let smoothingUp: Float = 0.4
+    private static let smoothingDown: Float = 0.15
+
+    var currentLevel: Float {
+        state.withLock { $0 }
+    }
+
+    func process(_ buffer: AVAudioPCMBuffer) {
+        guard let channelData = buffer.floatChannelData, buffer.frameLength > 0 else { return }
+        let frames = Int(buffer.frameLength)
+        let samples = channelData[0]
+        var sumOfSquares: Float = 0
+        for i in 0..<frames {
+            let s = samples[i]
+            sumOfSquares += s * s
+        }
+        let rms = sqrtf(sumOfSquares / Float(frames))
+        let dbFS = 20 * log10f(max(rms, 1e-7))
+        let minDB: Float = -50
+        let normalized = max(0, min(1, (dbFS - minDB) / -minDB))
+
+        state.withLock { previous in
+            let alpha = normalized > previous ? Self.smoothingUp : Self.smoothingDown
+            previous = previous + alpha * (normalized - previous)
+        }
     }
 }
