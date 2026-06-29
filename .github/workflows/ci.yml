@@ -44,6 +44,6 @@ jobs:
           xcodebuild test \
             -project Cog.xcodeproj \
             -scheme Cog \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -destination 'platform=iOS Simulator,name=iPhone 17e' \
             -derivedDataPath build/DerivedData/ci \
             CODE_SIGNING_ALLOWED=NO
