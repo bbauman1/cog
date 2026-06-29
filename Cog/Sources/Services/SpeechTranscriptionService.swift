@@ -203,7 +203,7 @@ final class SpeechTranscriptionService {
             return true
         case .notDetermined:
             let requestedStatus = await withCheckedContinuation { continuation in
-                SFSpeechRecognizer.requestAuthorization { status in
+                SFSpeechRecognizer.requestAuthorization { @Sendable status in
                     continuation.resume(returning: status)
                 }
             }
