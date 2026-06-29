@@ -168,6 +168,7 @@ struct SessionDetailView: View {
                     .padding()
                 }
                 .defaultScrollAnchor(.bottom)
+                .scrollDismissesKeyboard(.interactively)
                 .scrollEdgeEffectHidden(true, for: .top)
                 .onChange(of: viewModel.messages.count) {
                     if let lastId = viewModel.messages.last?.id {
