@@ -418,11 +418,6 @@ struct CreateSessionView: View {
 
             Spacer()
 
-            if speechService.isTranscribing {
-                VoiceWaveformView()
-                    .transition(.opacity)
-            }
-
             Button {
                 Task { await toggleTranscription() }
             } label: {
@@ -431,6 +426,7 @@ struct CreateSessionView: View {
                     .labelStyle(.iconOnly)
                     .font(.body)
                     .foregroundStyle(speechService.isTranscribing ? .red : .secondary)
+                    .symbolEffect(.pulse, isActive: speechService.isTranscribing)
             }
             .buttonStyle(.plain)
 
