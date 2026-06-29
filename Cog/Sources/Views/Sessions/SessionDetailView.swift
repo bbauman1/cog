@@ -167,17 +167,13 @@ struct SessionDetailView: View {
                     }
                     .padding()
                 }
+                .defaultScrollAnchor(.bottom)
                 .scrollEdgeEffectHidden(true, for: .top)
                 .onChange(of: viewModel.messages.count) {
                     if let lastId = viewModel.messages.last?.id {
                         withAnimation(.easeOut(duration: 0.3)) {
                             proxy.scrollTo(lastId, anchor: .bottom)
                         }
-                    }
-                }
-                .onAppear {
-                    if let lastId = viewModel.messages.last?.id {
-                        proxy.scrollTo(lastId, anchor: .bottom)
                     }
                 }
             }
