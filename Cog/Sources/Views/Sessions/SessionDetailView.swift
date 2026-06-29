@@ -379,6 +379,11 @@ struct SessionDetailView: View {
 
             Spacer()
 
+            if speechService.isTranscribing {
+                VoiceWaveformView()
+                    .transition(.opacity)
+            }
+
             if speechService.isAvailable {
                 Button {
                     Task { await toggleTranscription() }
@@ -388,7 +393,6 @@ struct SessionDetailView: View {
                         .labelStyle(.iconOnly)
                         .font(.body)
                         .foregroundStyle(speechService.isTranscribing ? .red : .secondary)
-                        .symbolEffect(.pulse, isActive: speechService.isTranscribing)
                 }
                 .buttonStyle(.plain)
             }

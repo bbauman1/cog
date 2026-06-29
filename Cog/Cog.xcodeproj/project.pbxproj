@@ -55,6 +55,7 @@
 		F5F4EEB2FD9F28B2650F1A09 /* SessionInsightsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49893B7AEBF809BB915108C3 /* SessionInsightsViewModel.swift */; };
 		F7D1066FBC53F124EBDA90C9 /* Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370FEDDC1EED6253BE411E4B /* Schedule.swift */; };
 		F856A288BC6F292A70100DD6 /* SessionDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05223957C8616F2EDF1BABF6 /* SessionDetailViewModel.swift */; };
+		FA1B2C3D4E5F6A7B8C9D0E1F /* VoiceWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2C3D4E5F6A7B8C9D0E1FA1 /* VoiceWaveformView.swift */; };
 		FC3B4962D965EE89DA184592 /* LibraryHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E63EB8FC386EE9E85138446D /* LibraryHubView.swift */; };
 /* End PBXBuildFile section */
 
@@ -121,6 +122,7 @@
 		EA358DB08CE7A44F76DD1545 /* PaginatedResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginatedResponse.swift; sourceTree = "<group>"; };
 		F1DD6186C82DA167D776F342 /* KnowledgeListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeListViewModel.swift; sourceTree = "<group>"; };
 		F567A27BA8C5DF06C50266CA /* Secret.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secret.swift; sourceTree = "<group>"; };
+		FB2C3D4E5F6A7B8C9D0E1FA1 /* VoiceWaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceWaveformView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -174,6 +176,7 @@
 				AC62BD2BDAF72BA5B1F18C6C /* SessionInsightsView.swift */,
 				1F03F86F60ABDC386FF09C20 /* SessionListView.swift */,
 				017FC44BC5BB4DA4EFB98AF6 /* SessionRowView.swift */,
+				FB2C3D4E5F6A7B8C9D0E1FA1 /* VoiceWaveformView.swift */,
 			);
 			path = Sessions;
 			sourceTree = "<group>";
@@ -465,6 +468,7 @@
 				A689EA755C19FE1FBC427AAE /* SessionRowView.swift in Sources */,
 				5795B61C471162959AA8C2A2 /* SettingsView.swift in Sources */,
 				80AC2079C6E1B7D38DF0354A /* SpeechTranscriptionService.swift in Sources */,
+				FA1B2C3D4E5F6A7B8C9D0E1F /* VoiceWaveformView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
