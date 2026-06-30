@@ -36,7 +36,7 @@ struct CreateSessionView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
-                        if speechService.isTranscribing {
+                        if speechService.isActive {
                             _ = speechService.stopTranscription()
                             UIApplication.shared.isIdleTimerDisabled = false
                         }
@@ -63,7 +63,7 @@ struct CreateSessionView: View {
             }
             .interactiveDismissDisabled(viewModel.isCreating)
             .onDisappear {
-                if speechService.isTranscribing {
+                if speechService.isActive {
                     _ = speechService.stopTranscription()
                     UIApplication.shared.isIdleTimerDisabled = false
                 }
@@ -426,8 +426,9 @@ struct CreateSessionView: View {
                     .labelStyle(.iconOnly)
                     .font(.body)
                     .foregroundStyle(speechService.isTranscribing ? .red : .secondary)
-                    .symbolEffect(.pulse, isActive: speechService.isTranscribing)
+                    .symbolEffect(.pulse, isActive: speechService.isActive)
             }
+            .disabled(speechService.isPreparing)
             .buttonStyle(.plain)
 
             Button {
@@ -464,6 +465,8 @@ struct CreateSessionView: View {
     // MARK: - Actions
 
     private func toggleTranscription() async {
+        guard !speechService.isPreparing else { return }
+
         if speechService.isTranscribing {
             _ = speechService.stopTranscription()
             promptBeforeTranscription = viewModel.prompt
@@ -472,11 +475,14 @@ struct CreateSessionView: View {
             promptBeforeTranscription = viewModel.prompt
             UIApplication.shared.isIdleTimerDisabled = true
             await speechService.startTranscription()
+            if !speechService.isTranscribing {
+                UIApplication.shared.isIdleTimerDisabled = false
+            }
         }
     }
 
     private func createSession() async {
-        if speechService.isTranscribing {
+        if speechService.isActive {
             _ = speechService.stopTranscription()
             promptBeforeTranscription = viewModel.prompt
             UIApplication.shared.isIdleTimerDisabled = false

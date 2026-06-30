@@ -7,6 +7,7 @@ import SwiftUI
 final class SpeechTranscriptionService {
     var transcribedText = ""
     var isTranscribing = false
+    var isPreparing = false
     var errorMessage: String?
 
     private var analyzer: SpeechAnalyzer?
@@ -23,8 +24,15 @@ final class SpeechTranscriptionService {
         SpeechTranscriber.isAvailable
     }
 
+    var isActive: Bool {
+        isPreparing || isTranscribing
+    }
+
     func startTranscription() async {
-        guard !isTranscribing else { return }
+        guard !isTranscribing, !isPreparing else { return }
+        isPreparing = true
+        defer { isPreparing = false }
+
         errorMessage = nil
         transcribedText = ""
         transcriptionSegments = []
@@ -38,24 +46,17 @@ final class SpeechTranscriptionService {
         }
 
         // Request microphone permission before accessing audio hardware
-        let recordPermission = AVAudioApplication.shared.recordPermission
-        Self.log.info("[mic] recordPermission = \(String(describing: recordPermission))")
+        let microphonePermission = await requestMicrophonePermission()
 
-        let permissionGranted: Bool
-        if recordPermission == .undetermined {
-            permissionGranted = await AVAudioApplication.requestRecordPermission()
-            Self.log.info("[mic] permission request result = \(permissionGranted)")
-        } else {
-            permissionGranted = recordPermission == .granted
-        }
-
-        guard permissionGranted else {
+        guard microphonePermission.isGranted else {
             Self.log.warning("[mic] microphone permission denied")
             errorMessage = "Microphone access is required. Enable it in Settings > Privacy > Microphone."
             return
         }
 
-        guard await requestSpeechRecognitionPermission() else {
+        let speechPermission = await requestSpeechRecognitionPermission()
+
+        guard speechPermission.isGranted else {
             Self.log.warning("[mic] speech recognition permission denied")
             errorMessage = "Speech recognition access is required. Enable it in Settings > Privacy > Speech Recognition."
             return
@@ -170,6 +171,7 @@ final class SpeechTranscriptionService {
         }
 
         isTranscribing = true
+        isPreparing = false
         Self.log.info("[mic] engine running — transcription active")
 
         resultsTask = Task { [weak self] in
@@ -194,25 +196,34 @@ final class SpeechTranscriptionService {
 
     // MARK: - Private
 
-    private func requestSpeechRecognitionPermission() async -> Bool {
+    private func requestMicrophonePermission() async -> PermissionResult {
+        let recordPermission = AVAudioApplication.shared.recordPermission
+        Self.log.info("[mic] recordPermission = \(String(describing: recordPermission))")
+
+        if recordPermission == .undetermined {
+            let isGranted = await AVAudioApplication.requestRecordPermission()
+            Self.log.info("[mic] permission request result = \(isGranted)")
+            return PermissionResult(isGranted: isGranted)
+        }
+
+        return PermissionResult(isGranted: recordPermission == .granted)
+    }
+
+    private func requestSpeechRecognitionPermission() async -> PermissionResult {
         let status = SFSpeechRecognizer.authorizationStatus()
         Self.log.info("[mic] speech authorizationStatus = \(String(describing: status))")
 
         switch status {
         case .authorized:
-            return true
+            return PermissionResult(isGranted: true)
         case .notDetermined:
-            let requestedStatus = await withCheckedContinuation { continuation in
-                SFSpeechRecognizer.requestAuthorization { status in
-                    continuation.resume(returning: status)
-                }
-            }
+            let requestedStatus = await requestSFSpeechRecognizerAuthorization()
             Self.log.info("[mic] speech authorization request result = \(String(describing: requestedStatus))")
-            return requestedStatus == .authorized
+            return PermissionResult(isGranted: requestedStatus == .authorized)
         case .denied, .restricted:
-            return false
+            return PermissionResult(isGranted: false)
         @unknown default:
-            return false
+            return PermissionResult(isGranted: false)
         }
     }
 
@@ -240,11 +251,11 @@ final class SpeechTranscriptionService {
         resultsTask = nil
 
         if let audioEngine {
-            audioEngine.stop()
             if isInputTapInstalled {
                 audioEngine.inputNode.removeTap(onBus: 0)
                 isInputTapInstalled = false
             }
+            audioEngine.stop()
         }
         audioEngine = nil
 
@@ -259,6 +270,7 @@ final class SpeechTranscriptionService {
         transcriber = nil
 
         isTranscribing = false
+        isPreparing = false
         transcribedText = ""
         transcriptionSegments = []
 
@@ -311,6 +323,18 @@ final class SpeechTranscriptionService {
 private struct TranscriptionSegment {
     let range: CMTimeRange
     var text: String
+}
+
+private struct PermissionResult {
+    let isGranted: Bool
+}
+
+private nonisolated func requestSFSpeechRecognizerAuthorization() async -> SFSpeechRecognizerAuthorizationStatus {
+    await withCheckedContinuation { continuation in
+        SFSpeechRecognizer.requestAuthorization { status in
+            continuation.resume(returning: status)
+        }
+    }
 }
 
 private enum SpeechAssetError: LocalizedError {
