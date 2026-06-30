@@ -99,7 +99,7 @@ struct SessionDetailView: View {
         }
         .onDisappear {
             viewModel.stopPolling()
-            if speechService.isTranscribing {
+            if speechService.isActive {
                 _ = speechService.stopTranscription()
                 UIApplication.shared.isIdleTimerDisabled = false
             }
@@ -389,8 +389,9 @@ struct SessionDetailView: View {
                         .labelStyle(.iconOnly)
                         .font(.body)
                         .foregroundStyle(speechService.isTranscribing ? .red : .secondary)
-                        .symbolEffect(.pulse, isActive: speechService.isTranscribing)
+                        .symbolEffect(.pulse, isActive: speechService.isActive)
                 }
+                .disabled(speechService.isPreparing)
                 .buttonStyle(.plain)
             }
 
@@ -428,6 +429,8 @@ struct SessionDetailView: View {
     }
 
     private func toggleTranscription() async {
+        guard !speechService.isPreparing else { return }
+
         if speechService.isTranscribing {
             _ = speechService.stopTranscription()
             messageDraftBeforeTranscription = viewModel.messageDraft
@@ -436,11 +439,14 @@ struct SessionDetailView: View {
             messageDraftBeforeTranscription = viewModel.messageDraft
             UIApplication.shared.isIdleTimerDisabled = true
             await speechService.startTranscription()
+            if !speechService.isTranscribing {
+                UIApplication.shared.isIdleTimerDisabled = false
+            }
         }
     }
 
     private func sendMessageWithSpeech() async {
-        if speechService.isTranscribing {
+        if speechService.isActive {
             _ = speechService.stopTranscription()
             messageDraftBeforeTranscription = viewModel.messageDraft
             UIApplication.shared.isIdleTimerDisabled = false
